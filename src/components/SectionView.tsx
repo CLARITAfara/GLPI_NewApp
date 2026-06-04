@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Section } from '../sections'
-import { fetchList } from '../api/glpi'
-import type { GlpiRow } from '../api/glpi'
+import { fetchList } from '../services/glpiApi'
+import type { GlpiRow } from '../services/glpiApi'
 
 type Status = 'loading' | 'ready' | 'error'
 

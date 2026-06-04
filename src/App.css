@@ -301,3 +301,364 @@
 .data-table tbody tr:hover {
   background: var(--social-bg);
 }
+
+/* ===== Reset Panel ===== */
+.reset-intro {
+  font-size: 14px;
+  margin-bottom: 0.75rem;
+}
+
+.reset-warning {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 35, 24, 0.3);
+  background: rgba(180, 35, 24, 0.06);
+  color: #b42318;
+  margin-bottom: 1.25rem;
+  max-width: 480px;
+}
+
+.reset-ressources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 480px;
+  margin-bottom: 1.25rem;
+}
+
+.reset-ressource-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  user-select: none;
+}
+
+.reset-ressource-card:hover {
+  border-color: var(--accent);
+}
+
+.reset-ressource-card.selected {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.04);
+}
+
+.reset-ressource-card input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #dc3545;
+  flex-shrink: 0;
+}
+
+.reset-ressource-icone {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.reset-module-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reset-ressource-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.reset-ep-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.reset-ep-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.reset-select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  cursor: pointer;
+  user-select: none;
+}
+
+.reset-select-all input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #dc3545;
+}
+
+/* Bouton de lancement */
+.btn-reset {
+  padding: 10px 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #dc3545;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-reset:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+/* Dialogue de confirmation */
+.reset-dialog {
+  max-width: 480px;
+  padding: 24px 28px;
+  border: 1px solid rgba(180, 35, 24, 0.35);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.reset-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #b42318;
+}
+
+.reset-dialog p {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.reset-dialog-list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+}
+
+.reset-dialog-list li::before {
+  content: '→ ';
+  color: #b42318;
+}
+
+.reset-confirm-field {
+  margin: 16px 0 20px;
+}
+
+.reset-confirm-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+.reset-confirm-field input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.reset-confirm-field input:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.reset-dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Barres de progression */
+.reset-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 480px;
+}
+
+.reset-progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reset-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reset-progress-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.reset-progress-count {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.reset-progress-eps {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.reset-progress-bar-wrap {
+  height: 6px;
+  background: var(--social-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.reset-progress-bar-fill {
+  height: 100%;
+  background: #dc3545;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+/* Rapport final */
+.reset-rapport-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin-bottom: 1.25rem;
+}
+
+.reset-rapport-item {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.reset-rapport-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reset-rapport-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-ok {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  color: #155724;
+  background: rgba(21, 87, 36, 0.1);
+  border: 1px solid rgba(21, 87, 36, 0.3);
+}
+
+.badge-err {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.1);
+  border: 1px solid rgba(180, 35, 24, 0.3);
+}
+
+.reset-rapport-echecs {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.reset-echec-list {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #b42318;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Messages d'état */
+.reset-msg {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid;
+  margin-bottom: 1rem;
+  max-width: 480px;
+}
+
+.reset-msg--ok {
+  color: #155724;
+  background: rgba(21, 87, 36, 0.08);
+  border-color: rgba(21, 87, 36, 0.25);
+}
+
+.reset-msg-echecs {
+  color: #b42318;
+}
+
+.reset-msg--err {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.25);
+}

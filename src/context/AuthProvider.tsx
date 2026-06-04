@@ -2,16 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AuthContext } from './AuthContext'
 import type { AuthStatus } from './AuthContext'
-import type { Session } from '../api/types'
-import { getSession, login as apiLogin, logout as apiLogout } from '../api/auth'
-import { getTokens } from '../api/tokenStore'
+import type { Session } from '../services/types'
+import { getSession, login as apiLogin, logout as apiLogout } from '../services/apiClient'
+import { getTokens } from '../services/tokenStore'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<Session | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Au démarrage : restaurer la session si un token est déjà présent
   useEffect(() => {
     let active = true
     async function restore() {

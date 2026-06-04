@@ -383,3 +383,13 @@ npm run build
 
 > **Prérequis GLPI** : version 10+ avec l'API High-Level activée  
 > (_Configuration > Générale > API_ → "Activer l'API REST")
+
+
+powershell -File c:\xampp\htdocs\glpi\GLPI_NewApp\DB\dump-glpi.ps1
+
+
+# Prend automatiquement la sauvegarde la plus récente
+powershell -File c:\xampp\htdocs\glpi\GLPI_NewApp\DB\restore-glpi.ps1
+
+# Ou un fichier précis
+powershell -File c:\xampp\htdocs\glpi\GLPI_NewApp\DB\restore-glpi.ps1 -File "DB\backups\glpi_2026-06-04_153000.sqlite"

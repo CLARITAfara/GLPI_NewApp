@@ -1,0 +1,56 @@
+{
+  "Assistance": {
+    "description": "Tickets, tâches, suivis, validations et solutions",
+    "tables": [
+      "glpi_tickets",
+      "glpi_itilsolutions",
+      "glpi_ticketfollowups",
+      "glpi_tickettasks",
+      "glpi_ticketvalidations",
+      "glpi_ticketsatisfactions",
+      "glpi_ticketcosts",
+      "glpi_tickets_users",
+      "glpi_groups_tickets",
+      "glpi_items_tickets"
+    ]
+  },
+  "Parc": {
+    "description": "Ordinateurs, moniteurs, imprimantes et périphériques",
+    "tables": [
+      "glpi_computers",
+      "glpi_monitors",
+      "glpi_networkequipments",
+      "glpi_printers",
+      "glpi_phones",
+      "glpi_peripherals",
+      "glpi_items_devicecases",
+      "glpi_computers_softwareversions",
+      "glpi_computers_softwarelicenses"
+    ]
+  },
+  "Logiciels": {
+    "description": "Logiciels, versions et licences",
+    "tables": [
+      "glpi_softwares",
+      "glpi_softwareversions",
+      "glpi_softwarelicenses"
+    ]
+  },
+  "Réseau": {
+    "description": "Ports, connexions et adresses réseau",
+    "tables": [
+      "glpi_networkports",
+      "glpi_networknames",
+      "glpi_ipaddresses",
+      "glpi_networkport_vlans"
+    ]
+  },
+  "Journaux": {
+    "description": "Historique des actions et événements système",
+    "tables": [
+      "glpi_logs",
+      "glpi_events"
+    ]
+  }
+}
+

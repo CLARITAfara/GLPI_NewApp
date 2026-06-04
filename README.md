@@ -1,6 +1,6 @@
 # GLPI_NewApp
 
-Application React + Node.js/Express + SQLite.
+Application React + Node.js/Express + SQLite (tables custom) + MySQL (base GLPI).
 
 ---
 
@@ -106,14 +106,51 @@ PUT http://localhost:3001/api/tickets/1
 
 ---
 
-## Base de données
+## Bases de données
 
-Fichier SQLite : `DB/glpi.sqlite`
+### SQLite — tables custom
+Fichier : `DB/glpi.sqlite` — géré via l'extension **SQLite (alexcvzz)** dans VS Code.
 
-Géré via l'extension **SQLite (alexcvzz)** dans VS Code.
+### MySQL — base GLPI
+Le serveur se connecte à MySQL avec ces paramètres par défaut :
 
-Pour ouvrir et exécuter des requêtes :
-- `Ctrl+Shift+P` → `SQLite: Open Database`
-- `Ctrl+Shift+P` → `SQLite: New Query`
-- `Ctrl+Shift+P` → `SQLite: Run Query`
+| Variable          | Défaut      | Override via env        |
+|-------------------|-------------|-------------------------|
+| Hôte              | `localhost` | `MYSQL_HOST`            |
+| Utilisateur       | `root`      | `MYSQL_USER`            |
+| Mot de passe      | `root`      | `MYSQL_PASSWORD`        |
+| Base de données   | `gpli`      | `MYSQL_DB`              |
+
+---
+
+## Réinitialisation par module (GLPI MySQL)
+
+Accessible dans l'app via la section **Réinitialisation** (admins uniquement).
+
+Les modules sont définis dans `DB/modules.json`. Chaque reset :
+1. Fait un `mysqldump` des tables concernées dans `DB/backups/`
+2. Exécute `TRUNCATE` sur les tables du module
+
+### Ajouter un module
+
+Éditez `DB/modules.json` :
+```json
+"Mon Module": {
+  "description": "Description du module",
+  "tables": ["glpi_ma_table1", "glpi_ma_table2"]
+}
+```
+
+### Sauvegarde / Restauration manuelle
+
+```powershell
+# Sauvegarder toute la base
+powershell -File DB/dump-glpi.ps1
+
+# Restaurer la dernière sauvegarde
+powershell -File DB/restore-glpi.ps1
+
+# Restaurer un fichier précis
+powershell -File DB/restore-glpi.ps1 -File "DB\backups\gpli_2026-06-04_150000.sql"
+```
 

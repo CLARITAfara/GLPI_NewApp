@@ -9,7 +9,7 @@
 
 param(
     [string]$File     = "",
-    [string]$Db       = "gplidb",
+    [string]$Db       = "glpi",
     [string]$User     = "root",
     [string]$Password = "root"
 )

@@ -1,5 +1,5 @@
-import type { GlpiRow } from './api/glpi'
-import { refName } from './api/glpi'
+import type { GlpiRow } from './services/glpiApi'
+import { refName } from './services/glpiApi'
 import { formatDate } from './format'
 
 export interface Column {
@@ -16,6 +16,8 @@ export interface Section {
   /** Endpoint de l'API GLPI (sans le préfixe /api) */
   endpoint: string
   columns: Column[]
+  /** Section spéciale sans tableau de données */
+  custom?: 'reset'
 }
 
 const PRIORITY: Record<number, string> = {
@@ -69,6 +71,15 @@ const USERS: Section = {
   ],
 }
 
+const RESET: Section = {
+  id: 'reset',
+  label: 'Réinitialisation',
+  icon: '🗑️',
+  endpoint: '',
+  columns: [],
+  custom: 'reset',
+}
+
 /**
  * Sections visibles selon le rôle.
  * - interface "helpdesk" (libre-service) : seulement ses tickets.
@@ -83,7 +94,7 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [TICKETS, COMPUTERS, USERS]
+      return [TICKETS, COMPUTERS, USERS, RESET]
     default:
       return [TICKETS, COMPUTERS]
   }

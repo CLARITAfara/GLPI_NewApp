@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
+import { ResetPanel } from './ResetPanel'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -60,7 +61,9 @@ export function Dashboard() {
         </nav>
 
         <main className="dash-main">
-          {active ? (
+          {active?.custom === 'reset' ? (
+            <ResetPanel />
+          ) : active ? (
             <SectionView key={active.id} section={active} />
           ) : (
             <p className="muted">Aucune section disponible pour ce rôle.</p>

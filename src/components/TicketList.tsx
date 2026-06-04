@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getTickets, type Ticket } from '../api/tickets'
+import { getTickets, type Ticket } from '../services/ticketApi'
 
 export function TicketList() {
   const [tickets, setTickets] = useState<Ticket[]>([])

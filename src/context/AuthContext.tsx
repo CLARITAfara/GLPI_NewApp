@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { Session } from '../api/types'
+import type { Session } from '../services/types'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
@@ -17,7 +17,7 @@ export const AuthContext = createContext<AuthContextValue | undefined>(undefined
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) {
-    throw new Error('useAuth doit être utilisé à l’intérieur de <AuthProvider>')
+    throw new Error('useAuth doit être utilisé à l\'intérieur de <AuthProvider>')
   }
   return ctx
 }
