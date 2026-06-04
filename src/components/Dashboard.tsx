@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
+import { OverviewView } from './OverviewView'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -60,10 +61,12 @@ export function Dashboard() {
         </nav>
 
         <main className="dash-main">
-          {active ? (
-            <SectionView key={active.id} section={active} />
-          ) : (
+          {!active ? (
             <p className="muted">Aucune section disponible pour ce rôle.</p>
+          ) : active.id === 'overview' ? (
+            <OverviewView />
+          ) : (
+            <SectionView key={active.id} section={active} />
           )}
         </main>
       </div>

@@ -1,3 +1,4 @@
+
 import type { GlpiRow } from './api/glpi'
 import { refName } from './api/glpi'
 import { formatDate } from './format'
@@ -25,6 +26,15 @@ const PRIORITY: Record<number, string> = {
   4: 'Haute',
   5: 'Très haute',
   6: 'Majeure',
+}
+
+// Section spéciale : rendue par <OverviewView> (pas un tableau générique)
+const OVERVIEW: Section = {
+  id: 'overview',
+  label: "Vue d'ensemble",
+  icon: '📊',
+  endpoint: '',
+  columns: [],
 }
 
 const TICKETS: Section = {
@@ -83,7 +93,7 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [TICKETS, COMPUTERS, USERS]
+      return [OVERVIEW, TICKETS, COMPUTERS, USERS]
     default:
       return [TICKETS, COMPUTERS]
   }

@@ -30,6 +30,12 @@ export async function fetchList(
   return { items, total }
 }
 
+/** Récupère uniquement le nombre total d'éléments (limit=1, lit Content-Range) */
+export async function fetchTotal(path: string): Promise<number> {
+  const { total } = await fetchList(path, { limit: 1 })
+  return total
+}
+
 function parseTotal(contentRange: string | null, fallback: number): number {
   if (!contentRange) return fallback
   const slash = contentRange.lastIndexOf('/')

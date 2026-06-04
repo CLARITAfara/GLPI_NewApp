@@ -11,7 +11,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Au démarrage : restaurer la session si un token est déjà présent
   useEffect(() => {
     let active = true
     async function restore() {

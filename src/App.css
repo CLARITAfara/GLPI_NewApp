@@ -234,6 +234,58 @@
   }
 }
 
+/* Vue d'ensemble (KPI) */
+.overview h1 {
+  font-size: 28px;
+  margin: 0 0 24px;
+}
+
+.kpi-group {
+  margin-bottom: 28px;
+}
+
+.kpi-group h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.kpi-icon {
+  font-size: 22px;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-h);
+}
+
+.kpi-label {
+  font-size: 14px;
+  color: var(--text);
+}
+
 /* Panneau d'une section */
 .panel-head {
   display: flex;
