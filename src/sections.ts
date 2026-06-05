@@ -17,7 +17,7 @@ export interface Section {
   endpoint: string
   columns: Column[]
   /** Section spéciale sans tableau de données */
-  custom?: 'reset'
+  custom?: 'reset' | 'import'
 }
 
 const PRIORITY: Record<number, string> = {
@@ -71,6 +71,15 @@ const USERS: Section = {
   ],
 }
 
+const IMPORT: Section = {
+  id: 'import',
+  label: 'Import CSV',
+  icon: '📥',
+  endpoint: '',
+  columns: [],
+  custom: 'import',
+}
+
 const RESET: Section = {
   id: 'reset',
   label: 'Réinitialisation',
@@ -94,7 +103,7 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [TICKETS, COMPUTERS, USERS, RESET]
+      return [TICKETS, COMPUTERS, USERS, IMPORT, RESET]
     default:
       return [TICKETS, COMPUTERS]
   }
