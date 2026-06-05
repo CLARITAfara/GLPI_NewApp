@@ -2,17 +2,20 @@
 // déroulantes / utilisateurs manquants et rollback atomique en cas d'échec.
 //
 // Assets / users / dropdowns / tickets / coûts : API OAuth High-Level.
-// Images → documents liés aux assets : API REST legacy (`/api/v1`), seule à
-// gérer l'upload de fichiers (cf. legacyApi.ts). Le lien asset↔ticket (colonne
-// Items) reste non importable : aucune API GLPI ne l'expose.
+// Images (documents liés) ET liens matériel↔ticket (colonne Items → relation
+// Item_Ticket) : API REST legacy (`/api/v1`, cf. legacyApi.ts). L'API OAuth
+// High-Level n'expose pas de route de création pour ces deux types, mais la
+// legacy le permet — elle nécessite VITE_GLPI_USER_TOKEN.
 
 import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import { extraireImagesZip, type DonneesImport } from './importValidation'
 import {
   fermerSession,
+  lierItemTicket,
   ouvrirSession,
   supprimerDocument,
+  supprimerItemTicket,
   uploaderDocument,
   uploadDisponible,
 } from './legacyApi'
@@ -32,9 +35,15 @@ export interface RapportImport {
     listes: number
     utilisateurs: number
     documents: number
+    liens: number
   }
-  /** Liens asset↔ticket non importés (aucune API GLPI ne l'expose). */
+  /** Liens matériel↔ticket non importés (jeton legacy absent ou échec). */
   liensIgnores: number
+  /**
+   * Détail des liens matériel↔ticket en échec (non bloquant). Une entrée par
+   * lien : "PC ↔ ticket #N — message".
+   */
+  liensEchecs: string[]
   /** Images non importées (sans asset, jeton legacy absent, ou upload refusé). */
   imagesIgnorees: number
   /**
@@ -121,10 +130,12 @@ export async function importer(
   // Cache find-or-create : clé "endpoint::champ::valeur" → id.
   const cache = new Map<string, number>()
 
+  const totalLiens = donnees.tickets.reduce((s, t) => s + t.items.length, 0)
   const rapport: RapportImport = {
     ok: false,
-    cree: { materiel: 0, tickets: 0, couts: 0, listes: 0, utilisateurs: 0, documents: 0 },
-    liensIgnores: donnees.tickets.reduce((s, t) => s + t.items.length, 0),
+    cree: { materiel: 0, tickets: 0, couts: 0, listes: 0, utilisateurs: 0, documents: 0, liens: 0 },
+    liensIgnores: totalLiens,
+    liensEchecs: [],
     imagesIgnorees: donnees.images.length,
     imagesEchecs: [],
     rollback: false,
@@ -317,6 +328,65 @@ export async function importer(
       rapport.cree.couts++
       onProgress({ etape: etape4, courant: i + 1, total: donnees.couts.length })
     }
+
+    // ── Étape 5 : liens matériel ↔ ticket (relation Item_Ticket, API legacy) ──
+    // Comme les images : best-effort et non bloquant. La colonne Items de la
+    // feuille tickets relie chaque ticket aux assets déjà créés à l'étape 1.
+    const liens: Array<{ itemType: string; itemId: number; ticketId: number; libelle: string }> = []
+    for (const t of donnees.tickets) {
+      const ticketId = ticketIdParRef.get(t.ref)
+      if (ticketId === undefined) continue
+      for (const nom of t.items) {
+        const asset = assetParNom.get(nom)
+        if (!asset) continue // asset absent (improbable : validé en amont)
+        liens.push({
+          itemType: asset.itemType,
+          itemId: asset.id,
+          ticketId,
+          libelle: `${nom} ↔ ticket #${t.ref}`,
+        })
+      }
+    }
+
+    if (liens.length > 0) {
+      const etape5 = 'Liens matériel ↔ ticket'
+      onProgress({ etape: etape5, courant: 0, total: liens.length })
+
+      let sessionOk = uploadDisponible()
+      if (!sessionOk) {
+        rapport.liensEchecs.push(
+          `${liens.length} lien(s) non importé(s) — jeton legacy (VITE_GLPI_USER_TOKEN) absent`,
+        )
+      } else {
+        try {
+          await ouvrirSession() // idempotent : déjà ouverte si des images ont été envoyées
+        } catch (err) {
+          sessionOk = false
+          rapport.liensEchecs.push(
+            `Liens non importés — session legacy indisponible : ${err instanceof Error ? err.message : String(err)}`,
+          )
+        }
+      }
+
+      for (let i = 0; sessionOk && i < liens.length; i++) {
+        const l = liens[i]
+        try {
+          const id = await lierItemTicket({
+            itemtype: l.itemType,
+            items_id: l.itemId,
+            tickets_id: l.ticketId,
+          })
+          annulations.push(() => supprimerItemTicket(id))
+          rapport.cree.liens++
+        } catch (err) {
+          rapport.liensEchecs.push(
+            `${l.libelle} — ${err instanceof Error ? err.message : String(err)}`,
+          )
+        }
+        onProgress({ etape: etape5, courant: i + 1, total: liens.length })
+      }
+    }
+    rapport.liensIgnores = totalLiens - rapport.cree.liens
 
     rapport.ok = true
     return rapport
