@@ -92,6 +92,33 @@ export async function uploaderDocument(opts: {
   return id
 }
 
+/**
+ * Associe un élément GLPI à un ticket via l'API legacy v1.
+ * Nécessite VITE_GLPI_USER_TOKEN. Un 409 (déjà associé) est traité comme succès.
+ */
+export async function associerElementTicket(
+  ticketId: number,
+  itemtype: string,
+  itemsId: number,
+): Promise<void> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const res = await fetch(`${BASE}/Item_Ticket/`, {
+    method: 'POST',
+    headers: entetes({
+      'Session-Token': sessionToken,
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({
+      input: { tickets_id: ticketId, itemtype, items_id: itemsId },
+    }),
+  })
+
+  if (res.ok || res.status === 409) return
+  const detail = await res.text().catch(() => '')
+  throw new Error(`Item_Ticket → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+}
+
 /** Supprime définitivement un document (rollback). Best-effort. */
 export async function supprimerDocument(id: number): Promise<void> {
   if (!sessionToken) return

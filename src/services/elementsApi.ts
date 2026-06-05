@@ -10,7 +10,6 @@ export const ALL_ITEM_TYPES = [
   'NetworkEquipment',
   'Peripheral',
   'Software',
-  'VirtualMachine',
   'Rack',
   'Appliance',
 ] as const
@@ -25,7 +24,6 @@ const ITEM_ENDPOINTS: Record<ItemType, string> = {
   NetworkEquipment: '/Assets/NetworkEquipment',
   Peripheral: '/Assets/Peripheral',
   Software: '/Assets/Software',
-  VirtualMachine: '/Assets/VirtualMachine',
   Rack: '/Assets/Rack',
   Appliance: '/Assets/Appliance',
 }
