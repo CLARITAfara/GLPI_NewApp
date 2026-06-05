@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  MODULES_DISPONIBLES,
+  MODULES_RESET,
+  compterEndpoints,
   reinitialiser,
+  type CompteursEndpoints,
   type ModuleReset,
   type ResultatModule,
   type ProgressionModule,
@@ -17,9 +19,21 @@ export function ResetPanel() {
   const [chargementIds, setChargementIds] = useState<Set<string>>(new Set())
   const [resultats, setResultats] = useState<ResultatModule[]>([])
   const [erreurGlobale, setErreurGlobale] = useState<string | null>(null)
+  const [compteurs, setCompteurs] = useState<CompteursEndpoints | null>(null)
 
-  const tousSelectionnees = selectionnees.size === MODULES_DISPONIBLES.length
-  const modulesSelectionnees = MODULES_DISPONIBLES.filter((m) => selectionnees.has(m.id))
+  const tousSelectionnees = selectionnees.size === MODULES_RESET.length
+  const modulesSelectionnees = MODULES_RESET.filter((m) => selectionnees.has(m.id))
+
+  // Charge le nombre d'enregistrements en base (via l'API GLPI directe).
+  useEffect(() => {
+    let actif = true
+    compterEndpoints(MODULES_RESET).then((c) => {
+      if (actif) setCompteurs(c)
+    })
+    return () => {
+      actif = false
+    }
+  }, [])
 
   function toggleModule(id: string) {
     setSelectionnees((prev) => {
@@ -34,7 +48,7 @@ export function ResetPanel() {
     if (tousSelectionnees) {
       setSelectionnees(new Set())
     } else {
-      setSelectionnees(new Set(MODULES_DISPONIBLES.map((m) => m.id)))
+      setSelectionnees(new Set(MODULES_RESET.map((m) => m.id)))
     }
   }
 
@@ -98,6 +112,7 @@ export function ResetPanel() {
         <PhaseSelection
           selectionnees={selectionnees}
           tousSelectionnees={tousSelectionnees}
+          compteurs={compteurs}
           onToggle={toggleModule}
           onToggleTout={toggleTout}
           onLancer={ouvrirConfirmation}
@@ -138,12 +153,14 @@ export function ResetPanel() {
 function PhaseSelection({
   selectionnees,
   tousSelectionnees,
+  compteurs,
   onToggle,
   onToggleTout,
   onLancer,
 }: {
   selectionnees: Set<string>
   tousSelectionnees: boolean
+  compteurs: CompteursEndpoints | null
   onToggle: (id: string) => void
   onToggleTout: () => void
   onLancer: () => void
@@ -151,8 +168,9 @@ function PhaseSelection({
   return (
     <div>
       <p className="muted reset-intro">
-        Supprime toutes les données des modules sélectionnés via l'API GLPI.
-        Chaque module regroupe plusieurs types de ressources.
+        Ressources concernées par les imports Excel/CSV (tickets, ordinateurs,
+        moniteurs). Le nombre indiqué correspond aux enregistrements actuellement
+        en base GLPI.
       </p>
       <div className="reset-warning">
         ⚠️ Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
@@ -168,28 +186,34 @@ function PhaseSelection({
       </label>
 
       <div className="reset-ressources">
-        {MODULES_DISPONIBLES.map((m) => (
-          <label
-            key={m.id}
-            className={`reset-ressource-card${selectionnees.has(m.id) ? ' selected' : ''}`}
-          >
-            <input
-              type="checkbox"
-              checked={selectionnees.has(m.id)}
-              onChange={() => onToggle(m.id)}
-            />
-            <span className="reset-ressource-icone">{m.icone}</span>
-            <span className="reset-module-info">
-              <span className="reset-ressource-label">{m.label}</span>
-              <span className="muted" style={{ fontSize: 13 }}>{m.description}</span>
-              <span className="reset-ep-tags">
-                {m.endpoints.map((ep) => (
-                  <span key={ep.endpoint} className="reset-ep-tag">{ep.label}</span>
-                ))}
+        {MODULES_RESET.map((m) => {
+          const n = compteurs?.[m.endpoints[0].endpoint]
+          const texte = compteurs == null ? '…' : n == null ? '?' : String(n)
+          const labelNombre =
+            compteurs == null
+              ? 'Comptage…'
+              : n == null
+              ? 'Nombre indisponible'
+              : `${n} en base`
+          return (
+            <label
+              key={m.id}
+              className={`reset-ressource-card${selectionnees.has(m.id) ? ' selected' : ''}`}
+            >
+              <input
+                type="checkbox"
+                checked={selectionnees.has(m.id)}
+                onChange={() => onToggle(m.id)}
+              />
+              <span className="reset-ressource-icone">{m.icone}</span>
+              <span className="reset-module-info">
+                <span className="reset-ressource-label">{m.label}</span>
+                <span className="muted" style={{ fontSize: 13 }}>{m.description}</span>
               </span>
-            </span>
-          </label>
-        ))}
+              <span className="reset-ep-count" title={labelNombre}>{texte}</span>
+            </label>
+          )
+        })}
       </div>
 
       <button
@@ -356,7 +380,7 @@ function PhaseRapport({
       {resultats.length > 0 && (
         <div className="reset-rapport-list">
           {resultats.map((res) => {
-            const config = MODULES_DISPONIBLES.find((m) => m.id === res.moduleId)
+            const config = MODULES_RESET.find((m) => m.id === res.moduleId)
             const echecsReels = res.echecs.filter((e) => e.id > 0)
             const echecsListing = res.echecs.filter((e) => e.id === 0)
 

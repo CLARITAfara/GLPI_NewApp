@@ -393,6 +393,20 @@
   white-space: nowrap;
 }
 
+.reset-ep-count {
+  margin-left: auto;
+  min-width: 38px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .reset-select-all {
   display: flex;
   align-items: center;
