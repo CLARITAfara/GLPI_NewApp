@@ -104,3 +104,51 @@ export async function supprimerDocument(id: number): Promise<void> {
     /* best-effort */
   }
 }
+
+/**
+ * Crée un lien matériel ↔ ticket (relation Item_Ticket : onglet « Éléments »
+ * d'un ticket). L'API OAuth High-Level n'expose pas de route de création pour
+ * ce type ; seule l'API legacy le permet. Renvoie l'id du lien créé.
+ */
+export async function lierItemTicket(opts: {
+  itemtype: string
+  items_id: number
+  tickets_id: number
+}): Promise<number> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const res = await fetch(`${BASE}/Item_Ticket`, {
+    method: 'POST',
+    headers: entetes({ 'Session-Token': sessionToken, 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      input: {
+        itemtype: opts.itemtype,
+        items_id: opts.items_id,
+        tickets_id: opts.tickets_id,
+      },
+    }),
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`POST Item_Ticket → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+  }
+  const data: unknown = await res.json()
+  const id = Array.isArray(data)
+    ? (data[0] as Record<string, unknown>)?.id
+    : (data as Record<string, unknown>)?.id
+  if (typeof id !== 'number') throw new Error('POST Item_Ticket : id absent de la réponse')
+  return id
+}
+
+/** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
+export async function supprimerItemTicket(id: number): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/Item_Ticket/${id}?force_purge=true`, {
+      method: 'DELETE',
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
+}

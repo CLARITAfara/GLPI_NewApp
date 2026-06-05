@@ -259,9 +259,15 @@ function PhaseApercu({
         )}
       </ul>
 
-      {liens > 0 && (
+      {liens > 0 && tokenOk && (
+        <p className="muted small">
+          🔗 {liens} lien(s) matériel↔ticket seront rattachés (relation Item_Ticket, via l'API legacy).
+        </p>
+      )}
+      {liens > 0 && !tokenOk && (
         <div className="reset-warning">
-          ⚠️ {liens} lien(s) asset↔ticket non importables — aucune API GLPI ne l'expose.
+          ⚠️ {liens} lien(s) matériel↔ticket non importés : définissez{' '}
+          <strong>VITE_GLPI_USER_TOKEN</strong> dans <code>.env</code> pour les rattacher.
         </div>
       )}
 
@@ -345,15 +351,27 @@ function PhaseRapport({
         <li><span className="badge-ok">{rapport.cree.tickets}</span> ticket(s)</li>
         <li><span className="badge-ok">{rapport.cree.couts}</span> coût(s)</li>
         <li><span className="badge-ok">{rapport.cree.documents}</span> image(s) rattachée(s) en documents</li>
+        <li><span className="badge-ok">{rapport.cree.liens}</span> lien(s) matériel↔ticket</li>
         <li><span className="badge-ok">{rapport.cree.listes}</span> entrée(s) de liste créée(s)</li>
         <li><span className="badge-ok">{rapport.cree.utilisateurs}</span> utilisateur(s) créé(s)</li>
         {(rapport.liensIgnores > 0 || rapport.imagesIgnorees > 0) && (
           <li className="muted">
-            Non importés : {rapport.liensIgnores} lien(s) asset↔ticket, {rapport.imagesIgnorees}{' '}
+            Non importés : {rapport.liensIgnores} lien(s) matériel↔ticket, {rapport.imagesIgnorees}{' '}
             image(s)
           </li>
         )}
       </ul>
+
+      {rapport.liensEchecs.length > 0 && (
+        <div className="reset-warning">
+          ⚠️ {rapport.liensEchecs.length} lien(s) matériel↔ticket non importé(s) (sans bloquer l'import) :
+          <ul className="import-resume" style={{ marginTop: 8 }}>
+            {rapport.liensEchecs.map((m, i) => (
+              <li key={i} className="small">{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {rapport.imagesEchecs.length > 0 && (
         <div className="reset-warning">
