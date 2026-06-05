@@ -1,0 +1,154 @@
+// Accès à l'API REST « legacy » de GLPI (`/api.php/v1`, via le proxy `/api/v1`).
+// Utilisée UNIQUEMENT pour l'upload de fichiers (documents), que l'API OAuth
+// High-Level n'expose pas. Authentification par jeton API personnel (user_token)
+// configuré dans `.env` — l'API legacy n'accepte pas le Bearer OAuth.
+
+import { config } from '../config'
+
+const BASE = `${config.apiBaseUrl}/v1`
+
+let sessionToken: string | null = null
+
+/** True si un jeton est configuré (sinon l'upload d'images est désactivé). */
+export function uploadDisponible(): boolean {
+  return config.glpiUserToken.trim() !== ''
+}
+
+function entetes(extra: Record<string, string> = {}): Record<string, string> {
+  const h: Record<string, string> = { ...extra }
+  if (config.glpiAppToken) h['App-Token'] = config.glpiAppToken
+  return h
+}
+
+/** Ouvre une session legacy à partir du user_token. Idempotent. */
+export async function ouvrirSession(): Promise<void> {
+  if (sessionToken) return
+  if (!uploadDisponible()) throw new Error('VITE_GLPI_USER_TOKEN non configuré')
+
+  const res = await fetch(`${BASE}/initSession`, {
+    headers: entetes({ Authorization: `user_token ${config.glpiUserToken}` }),
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`initSession → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+  }
+  const data = (await res.json()) as { session_token?: string }
+  if (!data.session_token) throw new Error('initSession : session_token absent')
+  sessionToken = data.session_token
+}
+
+/** Ferme la session legacy (best-effort). */
+export async function fermerSession(): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/killSession`, {
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
+  sessionToken = null
+}
+
+/**
+ * Upload un fichier en tant que Document GLPI, lié automatiquement à un item
+ * (itemtype + items_id → Document_Item créé par GLPI). Renvoie l'id du document.
+ */
+export async function uploaderDocument(opts: {
+  blob: Blob
+  filename: string
+  name: string
+  itemtype: string
+  items_id: number
+}): Promise<number> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const manifest = {
+    input: {
+      name: opts.name,
+      itemtype: opts.itemtype,
+      items_id: opts.items_id,
+    },
+  }
+  const form = new FormData()
+  form.append('uploadManifest', JSON.stringify(manifest))
+  form.append('filename[0]', opts.blob, opts.filename)
+
+  // NB : pas de Content-Type manuel → le navigateur fixe la boundary multipart.
+  const res = await fetch(`${BASE}/Document`, {
+    method: 'POST',
+    headers: entetes({ 'Session-Token': sessionToken }),
+    body: form,
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`POST Document → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+  }
+  const data: unknown = await res.json()
+  const id = Array.isArray(data)
+    ? (data[0] as Record<string, unknown>)?.id
+    : (data as Record<string, unknown>)?.id
+  if (typeof id !== 'number') throw new Error('POST Document : id absent de la réponse')
+  return id
+}
+
+/** Supprime définitivement un document (rollback). Best-effort. */
+export async function supprimerDocument(id: number): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/Document/${id}?force_purge=true`, {
+      method: 'DELETE',
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
+}
+
+/**
+ * Crée un lien matériel ↔ ticket (relation Item_Ticket : onglet « Éléments »
+ * d'un ticket). L'API OAuth High-Level n'expose pas de route de création pour
+ * ce type ; seule l'API legacy le permet. Renvoie l'id du lien créé.
+ */
+export async function lierItemTicket(opts: {
+  itemtype: string
+  items_id: number
+  tickets_id: number
+}): Promise<number> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const res = await fetch(`${BASE}/Item_Ticket`, {
+    method: 'POST',
+    headers: entetes({ 'Session-Token': sessionToken, 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      input: {
+        itemtype: opts.itemtype,
+        items_id: opts.items_id,
+        tickets_id: opts.tickets_id,
+      },
+    }),
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`POST Item_Ticket → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+  }
+  const data: unknown = await res.json()
+  const id = Array.isArray(data)
+    ? (data[0] as Record<string, unknown>)?.id
+    : (data as Record<string, unknown>)?.id
+  if (typeof id !== 'number') throw new Error('POST Item_Ticket : id absent de la réponse')
+  return id
+}
+
+/** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
+export async function supprimerItemTicket(id: number): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/Item_Ticket/${id}?force_purge=true`, {
+      method: 'DELETE',
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
+}

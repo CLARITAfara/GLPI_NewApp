@@ -1,4 +1,11 @@
-import { fetchAllIds, fetchCount, supprimerItem } from './glpiApi'
+import { fetchAllIds, fetchCount, fetchList, supprimerItem } from './glpiApi'
+
+/**
+ * Comptes système GLPI qui ne doivent JAMAIS être supprimés par une
+ * réinitialisation : `glpi` (super-admin) et `glpi-system` (compte technique
+ * utilisé par l'inventaire). Comparés en minuscules sur le champ `username`.
+ */
+export const UTILISATEURS_PROTEGES = ['glpi', 'glpi-system']
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -11,6 +18,11 @@ export interface EndpointConfig {
    * pas le filtre is_deleted==false (sinon erreur RSQL).
    */
   sansCorbeille?: boolean
+  /**
+   * Logins (champ `username`) à exclure de la suppression. Renseigné pour
+   * l'endpoint utilisateurs afin de préserver les comptes système GLPI.
+   */
+  protegerLogins?: string[]
 }
 
 export interface ModuleReset {
@@ -163,7 +175,13 @@ export const MODULES_RESET: ModuleReset[] = [
     label: 'Utilisateurs',
     icone: '👤',
     description: 'Utilisateurs (colonne User de l\'inventaire)',
-    endpoints: [{ endpoint: '/Administration/User', label: 'Utilisateurs' }],
+    endpoints: [
+      {
+        endpoint: '/Administration/User',
+        label: 'Utilisateurs',
+        protegerLogins: UTILISATEURS_PROTEGES,
+      },
+    ],
   },
   {
     id: 'localisations',
@@ -220,6 +238,38 @@ export async function compterEndpoints(
   return compteurs
 }
 
+/**
+ * Récupère les IDs à supprimer pour un endpoint, en excluant les logins
+ * protégés (`protegerLogins`). Sans liste de protection, délègue à
+ * `fetchAllIds`. Avec, pagine en lisant le champ `username` pour filtrer.
+ */
+async function idsSupprimables(ep: EndpointConfig): Promise<number[]> {
+  if (!ep.protegerLogins || ep.protegerLogins.length === 0) {
+    return fetchAllIds(ep.endpoint, { includeDeleted: ep.sansCorbeille })
+  }
+
+  const proteges = new Set(ep.protegerLogins.map((l) => l.toLowerCase()))
+  const ids: number[] = []
+  const pageSize = 500
+  let start = 0
+
+  while (true) {
+    const { items, total } = await fetchList(ep.endpoint, {
+      start,
+      limit: pageSize,
+      includeDeleted: ep.sansCorbeille,
+    })
+    for (const it of items) {
+      const login = String((it as Record<string, unknown>).username ?? '').toLowerCase()
+      if (typeof it.id === 'number' && !proteges.has(login)) ids.push(it.id)
+    }
+    start += items.length
+    if (start >= total || items.length === 0) break
+  }
+
+  return ids
+}
+
 // ─── Orchestration ───────────────────────────────────────────────────────────
 
 export async function reinitialiserModule(
@@ -231,7 +281,7 @@ export async function reinitialiserModule(
 
   for (const ep of module.endpoints) {
     try {
-      const ids = await fetchAllIds(ep.endpoint, { includeDeleted: ep.sansCorbeille })
+      const ids = await idsSupprimables(ep)
       collected.push({ ep, ids })
     } catch (err) {
       echecs.push({

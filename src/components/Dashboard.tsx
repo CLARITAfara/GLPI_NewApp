@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
 import { ResetPanel } from './ResetPanel'
+import { ImportPanel } from './ImportPanel'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -63,6 +64,8 @@ export function Dashboard() {
         <main className="dash-main">
           {active?.custom === 'reset' ? (
             <ResetPanel />
+          ) : active?.custom === 'import' ? (
+            <ImportPanel />
           ) : active ? (
             <SectionView key={active.id} section={active} />
           ) : (
