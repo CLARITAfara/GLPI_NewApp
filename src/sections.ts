@@ -17,16 +17,16 @@ export interface Section {
   endpoint: string
   columns: Column[]
   /** Section spéciale sans tableau de données */
-  custom?: 'reset' | 'import'
+  custom?: 'reset' | 'import' | 'stats' | 'tickets'
 }
 
-const PRIORITY: Record<number, string> = {
-  1: 'Très basse',
-  2: 'Basse',
-  3: 'Moyenne',
-  4: 'Haute',
-  5: 'Très haute',
-  6: 'Majeure',
+const STATS: Section = {
+  id: 'stats',
+  label: "Vue d'ensemble",
+  icon: '📊',
+  endpoint: '',
+  columns: [],
+  custom: 'stats',
 }
 
 const TICKETS: Section = {
@@ -34,13 +34,8 @@ const TICKETS: Section = {
   label: 'Tickets',
   icon: '🎫',
   endpoint: '/Assistance/Ticket',
-  columns: [
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Titre' },
-    { key: 'status', label: 'Statut', accessor: (r) => refName(r.status) },
-    { key: 'priority', label: 'Priorité', accessor: (r) => PRIORITY[Number(r.priority)] ?? refName(r.priority) },
-    { key: 'date_creation', label: 'Créé le', accessor: (r) => formatDate(r.date_creation) },
-  ],
+  columns: [],
+  custom: 'tickets',
 }
 
 const COMPUTERS: Section = {
@@ -103,8 +98,8 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [TICKETS, COMPUTERS, USERS, IMPORT, RESET]
+      return [STATS, TICKETS, COMPUTERS, USERS, IMPORT, RESET]
     default:
-      return [TICKETS, COMPUTERS]
+      return [STATS, TICKETS, COMPUTERS]
   }
 }

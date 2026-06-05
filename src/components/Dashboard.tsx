@@ -4,6 +4,8 @@ import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
 import { ResetPanel } from './ResetPanel'
 import { ImportPanel } from './ImportPanel'
+import { StatsView } from './StatsView'
+import { TicketsView } from './TicketsView'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -62,7 +64,11 @@ export function Dashboard() {
         </nav>
 
         <main className="dash-main">
-          {active?.custom === 'reset' ? (
+          {active?.custom === 'stats' ? (
+            <StatsView />
+          ) : active?.custom === 'tickets' ? (
+            <TicketsView />
+          ) : active?.custom === 'reset' ? (
             <ResetPanel />
           ) : active?.custom === 'import' ? (
             <ImportPanel />

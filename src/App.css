@@ -302,6 +302,323 @@
   background: var(--social-bg);
 }
 
+/* ===== Vue d'ensemble (statistiques) ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.stat-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.stat-card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+  border-radius: 12px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  flex-shrink: 0;
+}
+
+.stat-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.stat-total {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--text-h);
+}
+
+.stat-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.stat-bar-value {
+  margin-left: auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stat-bar-value small {
+  font-weight: 400;
+  color: var(--text);
+}
+
+.stat-bar-track {
+  height: 8px;
+  background: var(--social-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.stat-bar-fill {
+  height: 100%;
+  min-width: 4px;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* ===== Tickets (liste + fiche) ===== */
+.tickets-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tickets-search {
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.tickets-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.tickets-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.ticket-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 11px 13px;
+  text-align: left;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ticket-row:hover {
+  border-color: var(--accent);
+}
+
+.ticket-row.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.ticket-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-ref {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ticket-row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-row-meta {
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* Badge de statut */
+.statut-badge {
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.statut-badge.st-new {
+  color: #1570ef;
+  background: rgba(21, 112, 239, 0.1);
+  border-color: rgba(21, 112, 239, 0.35);
+}
+.statut-badge.st-progress {
+  color: #b54708;
+  background: rgba(181, 71, 8, 0.1);
+  border-color: rgba(181, 71, 8, 0.35);
+}
+.statut-badge.st-pending {
+  color: #7a5af8;
+  background: rgba(122, 90, 248, 0.1);
+  border-color: rgba(122, 90, 248, 0.35);
+}
+.statut-badge.st-solved {
+  color: #155724;
+  background: rgba(21, 87, 36, 0.1);
+  border-color: rgba(21, 87, 36, 0.3);
+}
+.statut-badge.st-closed {
+  color: var(--text);
+  background: var(--social-bg);
+  border-color: var(--border);
+}
+
+/* Fiche détaillée */
+.ticket-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.fiche-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.fiche-head h3 {
+  margin: 4px 0 0;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.fiche-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.fiche-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fiche-champ dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+}
+
+.fiche-champ dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.fiche-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.fiche-section h4 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+}
+
+.fiche-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-h);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 820px) {
+  .tickets-layout {
+    grid-template-columns: 1fr;
+  }
+  .tickets-list ul {
+    max-height: none;
+  }
+}
+
 /* ===== Reset Panel ===== */
 .reset-intro {
   font-size: 14px;
