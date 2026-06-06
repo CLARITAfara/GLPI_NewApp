@@ -1,11 +1,20 @@
 import { fetchAllIds, fetchCount, fetchList, supprimerItem } from './glpiApi'
 
 /**
- * Comptes système GLPI qui ne doivent JAMAIS être supprimés par une
- * réinitialisation : `glpi` (super-admin) et `glpi-system` (compte technique
- * utilisé par l'inventaire). Comparés en minuscules sur le champ `username`.
+ * Comptes par défaut de GLPI qui ne doivent JAMAIS être supprimés par une
+ * réinitialisation. Le reset supprime tous les autres utilisateurs (importés),
+ * mais conserve ces comptes natifs. Comparés en minuscules sur `username` :
+ *  - `glpi`        : super-admin (compte de connexion de l'app)
+ *  - `glpi-system` : compte technique de l'inventaire natif
+ *  - `post-only`, `tech`, `normal` : comptes de démonstration par défaut
  */
-export const UTILISATEURS_PROTEGES = ['glpi', 'glpi-system']
+export const UTILISATEURS_PROTEGES = [
+  'glpi',
+  'glpi-system',
+  'post-only',
+  'tech',
+  'normal',
+]
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

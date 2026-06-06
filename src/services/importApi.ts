@@ -37,6 +37,11 @@ export interface RapportImport {
     documents: number
     liens: number
   }
+  /**
+   * Matériels déjà présents dans GLPI (même nom + même type) qui ont été
+   * RÉUTILISÉS au lieu d'être recréés — évite les doublons à chaque ré-import.
+   */
+  materielReutilise: number
   /** Liens matériel↔ticket non importés (jeton legacy absent ou échec). */
   liensIgnores: number
   /**
@@ -118,6 +123,60 @@ async function creer(endpoint: string, corps: Record<string, unknown>): Promise<
   return id
 }
 
+// ─── Détection des doublons (matériels déjà présents dans GLPI) ──────────────
+
+/**
+ * Charge tous les couples nom→id d'un endpoint (paginé). La clé est le nom en
+ * minuscules pour une comparaison insensible à la casse. La corbeille est
+ * exclue (on ne déduplique que sur les éléments actifs).
+ */
+async function chargerNomsExistants(endpoint: string): Promise<Map<string, number>> {
+  const map = new Map<string, number>()
+  const pageSize = 500
+  let start = 0
+  while (true) {
+    const { items, total } = await fetchList(endpoint, { start, limit: pageSize })
+    for (const it of items) {
+      const nom = String((it as Record<string, unknown>).name ?? '').toLowerCase()
+      if (nom && typeof it.id === 'number' && !map.has(nom)) map.set(nom, it.id)
+    }
+    start += items.length
+    if (start >= total || items.length === 0) break
+  }
+  return map
+}
+
+export interface AssetExistant {
+  name: string
+  itemType: 'Computer' | 'Monitor'
+  id: number
+}
+
+/**
+ * Détecte, parmi les assets à importer, ceux qui existent DÉJÀ dans GLPI
+ * (même nom + même type). Sert à prévenir l'utilisateur à la validation et à
+ * éviter les doublons. Une seule requête paginée par type concerné.
+ */
+export async function detecterAssetsExistants(
+  donnees: DonneesImport,
+): Promise<AssetExistant[]> {
+  const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
+  const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
+  const vide = new Map<string, number>()
+  const [computers, monitors] = await Promise.all([
+    besoinComputer ? chargerNomsExistants(EP.computer) : Promise.resolve(vide),
+    besoinMonitor ? chargerNomsExistants(EP.monitor) : Promise.resolve(vide),
+  ])
+
+  const existants: AssetExistant[] = []
+  for (const a of donnees.assets) {
+    const map = a.itemType === 'Computer' ? computers : monitors
+    const id = map.get(a.name.toLowerCase())
+    if (id !== undefined) existants.push({ name: a.name, itemType: a.itemType, id })
+  }
+  return existants
+}
+
 // ─── Orchestration ───────────────────────────────────────────────────────────
 
 export async function importer(
@@ -134,6 +193,7 @@ export async function importer(
   const rapport: RapportImport = {
     ok: false,
     cree: { materiel: 0, tickets: 0, couts: 0, listes: 0, utilisateurs: 0, documents: 0, liens: 0 },
+    materielReutilise: 0,
     liensIgnores: totalLiens,
     liensEchecs: [],
     imagesIgnorees: donnees.images.length,
@@ -204,10 +264,28 @@ export async function importer(
 
   try {
     // ── Étape 1 : matériel (résout listes + utilisateur, puis crée l'asset) ──
+    // Anti-doublons : on pré-charge les noms existants par type ; un asset déjà
+    // présent (même nom) est réutilisé tel quel au lieu d'être recréé.
+    const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
+    const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
+    const videMap = new Map<string, number>()
+    const existantComputer = besoinComputer ? await chargerNomsExistants(EP.computer) : videMap
+    const existantMonitor = besoinMonitor ? await chargerNomsExistants(EP.monitor) : videMap
+
     const etape1 = 'Matériel (ordinateurs / moniteurs)'
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
     for (let i = 0; i < donnees.assets.length; i++) {
       const a = donnees.assets[i]
+
+      // Doublon : asset déjà présent dans GLPI → réutilisé, pas recréé.
+      const mapExist = a.itemType === 'Computer' ? existantComputer : existantMonitor
+      const dejaId = mapExist.get(a.name.toLowerCase())
+      if (dejaId !== undefined) {
+        assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
+        rapport.materielReutilise++
+        onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
+        continue
+      }
 
       const statusId = await trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
       const locationId = await trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })

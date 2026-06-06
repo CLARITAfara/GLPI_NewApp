@@ -4,7 +4,13 @@ import {
   type ErreurValidation,
   type DonneesImport,
 } from '../services/importValidation'
-import { importer, type ProgressionImport, type RapportImport } from '../services/importApi'
+import {
+  importer,
+  detecterAssetsExistants,
+  type ProgressionImport,
+  type RapportImport,
+  type AssetExistant,
+} from '../services/importApi'
 import { uploadDisponible } from '../services/legacyApi'
 
 type Phase = 'selection' | 'erreurs' | 'apercu' | 'execution' | 'rapport'
@@ -35,6 +41,8 @@ export function ImportPanel() {
   const [rapport, setRapport] = useState<RapportImport | null>(null)
   const [erreurGlobale, setErreurGlobale] = useState<string | null>(null)
   const [occupe, setOccupe] = useState(false)
+  const [assetsExistants, setAssetsExistants] = useState<AssetExistant[]>([])
+  const [verifDoublonsErreur, setVerifDoublonsErreur] = useState<string | null>(null)
 
   const csvPrets = fichiers.inventaire && fichiers.tickets && fichiers.couts
 
@@ -57,6 +65,16 @@ export function ImportPanel() {
       const res = validerImport({ inventaire, tickets, couts, imagesZip })
       if (res.ok) {
         setDonnees(res.donnees)
+        // Vérifie ce qui existe déjà dans GLPI (non bloquant pour la validation).
+        setVerifDoublonsErreur(null)
+        try {
+          setAssetsExistants(await detecterAssetsExistants(res.donnees))
+        } catch {
+          setAssetsExistants([])
+          setVerifDoublonsErreur(
+            'Vérification des doublons impossible (API GLPI injoignable). L\'import évitera quand même les doublons.',
+          )
+        }
         setPhase('apercu')
       } else {
         setErreurs(res.erreurs)
@@ -87,6 +105,8 @@ export function ImportPanel() {
     setProgression(null)
     setRapport(null)
     setErreurGlobale(null)
+    setAssetsExistants([])
+    setVerifDoublonsErreur(null)
     setPhase('selection')
   }
 
@@ -112,7 +132,13 @@ export function ImportPanel() {
       )}
 
       {phase === 'apercu' && donnees && (
-        <PhaseApercu donnees={donnees} onRetour={() => setPhase('selection')} onConfirmer={lancerImport} />
+        <PhaseApercu
+          donnees={donnees}
+          assetsExistants={assetsExistants}
+          verifDoublonsErreur={verifDoublonsErreur}
+          onRetour={() => setPhase('selection')}
+          onConfirmer={lancerImport}
+        />
       )}
 
       {phase === 'execution' && <PhaseExecution progression={progression} />}
@@ -226,10 +252,14 @@ function PhaseErreurs({ erreurs, onRetour }: { erreurs: ErreurValidation[]; onRe
 
 function PhaseApercu({
   donnees,
+  assetsExistants,
+  verifDoublonsErreur,
   onRetour,
   onConfirmer,
 }: {
   donnees: DonneesImport
+  assetsExistants: AssetExistant[]
+  verifDoublonsErreur: string | null
   onRetour: () => void
   onConfirmer: () => void
 }) {
@@ -240,13 +270,35 @@ function PhaseApercu({
     return nomsAssets.has(base)
   }).length
   const tokenOk = uploadDisponible()
+  const nbExistants = assetsExistants.length
+  const nbNouveaux = donnees.assets.length - nbExistants
 
   return (
     <div>
       <p className="reset-msg reset-msg--ok">Validation réussie. Prêt à importer dans GLPI.</p>
 
+      {nbExistants > 0 && (
+        <div className="reset-warning">
+          ⚠️ <strong>{nbExistants}</strong> matériel(s) déjà présent(s) dans GLPI — ils seront{' '}
+          <strong>réutilisés</strong> (pas de doublon créé). {nbNouveaux} nouveau(x) sera(ont) créé(s).
+          <ul className="import-resume" style={{ marginTop: 8 }}>
+            {assetsExistants.map((a) => (
+              <li key={`${a.itemType}-${a.id}`} className="small">
+                {a.itemType === 'Computer' ? '💻' : '🖥️'} {a.name} (déjà présent, #{a.id})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {verifDoublonsErreur && <p className="muted small">{verifDoublonsErreur}</p>}
+
       <ul className="import-resume">
-        <li>💻 <strong>{donnees.assets.length}</strong> matériel(s) (ordinateurs / moniteurs)</li>
+        <li>
+          💻 <strong>{donnees.assets.length}</strong> matériel(s) (ordinateurs / moniteurs)
+          {nbExistants > 0 && (
+            <span className="muted"> — {nbNouveaux} à créer, {nbExistants} réutilisé(s)</span>
+          )}
+        </li>
         <li>🎫 <strong>{donnees.tickets.length}</strong> ticket(s)</li>
         <li>💰 <strong>{donnees.couts.length}</strong> coût(s) de ticket</li>
         {donnees.images.length > 0 && (
@@ -347,7 +399,10 @@ function PhaseRapport({
       )}
 
       <ul className="import-resume">
-        <li><span className="badge-ok">{rapport.cree.materiel}</span> matériel(s)</li>
+        <li><span className="badge-ok">{rapport.cree.materiel}</span> matériel(s) créé(s)</li>
+        {rapport.materielReutilise > 0 && (
+          <li><span className="badge-ok">{rapport.materielReutilise}</span> matériel(s) déjà présent(s) réutilisé(s)</li>
+        )}
         <li><span className="badge-ok">{rapport.cree.tickets}</span> ticket(s)</li>
         <li><span className="badge-ok">{rapport.cree.couts}</span> coût(s)</li>
         <li><span className="badge-ok">{rapport.cree.documents}</span> image(s) rattachée(s) en documents</li>
