@@ -7,6 +7,7 @@
 // High-Level n'expose pas de route de création pour ces deux types, mais la
 // legacy le permet — elle nécessite VITE_GLPI_USER_TOKEN.
 
+import { config } from '../config'
 import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import { extraireImagesZip, type DonneesImport } from './importValidation'
@@ -303,11 +304,16 @@ export async function importer(
       if (a.inventoryNumber) corps.otherserial = a.inventoryNumber
       if (a.user) {
         const login = slugLogin(a.user) || `user${i}`
+        const corpsUser: Record<string, unknown> = { username: login, realname: a.user }
+        if (config.importUserProfileId > 0) {
+          corpsUser._profiles_id = config.importUserProfileId
+          corpsUser._entities_id = 0
+        }
         const userId = await trouverOuCreer(
           EP.user,
           'username',
           login,
-          { username: login, realname: a.user },
+          corpsUser,
           { compteur: 'utilisateurs', restaurer: true },
         )
         corps.user = { id: userId }

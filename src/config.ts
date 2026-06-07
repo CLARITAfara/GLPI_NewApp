@@ -17,4 +17,9 @@ export const config = {
   glpiUserToken: import.meta.env.VITE_GLPI_USER_TOKEN || '',
   /** App-Token GLPI (optionnel, selon la configuration du client API). */
   glpiAppToken: import.meta.env.VITE_GLPI_APP_TOKEN || '',
+  /**
+   * ID du profil GLPI assigné aux utilisateurs créés lors de l'import CSV.
+   * 0 = non configuré (aucun profil assigné).
+   */
+  importUserProfileId: Number(import.meta.env.VITE_IMPORT_USER_PROFILE_ID) || 0,
 }

@@ -40,6 +40,13 @@ export function ElementsPanel() {
     setError('')
     try {
       const result = await fetchAllElements()
+      if (result.forbidden) {
+        setError(
+          "Vous n'avez pas les droits pour consulter les équipements. Contactez votre administrateur GLPI.",
+        )
+        setLoadStatus('error')
+        return
+      }
       setAllRows(result.rows)
       setTruncated(result.truncated)
       setLoadStatus('ready')

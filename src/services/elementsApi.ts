@@ -90,17 +90,14 @@ function normalizeRow(raw: GlpiRow, itemType: string): ElementRow {
 }
 
 async function fetchForType(type: ItemType): Promise<ElementRow[]> {
-  try {
-    const { items } = await fetchList(ITEM_ENDPOINTS[type], { limit: FETCH_LIMIT })
-    return items.map((raw) => normalizeRow(raw, type))
-  } catch {
-    return []
-  }
+  const { items } = await fetchList(ITEM_ENDPOINTS[type], { limit: FETCH_LIMIT })
+  return items.map((raw) => normalizeRow(raw, type))
 }
 
 export interface FetchResult {
   rows: ElementRow[]
   truncated: boolean
+  forbidden: boolean
 }
 
 /** Charge tous les éléments de tous les types depuis l'API (sans filtre côté client). */
@@ -108,16 +105,22 @@ export async function fetchAllElements(): Promise<FetchResult> {
   const results = await Promise.allSettled(ALL_ITEM_TYPES.map(fetchForType))
 
   let truncated = false
+  let forbiddenCount = 0
   const rows: ElementRow[] = []
 
   for (const result of results) {
     if (result.status === 'fulfilled') {
       if (result.value.length >= FETCH_LIMIT) truncated = true
       rows.push(...result.value)
+    } else {
+      const msg = result.reason instanceof Error ? result.reason.message : ''
+      if (msg.includes('403')) forbiddenCount++
     }
   }
 
-  return { rows, truncated }
+  const forbidden = forbiddenCount === ALL_ITEM_TYPES.length
+
+  return { rows, truncated, forbidden }
 }
 
 /** Filtre côté client — appliqué sur les données déjà chargées. */
