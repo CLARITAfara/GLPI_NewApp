@@ -53,6 +53,9 @@ export type ItemType =
   | 'Cable'
   | 'Socket'
   | 'Appliance'
+  | 'Unmanaged'
+  | 'CartridgeItem'
+  | 'ConsumableItem'
 
 /** Champs partagés (listes déroulantes / utilisateur) qu'un type accepte. */
 export type ChampPartage = 'location' | 'manufacturer' | 'user' | 'otherserial'
@@ -87,6 +90,13 @@ export interface ItemTypeConfig {
    * (classe avec namespace). Par défaut (absent) : identique à `itemType`.
    */
   ticketItemtype?: string
+  /**
+   * true si le type n'a PAS de route de création High-Level et doit être créé
+   * via l'API REST legacy (`/apirest.php`). Ex. CartridgeItem, ConsumableItem :
+   * GLPI n'expose pas `/Assets/CartridgeItem`. Nécessite VITE_GLPI_USER_TOKEN.
+   * Le corps legacy utilise des champs `*_id` (locations_id, manufacturers_id…).
+   */
+  viaLegacy?: boolean
   /** Pictogramme affiché dans l'UI. */
   icone: string
   /** Libellé FR (pluriel) affiché dans l'UI (réinitialisation, rapports…). */
@@ -118,8 +128,16 @@ export const ITEM_TYPES: Record<ItemType, ItemTypeConfig> = {
   Certificate: { itemType: 'Certificate', assetEndpoint: '/Assets/Certificate', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-file-earmark-text', libelle: 'Certificats' },
   Cable: { itemType: 'Cable', assetEndpoint: '/Assets/Cable', statusField: 'state', champs: ['user', 'otherserial'], icone: 'bi bi-link-45deg', libelle: 'Câbles' },
   // Socket : classe GLPI namespacée → itemtype `Glpi\Socket` pour Item_Ticket.
-  Socket: { itemType: 'Socket', assetEndpoint: '/Assets/Socket', champs: ['location'], sansCorbeille: true, ticketItemtype: 'Glpi\\Socket', icone: 'bi bi-square', libelle: 'Prises' },
-  Appliance: { itemType: 'Appliance', assetEndpoint: '/Assets/Appliance', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-cloud', libelle: 'Applicatifs' },
+  Socket: { itemType: 'Socket', assetEndpoint: '/Assets/Socket', champs: ['location'], sansCorbeille: true, ticketItemtype: 'Glpi\\Socket', icone: '🔲', libelle: 'Prises' },
+  Appliance: { itemType: 'Appliance', assetEndpoint: '/Assets/Appliance', statusField: 'status', champs: CHAMPS_STD, icone: '📡', libelle: 'Applicatifs' },
+  // Matériel « non géré » (découvert mais non inventorié) : ni localisation ni modèle.
+  Unmanaged: { itemType: 'Unmanaged', assetEndpoint: '/Assets/Unmanaged', statusField: 'status', champs: ['manufacturer', 'user', 'otherserial'], icone: '❓', libelle: 'Matériels non gérés' },
+  // Cartouches / Consommables (modèles) : GLPI n'expose PAS de route HL → créés
+  // via l'API legacy. Associables aux tickets via Item_Ticket (l'API legacy
+  // accepte le lien : Item_Ticket ne valide pas contre $CFG_GLPI['ticket_types']
+  // à la création, seul un ticket clos est refusé).
+  CartridgeItem: { itemType: 'CartridgeItem', assetEndpoint: '/Assets/CartridgeItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: '🟦', libelle: 'Cartouches' },
+  ConsumableItem: { itemType: 'ConsumableItem', assetEndpoint: '/Assets/ConsumableItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: '🧴', libelle: 'Consommables' },
 }
 
 // ─── Tables de correspondance ────────────────────────────────────────────────
@@ -205,6 +223,24 @@ export const TYPES_ITEM: Record<string, ItemType> = {
   appliance: 'Appliance',
   applicatif: 'Appliance',
   appareil: 'Appliance',
+  // Unmanaged
+  unmanaged: 'Unmanaged',
+  'non gere': 'Unmanaged',
+  'non géré': 'Unmanaged',
+  'materiel non gere': 'Unmanaged',
+  'matériel non géré': 'Unmanaged',
+  // CartridgeItem
+  cartridgeitem: 'CartridgeItem',
+  'cartridge item': 'CartridgeItem',
+  cartridge: 'CartridgeItem',
+  cartouche: 'CartridgeItem',
+  cartouches: 'CartridgeItem',
+  // ConsumableItem
+  consumableitem: 'ConsumableItem',
+  'consumable item': 'ConsumableItem',
+  consumable: 'ConsumableItem',
+  consommable: 'ConsumableItem',
+  consommables: 'ConsumableItem',
 }
 
 /** Type de ticket → code GLPI (1 = Incident, 2 = Demande). */
@@ -312,7 +348,9 @@ export const SCHEMA_COUTS: FichierSchema = {
   colonnes: [
     // Doit correspondre à un Ref_Ticket de la Feuille 2 (référence libre).
     { nom: 'Num_Ticket', regle: 'texte' },
-    { nom: 'Duration_second', regle: 'entier' },
+    // Durée en secondes : on accepte les décimaux (virgule FR) — arrondis à
+    // l'entier le plus proche à l'import (GLPI stocke une durée entière).
+    { nom: 'Duration_second', regle: 'nombre-fr' },
     { nom: 'Time_Cost', regle: 'nombre-fr' },
     { nom: 'Fixed_Cost', regle: 'nombre-fr' },
   ],

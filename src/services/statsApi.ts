@@ -4,6 +4,7 @@
 
 import { fetchCount } from './glpiApi'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
+import { compterItemLegacy, uploadDisponible } from './legacyApi'
 
 /** Détail d'un type au sein d'une catégorie (un type d'élément, un type de ticket…). */
 export interface TypeCount {
@@ -31,6 +32,19 @@ async function compterSur(
   }
 }
 
+/**
+ * Compte un type sans route High-Level (CartridgeItem, ConsumableItem) via
+ * l'API legacy. Sans jeton legacy configuré, on ne peut pas compter → 0.
+ */
+async function compterLegacySur(itemtype: string): Promise<number> {
+  if (!uploadDisponible()) return 0
+  try {
+    return await compterItemLegacy(itemtype)
+  } catch {
+    return 0
+  }
+}
+
 // ── Éléments (parc) ────────────────────────────────────────────────────────
 // La liste des types comptés est dérivée de ITEM_TYPES (source unique partagée
 // avec l'import et le reset) : tout type importable est donc compté ici, et
@@ -44,8 +58,11 @@ export async function getElementStats(): Promise<StatGroup> {
       key: t.assetEndpoint,
       label: t.libelle,
       icon: t.icone,
+      // Cartouches/Consommables : pas de route HL → comptage via l'API legacy.
       // Socket n'a pas de corbeille : on omet le filtre is_deleted (sinon 0).
-      total: await compterSur(t.assetEndpoint, { includeDeleted: t.sansCorbeille }),
+      total: t.viaLegacy
+        ? await compterLegacySur(t.itemType)
+        : await compterSur(t.assetEndpoint, { includeDeleted: t.sansCorbeille }),
     })),
   )
   const total = parType.reduce((sum, t) => sum + t.total, 0)

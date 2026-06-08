@@ -179,6 +179,30 @@ export async function lierItemTicket(opts: {
 }
 
 /**
+ * Compte les éléments d'un itemtype via l'API legacy, pour les types que l'API
+ * High-Level n'expose pas (CartridgeItem, ConsumableItem). Le total est lu dans
+ * l'en-tête Content-Range (« 0-0/N ») d'une requête à plage vide (`range=0-0`).
+ * Nécessite VITE_GLPI_USER_TOKEN. Renvoie 0 si le type est vide/indisponible.
+ */
+export async function compterItemLegacy(itemtype: string): Promise<number> {
+  await ouvrirSession()
+
+  const res = await fetch(`${BASE}/${itemtype}?range=0-0&only_id=true`, {
+    headers: entetes({ 'Session-Token': sessionToken! }),
+  })
+  // Liste vide → GLPI renvoie 400 (ERROR_RANGE_EXCEED_TOTAL) sans Content-Range.
+  if (res.status === 400) return 0
+  if (!res.ok && res.status !== 206) {
+    const detail = detailErreur(await res.text().catch(() => ''))
+    throw new Error(`GET ${itemtype} (count) → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+  const range = res.headers.get('Content-Range')
+  if (!range) return 0
+  const total = Number(range.slice(range.lastIndexOf('/') + 1))
+  return Number.isFinite(total) ? total : 0
+}
+
+/**
  * Une ligne brute de la table `glpi_logs`, telle que renvoyée par l'API legacy
  * dans le champ `_logs` quand on passe `with_logs=true`.
  */
@@ -222,6 +246,48 @@ export async function getItemLogs(itemtype: string, itemsId: number): Promise<Le
   if (Array.isArray(logs)) return logs as LegacyLog[]
   if (logs && typeof logs === 'object') return Object.values(logs) as LegacyLog[]
   return []
+}
+
+/**
+ * Crée un élément via l'API legacy (`POST /{itemtype}`) pour les types que
+ * l'API High-Level n'expose pas (CartridgeItem, ConsumableItem). Le corps suit
+ * la convention legacy : champs `*_id` (locations_id, manufacturers_id…).
+ * Renvoie l'id créé.
+ */
+export async function creerItemLegacy(
+  itemtype: string,
+  input: Record<string, unknown>,
+): Promise<number> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const res = await fetch(`${BASE}/${itemtype}`, {
+    method: 'POST',
+    headers: entetes({ 'Session-Token': sessionToken, 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ input }),
+  })
+  if (!res.ok) {
+    const detail = detailErreur(await res.text().catch(() => ''))
+    throw new Error(`POST ${itemtype} → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+  const data: unknown = await res.json()
+  const id = Array.isArray(data)
+    ? (data[0] as Record<string, unknown>)?.id
+    : (data as Record<string, unknown>)?.id
+  if (typeof id !== 'number') throw new Error(`POST ${itemtype} : id absent de la réponse`)
+  return id
+}
+
+/** Supprime définitivement un élément créé via legacy (rollback). Best-effort. */
+export async function supprimerItemLegacy(itemtype: string, id: number): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/${itemtype}/${id}?force_purge=true`, {
+      method: 'DELETE',
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
 }
 
 /** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
