@@ -6,10 +6,13 @@ import {
 } from '../services/importValidation'
 import {
   importer,
-  detecterAssetsExistants,
+  chargerAssetsExistants,
+  assetsExistantsDansBdd,
+  nomsAssetsBdd,
   type ProgressionImport,
   type RapportImport,
   type AssetExistant,
+  type AssetsBdd,
 } from '../services/importApi'
 import { uploadDisponible } from '../services/legacyApi'
 import { ITEM_TYPES } from '../services/importSchemas'
@@ -44,8 +47,11 @@ export function ImportPanel() {
   const [occupe, setOccupe] = useState(false)
   const [assetsExistants, setAssetsExistants] = useState<AssetExistant[]>([])
   const [verifDoublonsErreur, setVerifDoublonsErreur] = useState<string | null>(null)
+  const [assetsBdd, setAssetsBdd] = useState<AssetsBdd | null>(null)
 
-  const csvPrets = fichiers.inventaire && fichiers.tickets && fichiers.couts
+  // Un seul CSV suffit : chaque feuille peut être importée seule. La validation
+  // bloquera si une feuille fournie référence une feuille absente.
+  const auMoinsUn = !!(fichiers.inventaire || fichiers.tickets || fichiers.couts)
 
   function choisir(cle: keyof Fichiers, file: File | null) {
     setFichiers((prev) => ({ ...prev, [cle]: file }))
@@ -55,6 +61,22 @@ export function ImportPanel() {
     setOccupe(true)
     setErreurGlobale(null)
     try {
+      // Charge les matériels déjà présents dans GLPI : sert à valider les liens
+      // Tickets→matériel (un asset peut exister en base sans être dans la
+      // Feuille 1) et à détecter les doublons. Non bloquant en soi, mais si
+      // GLPI est injoignable, tout matériel absent de la Feuille 1 sera bloqué.
+      setVerifDoublonsErreur(null)
+      let bdd: AssetsBdd | null = null
+      try {
+        bdd = await chargerAssetsExistants()
+      } catch {
+        bdd = null
+        setVerifDoublonsErreur(
+          'Vérification GLPI impossible (API injoignable) : un ticket référençant un matériel absent de la Feuille 1 sera bloqué.',
+        )
+      }
+      setAssetsBdd(bdd)
+
       const [inventaire, tickets, couts] = await Promise.all([
         fichiers.inventaire?.text() ?? Promise.resolve(null),
         fichiers.tickets?.text() ?? Promise.resolve(null),
@@ -63,19 +85,13 @@ export function ImportPanel() {
       const imagesZip = fichiers.imagesZip ? await fichiers.imagesZip.arrayBuffer() : null
       setZipBuffer(imagesZip)
 
-      const res = validerImport({ inventaire, tickets, couts, imagesZip })
+      const res = validerImport(
+        { inventaire, tickets, couts, imagesZip },
+        bdd ? nomsAssetsBdd(bdd) : null,
+      )
       if (res.ok) {
         setDonnees(res.donnees)
-        // Vérifie ce qui existe déjà dans GLPI (non bloquant pour la validation).
-        setVerifDoublonsErreur(null)
-        try {
-          setAssetsExistants(await detecterAssetsExistants(res.donnees))
-        } catch {
-          setAssetsExistants([])
-          setVerifDoublonsErreur(
-            'Vérification des doublons impossible (API GLPI injoignable). L\'import évitera quand même les doublons.',
-          )
-        }
+        setAssetsExistants(bdd ? assetsExistantsDansBdd(res.donnees, bdd) : [])
         setPhase('apercu')
       } else {
         setErreurs(res.erreurs)
@@ -93,7 +109,7 @@ export function ImportPanel() {
     if (!donnees) return
     setPhase('execution')
     setProgression(null)
-    const r = await importer(donnees, setProgression, zipBuffer)
+    const r = await importer(donnees, setProgression, zipBuffer, assetsBdd)
     setRapport(r)
     setPhase('rapport')
   }
@@ -108,6 +124,7 @@ export function ImportPanel() {
     setErreurGlobale(null)
     setAssetsExistants([])
     setVerifDoublonsErreur(null)
+    setAssetsBdd(null)
     setPhase('selection')
   }
 
@@ -121,7 +138,7 @@ export function ImportPanel() {
         <PhaseSelection
           fichiers={fichiers}
           occupe={occupe}
-          csvPrets={!!csvPrets}
+          auMoinsUn={auMoinsUn}
           erreurGlobale={erreurGlobale}
           onChoisir={choisir}
           onValider={valider}
@@ -156,14 +173,14 @@ export function ImportPanel() {
 function PhaseSelection({
   fichiers,
   occupe,
-  csvPrets,
+  auMoinsUn,
   erreurGlobale,
   onChoisir,
   onValider,
 }: {
   fichiers: Fichiers
   occupe: boolean
-  csvPrets: boolean
+  auMoinsUn: boolean
   erreurGlobale: string | null
   onChoisir: (cle: keyof Fichiers, file: File | null) => void
   onValider: () => void
@@ -171,8 +188,10 @@ function PhaseSelection({
   return (
     <div>
       <p className="muted reset-intro">
-        Sélectionnez les 3 fichiers CSV (et éventuellement le ZIP d'images), puis lancez la
-        validation. Aucune écriture dans GLPI n'a lieu tant que la validation n'est pas réussie.
+        Sélectionnez une ou plusieurs feuilles CSV (et éventuellement le ZIP d'images), puis lancez
+        la validation. Chaque feuille peut être importée seule, mais une feuille qui en référence une
+        autre (Tickets → Inventaire, Coûts → Tickets) exige que la feuille référencée soit aussi
+        fournie. Aucune écriture dans GLPI n'a lieu tant que la validation n'est pas réussie.
       </p>
 
       <div className="import-inputs">
@@ -201,10 +220,10 @@ function PhaseSelection({
         </p>
       )}
 
-      <button className="btn-reset" onClick={onValider} disabled={!csvPrets || occupe}>
+      <button className="btn-reset" onClick={onValider} disabled={!auMoinsUn || occupe}>
         {occupe ? 'Validation…' : 'Valider et importer'}
       </button>
-      {!csvPrets && <p className="muted small">Les 3 fichiers CSV sont requis.</p>}
+      {!auMoinsUn && <p className="muted small">Sélectionnez au moins une feuille CSV.</p>}
     </div>
   )
 }

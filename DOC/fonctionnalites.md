@@ -65,8 +65,11 @@ Le `README.md` décrit une réinitialisation **au niveau MySQL** (`mysqldump` de
 - Données d'exemple : [`data-import/`](../data-import/) (3 CSV + `images.zip`).
 
 ### 2.2 Fichiers attendus
+<<<<<<< Updated upstream
 **Les 3 fichiers CSV sont obligatoires** (le bouton « Valider et importer » reste désactivé tant qu'ils ne sont pas tous fournis). Le ZIP d'images est optionnel.
 
+=======
+>>>>>>> Stashed changes
 | Fichier | Contenu | Colonnes |
 |---|---|---|
 | Feuille 1 — Inventaire (`.csv`) | Ordinateurs & moniteurs | `Name, Status, Location, Manufacturer, Item_Type, Model, Inventory_Number, User` |
@@ -74,10 +77,16 @@ Le `README.md` décrit une réinitialisation **au niveau MySQL** (`mysqldump` de
 | Feuille 3 — Coûts (`.csv`) | Coûts par ticket | `Num_Ticket, Duration_second, Time_Cost, Fixed_Cost` |
 | Images (`.zip`) | Optionnel | nom de fichier (sans extension) = `Name` de l'asset |
 
+<<<<<<< Updated upstream
 **Cohérence inter-feuilles vérifiée à la validation :**
 - chaque valeur de `Items` (Feuille 2) doit correspondre à un `Name` de la **Feuille 1** ;
 - chaque `Num_Ticket` (Feuille 3) doit correspondre à un `Ref_Ticket` de la **Feuille 2** ;
 - les doublons de `Name` (Feuille 1) et de `Ref_Ticket` (Feuille 2) sont rejetés.
+=======
+**Import partiel** : chaque feuille peut être importée **seule** (au moins une requise). Mais un import est **bloqué** si une feuille fournie référence une feuille absente :
+- un `Items` (Feuille 2) doit exister dans la Feuille 1 **ou déjà en base GLPI** ;
+- un `Num_Ticket` (Feuille 3) doit exister dans la Feuille 2.
+>>>>>>> Stashed changes
 
 ### 2.3 Règles de validation par colonne (`RegleType`)
 `texte` (requis), `texte-optionnel`, `entier` (≥0), `nombre-fr` (décimal, virgule FR), `date-ddmmyyyy` (`JJ/MM/AAAA`), `heure-hhmm` (`HH:MM`), `enum` (table de correspondance insensible à la casse), `json-array` (ex. `["PC-ADM-001"]`).
@@ -92,7 +101,11 @@ Parseur maison, sans dépendance : gère les guillemets, virgules et **sauts de 
 - **Détection du vrai type d'image par magic bytes** (PNG/JPEG/GIF/WebP/BMP) : indispensable car GLPI **refuse** un fichier dont le contenu ne correspond pas à l'extension.
 
 ### 2.6 Validation puis exécution
+<<<<<<< Updated upstream
 La validation a lieu **avant tout appel d'écriture**. En cas d'erreur → écran « Erreurs » détaillé (fichier, ligne, colonne, valeur, message), aucun appel API. Sinon → **aperçu** : compte des assets/tickets/coûts et, via `detecterAssetsExistants()`, indication des matériels **déjà présents dans GLPI** (même nom + type) qui seront **réutilisés** au lieu d'être recréés. Puis **confirmation** → exécution.
+=======
+La validation a lieu **avant tout appel d'écriture**. En cas d'erreur → écran « Erreurs » (aucun appel API). Sinon → **aperçu** (compte des assets/tickets/coûts, doublons déjà présents réutilisés) → **confirmation** → exécution.
+>>>>>>> Stashed changes
 
 `importer()` procède en **5 étapes** avec **rollback atomique** (toute création est empilée et annulée en ordre inverse si une étape échoue) :
 1. **Matériel** — résout/crée les dropdowns (Status, Location, Manufacturer, Model) et l'utilisateur (`find-or-create`), puis crée l'asset. **Dédoublonnage** : un asset déjà présent (même nom + type) est réutilisé, pas recréé.

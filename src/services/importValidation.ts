@@ -411,7 +411,17 @@ function baseSansExt(chemin: string): string {
 
 // ─── Point d'entrée ──────────────────────────────────────────────────────────
 
-export function validerImport(entrees: EntreesImport): ResultatValidation {
+/**
+ * @param entrees       Contenu des feuilles CSV (et ZIP) à valider.
+ * @param assetsBddNoms Noms (en minuscules) des matériels déjà présents dans
+ *   GLPI. Un `Items` de la Feuille 2 est valide s'il figure dans la Feuille 1
+ *   OU dans cet ensemble. `null` = GLPI injoignable : la vérification se limite
+ *   alors à la Feuille 1 (tout matériel absent de la Feuille 1 est bloqué).
+ */
+export function validerImport(
+  entrees: EntreesImport,
+  assetsBddNoms?: Set<string> | null,
+): ResultatValidation {
   const erreurs: ErreurValidation[] = []
 
   const donnees: DonneesImport = {
@@ -423,22 +433,18 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
     assetsSansImage: [],
   }
 
-  // Fichiers CSV obligatoires
-  const requis: [keyof EntreesImport, FichierSchema][] = [
-    ['inventaire', SCHEMA_INVENTAIRE],
-    ['tickets', SCHEMA_TICKETS],
-    ['couts', SCHEMA_COUTS],
-  ]
-  for (const [cle, schema] of requis) {
-    if (!entrees[cle]) {
-      erreurs.push({
-        fichier: schema.libelle,
-        ligne: null,
-        colonne: '—',
-        valeur: '',
-        message: 'fichier manquant',
-      })
-    }
+  // Chaque feuille peut être importée seule : au moins un CSV suffit.
+  // Les dépendances entre feuilles (Items→Inventaire, Num_Ticket→Tickets) sont
+  // vérifiées plus bas — un import partiel est BLOQUÉ s'il contient des lignes
+  // qui référencent une feuille non fournie.
+  if (!entrees.inventaire && !entrees.tickets && !entrees.couts) {
+    erreurs.push({
+      fichier: '—',
+      ligne: null,
+      colonne: '—',
+      valeur: '',
+      message: 'aucun fichier CSV fourni — sélectionnez au moins une feuille',
+    })
   }
 
   const invAnalyse = entrees.inventaire
@@ -495,14 +501,20 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
     }
 
     const items = valeurs.Items as string[]
-    const inconnus = items.filter((it) => !nomsAssets.has(it))
+    // Un matériel lié est valide s'il est dans la Feuille 1 OU déjà présent en
+    // base GLPI. Sinon le ticket est bloqué.
+    const inconnus = items.filter(
+      (it) => !nomsAssets.has(it) && !(assetsBddNoms?.has(it.toLowerCase()) ?? false),
+    )
     if (inconnus.length > 0) {
+      const ou = entrees.inventaire ? 'la Feuille 1' : 'la Feuille 1 (non fournie)'
+      const bdd = assetsBddNoms === null ? ' (vérification GLPI impossible)' : ' ni dans GLPI'
       erreurs.push({
         fichier: SCHEMA_TICKETS.libelle,
         ligne: numLigne,
         colonne: 'Items',
         valeur: tronquer(inconnus.join(', ')),
-        message: `asset(s) introuvable(s) dans la Feuille 1 : ${inconnus.join(', ')}`,
+        message: `matériel(s) introuvable(s) dans ${ou}${bdd} : ${inconnus.join(', ')}`,
       })
       continue
     }
@@ -530,7 +542,9 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
         ligne: numLigne,
         colonne: 'Num_Ticket',
         valeur: String(numTicket),
-        message: 'ticket introuvable dans la Feuille 2',
+        message: entrees.tickets
+          ? 'ticket introuvable dans la Feuille 2'
+          : 'Feuille 2 (Tickets) non fournie — requise pour rattacher ce coût',
       })
       continue
     }

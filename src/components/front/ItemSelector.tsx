@@ -119,8 +119,13 @@ export function ItemSelector({ selected, onToggle }: Props) {
           )}
 
           {selected.size > 0 && (
-            <p className="item-selector-count">
-              {selected.size} élément{selected.size > 1 ? 's' : ''} sélectionné{selected.size > 1 ? 's' : ''}
+            // Libellé rendu comme UN SEUL nœud de texte (template literal) et non
+            // « {n} élément{s} sélectionné{s} » : ce dernier crée des nœuds de
+            // texte adjacents que React insère/retire au changement singulier↔
+            // pluriel, ce qui plante (insertBefore NotFoundError → page blanche)
+            // quand la traduction auto du navigateur a remplacé ces nœuds.
+            <p className="item-selector-count" translate="no">
+              {`${selected.size} élément${selected.size > 1 ? 's' : ''} sélectionné${selected.size > 1 ? 's' : ''}`}
             </p>
           )}
         </>

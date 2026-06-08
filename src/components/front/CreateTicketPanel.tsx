@@ -136,13 +136,13 @@ export function CreateTicketPanel() {
           <h3>Ticket créé avec succès !</h3>
           <p>Ticket n° <strong>{ticketId}</strong> créé.</p>
           {selectedKeys.size > 0 && itemErrors === 0 && (
-            <p className="muted">
-              {selectedKeys.size} élément{selectedKeys.size > 1 ? 's' : ''} associé{selectedKeys.size > 1 ? 's' : ''}.
+            <p className="muted" translate="no">
+              {`${selectedKeys.size} élément${selectedKeys.size > 1 ? 's' : ''} associé${selectedKeys.size > 1 ? 's' : ''}.`}
             </p>
           )}
           {itemErrors > 0 && (
-            <p className="muted">
-              {selectedKeys.size - itemErrors} élément{selectedKeys.size - itemErrors > 1 ? 's' : ''} associé{selectedKeys.size - itemErrors > 1 ? 's' : ''} ({itemErrors} échec{itemErrors > 1 ? 's' : ''} d'association).
+            <p className="muted" translate="no">
+              {`${selectedKeys.size - itemErrors} élément${selectedKeys.size - itemErrors > 1 ? 's' : ''} associé${selectedKeys.size - itemErrors > 1 ? 's' : ''} (${itemErrors} échec${itemErrors > 1 ? 's' : ''} d'association).`}
             </p>
           )}
           <button type="button" className="btn-primary" style={{ marginTop: '1.5rem' }} onClick={handleReset}>
