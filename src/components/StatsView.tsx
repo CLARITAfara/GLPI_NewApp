@@ -88,7 +88,7 @@ export function StatsView() {
             group={tickets}
             emptyLabel="Aucun ticket en base."
           />
-        </>
+        </div>
       )}
     </section>
   )
