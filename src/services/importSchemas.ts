@@ -52,16 +52,18 @@ export interface ItemTypeConfig {
   modelEndpoint: string
   /** Pictogramme affiché dans l'UI. */
   icone: string
+  /** Libellé FR (pluriel) affiché dans l'UI (réinitialisation, rapports…). */
+  libelle: string
 }
 
-/** Registre des itemtypes gérés → endpoints API + icône. */
+/** Registre des itemtypes gérés → endpoints API + icône + libellé. */
 export const ITEM_TYPES: Record<ItemType, ItemTypeConfig> = {
-  Computer: { itemType: 'Computer', assetEndpoint: '/Assets/Computer', modelEndpoint: '/Dropdowns/ComputerModel', icone: '💻' },
-  Monitor: { itemType: 'Monitor', assetEndpoint: '/Assets/Monitor', modelEndpoint: '/Dropdowns/MonitorModel', icone: '🖥️' },
-  NetworkEquipment: { itemType: 'NetworkEquipment', assetEndpoint: '/Assets/NetworkEquipment', modelEndpoint: '/Dropdowns/NetworkEquipmentModel', icone: '🌐' },
-  Peripheral: { itemType: 'Peripheral', assetEndpoint: '/Assets/Peripheral', modelEndpoint: '/Dropdowns/PeripheralModel', icone: '🖱️' },
-  Phone: { itemType: 'Phone', assetEndpoint: '/Assets/Phone', modelEndpoint: '/Dropdowns/PhoneModel', icone: '📱' },
-  Printer: { itemType: 'Printer', assetEndpoint: '/Assets/Printer', modelEndpoint: '/Dropdowns/PrinterModel', icone: '🖨️' },
+  Computer: { itemType: 'Computer', assetEndpoint: '/Assets/Computer', modelEndpoint: '/Dropdowns/ComputerModel', icone: '💻', libelle: 'Ordinateurs' },
+  Monitor: { itemType: 'Monitor', assetEndpoint: '/Assets/Monitor', modelEndpoint: '/Dropdowns/MonitorModel', icone: '🖥️', libelle: 'Moniteurs' },
+  NetworkEquipment: { itemType: 'NetworkEquipment', assetEndpoint: '/Assets/NetworkEquipment', modelEndpoint: '/Dropdowns/NetworkEquipmentModel', icone: '🌐', libelle: 'Équipements réseau' },
+  Peripheral: { itemType: 'Peripheral', assetEndpoint: '/Assets/Peripheral', modelEndpoint: '/Dropdowns/PeripheralModel', icone: '🖱️', libelle: 'Périphériques' },
+  Phone: { itemType: 'Phone', assetEndpoint: '/Assets/Phone', modelEndpoint: '/Dropdowns/PhoneModel', icone: '📱', libelle: 'Téléphones' },
+  Printer: { itemType: 'Printer', assetEndpoint: '/Assets/Printer', modelEndpoint: '/Dropdowns/PrinterModel', icone: '🖨️', libelle: 'Imprimantes' },
 }
 
 // ─── Tables de correspondance ────────────────────────────────────────────────

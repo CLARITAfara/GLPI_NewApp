@@ -91,6 +91,9 @@ async function texteErreur(res: Response): Promise<string> {
   return ''
 }
 
+/** Code GLPI du statut « Nouveau » — seul statut autorisé à la création d'un ticket. */
+const STATUT_NEW = 1
+
 /** Restaure un élément de la corbeille (is_deleted = false) via PATCH. */
 async function restaurer(endpoint: string, id: number): Promise<void> {
   const res = await apiFetch(`${endpoint}/${id}`, {
@@ -101,6 +104,19 @@ async function restaurer(endpoint: string, id: number): Promise<void> {
   if (!res.ok) {
     const detail = await texteErreur(res)
     throw new Error(`PATCH ${endpoint}/${id} → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+}
+
+/** Met à jour un élément via PATCH (champs partiels). */
+async function mettreAJour(path: string, corps: Record<string, unknown>): Promise<void> {
+  const res = await apiFetch(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corps),
+  })
+  if (!res.ok) {
+    const detail = await texteErreur(res)
+    throw new Error(`PATCH ${path} → ${res.status}${detail ? ` (${detail})` : ''}`)
   }
 }
 
@@ -396,12 +412,17 @@ export async function importer(
     onProgress({ etape: etape3, courant: 0, total: donnees.tickets.length })
     for (let i = 0; i < donnees.tickets.length; i++) {
       const t = donnees.tickets[i]
+      // GLPI impose le workflow depuis « Nouveau » : créer un ticket
+      // directement dans un statut avancé (résolu, clos…) est refusé, et un
+      // ticket clos REFUSE ensuite l'ajout de coûts ou de matériel lié. On crée
+      // donc en statut New (1) et on applique le statut final tout à la fin
+      // (étape 6), une fois coûts et liens rattachés.
       const id = await creer(EP.ticket, {
         name: t.titre,
         content: t.description,
         type: t.type,
         priority: t.priority,
-        status: { id: t.status },
+        status: { id: STATUT_NEW },
         date: t.date,
       })
       planifierSuppressionHL(`${EP.ticket}/${id}`)
@@ -498,6 +519,23 @@ export async function importer(
       }
     }
     rapport.liensIgnores = totalLiens - rapport.cree.liens
+
+    // ── Étape 6 : statut final des tickets ──
+    // Appliqué EN DERNIER : un ticket clos/résolu refuse l'ajout de coûts et de
+    // matériel lié, faits aux étapes 4 et 5 pendant que le ticket est « Nouveau ».
+    const aBasculer = donnees.tickets.filter((t) => t.status !== STATUT_NEW)
+    if (aBasculer.length > 0) {
+      const etape6 = 'Statut des tickets'
+      onProgress({ etape: etape6, courant: 0, total: aBasculer.length })
+      for (let i = 0; i < aBasculer.length; i++) {
+        const t = aBasculer[i]
+        const ticketId = ticketIdParRef.get(t.ref)
+        if (ticketId !== undefined) {
+          await mettreAJour(`${EP.ticket}/${ticketId}`, { status: { id: t.status } })
+        }
+        onProgress({ etape: etape6, courant: i + 1, total: aBasculer.length })
+      }
+    }
 
     rapport.ok = true
     return rapport

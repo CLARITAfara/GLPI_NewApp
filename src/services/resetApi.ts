@@ -1,4 +1,5 @@
 import { fetchAllIds, fetchCount, fetchList, supprimerItem } from './glpiApi'
+import { ITEM_TYPES, type ItemType } from './importSchemas'
 
 /**
  * Comptes par défaut de GLPI qui ne doivent JAMAIS être supprimés par une
@@ -154,6 +155,24 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
 ]
 
 /**
+ * Un module de réinitialisation par type de matériel géré par l'import (cf.
+ * ITEM_TYPES). Garde le reset aligné sur les itemtypes importables : ajouter un
+ * type au registre l'expose automatiquement ici.
+ */
+const MODULES_ASSETS: ModuleReset[] = (Object.keys(ITEM_TYPES) as ItemType[]).map(
+  (t) => {
+    const c = ITEM_TYPES[t]
+    return {
+      id: t.toLowerCase(),
+      label: c.libelle,
+      icone: c.icone,
+      description: `${c.libelle} de l'inventaire (Item_Type = ${t})`,
+      endpoints: [{ endpoint: c.assetEndpoint, label: c.libelle }],
+    }
+  },
+)
+
+/**
  * Modules réellement proposés à la réinitialisation dans l'UI : un module
  * distinct par type de ressource alimenté par les imports Excel/CSV.
  */
@@ -165,20 +184,7 @@ export const MODULES_RESET: ModuleReset[] = [
     description: 'Tickets importés (avec leurs coûts et liens d\'objets)',
     endpoints: [{ endpoint: '/Assistance/Ticket', label: 'Tickets' }],
   },
-  {
-    id: 'ordinateurs',
-    label: 'Ordinateurs',
-    icone: '💻',
-    description: 'Ordinateurs de l\'inventaire (Item_Type = Computer)',
-    endpoints: [{ endpoint: '/Assets/Computer', label: 'Ordinateurs' }],
-  },
-  {
-    id: 'moniteurs',
-    label: 'Moniteurs',
-    icone: '🖥️',
-    description: 'Moniteurs de l\'inventaire (Item_Type = Monitor)',
-    endpoints: [{ endpoint: '/Assets/Monitor', label: 'Moniteurs' }],
-  },
+  ...MODULES_ASSETS,
   {
     id: 'utilisateurs',
     label: 'Utilisateurs',
