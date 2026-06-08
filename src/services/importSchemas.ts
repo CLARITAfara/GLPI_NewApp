@@ -125,6 +125,8 @@ export const STATUTS_TICKET: Record<string, number> = {
   new: 1,
   nouveau: 1,
   assigned: 2,
+  'in progress': 2,
+  'en cours': 2,
   'en cours (attribué)': 2,
   attribue: 2,
   planned: 3,
@@ -133,10 +135,13 @@ export const STATUTS_TICKET: Record<string, number> = {
   pending: 4,
   'en attente': 4,
   solved: 5,
+  resolved: 5,
   resolu: 5,
+  résolu: 5,
   closed: 6,
   clos: 6,
   ferme: 6,
+  fermé: 6,
 }
 
 /** Priorité de ticket → code GLPI (1..5). */
@@ -156,6 +161,8 @@ export const PRIORITES_TICKET: Record<string, number> = {
   haute: 4,
   '5': 5,
   'very high': 5,
+  critical: 5,
+  critique: 5,
   'très haute': 5,
   'tres haute': 5,
 }
