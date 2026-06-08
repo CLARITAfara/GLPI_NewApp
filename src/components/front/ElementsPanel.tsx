@@ -85,7 +85,10 @@ export function ElementsPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>📦 Éléments</h2>
+        <h2>
+          <i className="bi bi-box-seam me-2" aria-hidden="true" />
+          Éléments
+        </h2>
         {loadStatus === 'ready' && (
           <span className="count-badge">
             {filteredRows.length !== allRows.length

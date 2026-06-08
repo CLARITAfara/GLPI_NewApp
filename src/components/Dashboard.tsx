@@ -36,39 +36,86 @@ export function Dashboard() {
   const displayName = session.friendly_name || session.name
 
   return (
-    <div className="dash-wrap">
-      <header className="dash-header">
-        <div className="dash-user">
-          <span className="avatar">{displayName.charAt(0).toUpperCase()}</span>
-          <div>
-            <strong>{displayName}</strong>
-            <span className={`role-badge role-${iface}`}>{roleLabel}</span>
+  <div className="dash-wrap">
+    <header className="dash-header">
+      <div className="header-left">
+        <div className="brand">
+          <img
+            src="/logo-glpi.png"
+            alt="GLPI"
+            className="brand-logo"
+          />
+
+          <div className="brand-info">
+            <strong>GLPI Manager</strong>
+            <span>{roleLabel}</span>
           </div>
         </div>
-        <button type="button" className="btn-ghost" onClick={() => navigate('/front')}>
+      </div>
+
+      <div className="header-right">
+        <div className="dash-user-card">
+          <div className="avatar">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+
+          <div className="user-info">
+            <strong>{displayName}</strong>
+
+            <span className={`role-badge role-${iface}`}>
+              {roleLabel}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-outline-primary"
+          onClick={() => navigate('/front')}
+        >
           Espace utilisateur
         </button>
-        <button type="button" className="btn-ghost" onClick={logout}>
-          Se déconnecter
+
+        <button
+          type="button"
+          className="btn btn-outline-danger"
+          onClick={logout}
+        >
+          Déconnexion
         </button>
-      </header>
+      </div>
+    </header>
 
-      <div className="dash-body">
-        <nav className="dash-nav">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              className={s.id === active?.id ? 'nav-item active' : 'nav-item'}
-              onClick={() => setActiveId(s.id)}
-            >
-              <span aria-hidden="true">{s.icon}</span>
+    <div className="dash-body">
+      <aside className="dash-nav">
+        <div className="nav-title">
+          Navigation
+        </div>
+
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={
+              s.id === active?.id
+                ? 'nav-item active'
+                : 'nav-item'
+            }
+            onClick={() => setActiveId(s.id)}
+          >
+            <span className="nav-icon">
+              <i className={s.icon} aria-hidden="true" />
+            </span>
+
+            <span className="nav-label">
               {s.label}
-            </button>
-          ))}
-        </nav>
+            </span>
+          </button>
+        ))}
+      </aside>
 
-        <main className="dash-main">
+      <main className="dash-main">
+        <div className="container-fluid px-0">
           {active?.custom === 'stats' ? (
             <StatsView />
           ) : active?.custom === 'tickets' ? (
@@ -78,12 +125,22 @@ export function Dashboard() {
           ) : active?.custom === 'import' ? (
             <ImportPanel />
           ) : active ? (
-            <SectionView key={active.id} section={active} />
+            <div className="card shadow-sm border-0">
+              <div className="card-body">
+                <SectionView
+                  key={active.id}
+                  section={active}
+                />
+              </div>
+            </div>
           ) : (
-            <p className="muted">Aucune section disponible pour ce rôle.</p>
+            <div className="alert alert-warning">
+              Aucune section disponible pour ce rôle.
+            </div>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
-  )
+  </div>
+)
 }

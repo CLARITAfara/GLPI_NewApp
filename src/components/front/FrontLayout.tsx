@@ -1,8 +1,8 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 const NAV = [
-  { path: '/front', label: '📦 Éléments', exact: true },
-  { path: '/front/tickets/create', label: '🎫 Créer un ticket', exact: false },
+  { path: '/front', icon: 'bi bi-box-seam', label: 'Éléments', exact: true },
+  { path: '/front/tickets/create', icon: 'bi bi-ticket-detailed', label: 'Créer un ticket', exact: false },
 ]
 
 export function FrontLayout() {
@@ -13,7 +13,9 @@ export function FrontLayout() {
     <div className="front-wrap">
       <header className="front-header">
         <div className="front-brand">
-          <span className="front-brand-icon" aria-hidden="true">📦</span>
+          <span className="front-brand-icon" aria-hidden="true">
+            <i className="bi bi-box-seam" />
+          </span>
           <span className="front-brand-name">Espace utilisateur</span>
         </div>
       </header>
@@ -28,6 +30,7 @@ export function FrontLayout() {
               className={`front-nav-item${active ? ' active' : ''}`}
               onClick={() => navigate(item.path)}
             >
+              <i className={`${item.icon} me-2`} aria-hidden="true" />
               {item.label}
             </button>
           )
