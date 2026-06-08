@@ -552,7 +552,8 @@ export function validerImport(
     donnees.couts.push({
       numLigne,
       numTicket,
-      duration: Number(valeurs.Duration_second),
+      // Durée arrondie : GLPI attend un entier de secondes.
+      duration: Math.round(Number(valeurs.Duration_second)),
       costTime: Number(valeurs.Time_Cost),
       costFixed: Number(valeurs.Fixed_Cost),
     })

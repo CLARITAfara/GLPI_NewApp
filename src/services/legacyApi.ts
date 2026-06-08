@@ -224,6 +224,48 @@ export async function getItemLogs(itemtype: string, itemsId: number): Promise<Le
   return []
 }
 
+/**
+ * Crée un élément via l'API legacy (`POST /{itemtype}`) pour les types que
+ * l'API High-Level n'expose pas (CartridgeItem, ConsumableItem). Le corps suit
+ * la convention legacy : champs `*_id` (locations_id, manufacturers_id…).
+ * Renvoie l'id créé.
+ */
+export async function creerItemLegacy(
+  itemtype: string,
+  input: Record<string, unknown>,
+): Promise<number> {
+  if (!sessionToken) throw new Error('session legacy non initialisée')
+
+  const res = await fetch(`${BASE}/${itemtype}`, {
+    method: 'POST',
+    headers: entetes({ 'Session-Token': sessionToken, 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ input }),
+  })
+  if (!res.ok) {
+    const detail = detailErreur(await res.text().catch(() => ''))
+    throw new Error(`POST ${itemtype} → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+  const data: unknown = await res.json()
+  const id = Array.isArray(data)
+    ? (data[0] as Record<string, unknown>)?.id
+    : (data as Record<string, unknown>)?.id
+  if (typeof id !== 'number') throw new Error(`POST ${itemtype} : id absent de la réponse`)
+  return id
+}
+
+/** Supprime définitivement un élément créé via legacy (rollback). Best-effort. */
+export async function supprimerItemLegacy(itemtype: string, id: number): Promise<void> {
+  if (!sessionToken) return
+  try {
+    await fetch(`${BASE}/${itemtype}/${id}?force_purge=true`, {
+      method: 'DELETE',
+      headers: entetes({ 'Session-Token': sessionToken }),
+    })
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
 export async function supprimerItemTicket(id: number): Promise<void> {
   if (!sessionToken) return
