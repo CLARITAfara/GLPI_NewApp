@@ -382,6 +382,21 @@
 }
 
 /* Panneau d'une section */
+.panel {
+  animation: panel-fade 0.2s ease;
+}
+
+@keyframes panel-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .panel-head {
   display: flex;
   align-items: center;
@@ -455,91 +470,131 @@
 }
 
 /* ===== Vue d'ensemble (statistiques) ===== */
-.stats-grid {
+/* Cartes KPI : grandes valeurs en tête de page. */
+.kpi-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
 }
 
-.stat-card {
+.kpi-tile {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 22px;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--bg);
   box-shadow: var(--shadow);
 }
 
-.stat-card-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.stat-card-icon {
+.kpi-icon {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  font-size: 24px;
-  border-radius: 12px;
+  width: 54px;
+  height: 54px;
+  font-size: 26px;
+  border-radius: 14px;
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);
   flex-shrink: 0;
 }
 
-.stat-card-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.stat-total {
-  font-size: 40px;
+.kpi-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.kpi-value {
+  font-size: 38px;
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -1px;
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+  color: var(--text-h);
+}
+
+/* Sections de répartition : une carte par catégorie. */
+.stat-breakdown {
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.stat-breakdown + .stat-breakdown {
+  margin-top: 20px;
+}
+
+.stat-breakdown-title {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-h);
 }
 
 .stat-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Variante grille : deux colonnes de barres quand la place le permet. */
+.stat-bars--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px 28px;
 }
 
 .stat-bar-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .stat-bar-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   font-size: 14px;
   color: var(--text-h);
 }
 
-.stat-bar-value {
-  margin-left: auto;
-  font-weight: 600;
+.stat-bar-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.stat-bar-value {
+  margin-left: auto;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text-h);
+}
+
 .stat-bar-value small {
-  font-weight: 400;
+  font-weight: 500;
   color: var(--text);
 }
 
 .stat-bar-track {
-  height: 8px;
+  height: 9px;
   background: var(--social-bg);
   border-radius: 999px;
   overflow: hidden;
@@ -548,10 +603,10 @@
 
 .stat-bar-fill {
   height: 100%;
-  min-width: 4px;
-  background: var(--accent);
+  min-width: 5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-border));
   border-radius: 999px;
-  transition: width 0.3s ease;
+  transition: width 0.4s ease;
 }
 
 /* ===== Tickets (liste + fiche) ===== */

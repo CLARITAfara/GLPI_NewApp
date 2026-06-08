@@ -179,6 +179,30 @@ export async function lierItemTicket(opts: {
 }
 
 /**
+ * Compte les éléments d'un itemtype via l'API legacy, pour les types que l'API
+ * High-Level n'expose pas (CartridgeItem, ConsumableItem). Le total est lu dans
+ * l'en-tête Content-Range (« 0-0/N ») d'une requête à plage vide (`range=0-0`).
+ * Nécessite VITE_GLPI_USER_TOKEN. Renvoie 0 si le type est vide/indisponible.
+ */
+export async function compterItemLegacy(itemtype: string): Promise<number> {
+  await ouvrirSession()
+
+  const res = await fetch(`${BASE}/${itemtype}?range=0-0&only_id=true`, {
+    headers: entetes({ 'Session-Token': sessionToken! }),
+  })
+  // Liste vide → GLPI renvoie 400 (ERROR_RANGE_EXCEED_TOTAL) sans Content-Range.
+  if (res.status === 400) return 0
+  if (!res.ok && res.status !== 206) {
+    const detail = detailErreur(await res.text().catch(() => ''))
+    throw new Error(`GET ${itemtype} (count) → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+  const range = res.headers.get('Content-Range')
+  if (!range) return 0
+  const total = Number(range.slice(range.lastIndexOf('/') + 1))
+  return Number.isFinite(total) ? total : 0
+}
+
+/**
  * Une ligne brute de la table `glpi_logs`, telle que renvoyée par l'API legacy
  * dans le champ `_logs` quand on passe `with_logs=true`.
  */
