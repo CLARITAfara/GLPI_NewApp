@@ -13,10 +13,12 @@ import { extraireImagesZip, type DonneesImport } from './importValidation'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
 import { pool } from './concurrency'
 import {
+  creerItemLegacy,
   fermerSession,
   lierItemTicket,
   ouvrirSession,
   supprimerDocument,
+  supprimerItemLegacy,
   supprimerItemTicket,
   uploaderDocument,
   uploadDisponible,
@@ -341,6 +343,19 @@ export async function importer(
     const bddAssets = bdd ?? (await chargerAssetsExistants())
     const videMap = new Map<string, number>()
 
+    // Certains types (CartridgeItem, ConsumableItem) n'ont pas de route de
+    // création High-Level : ils passent par l'API legacy, qui exige une session
+    // (donc le jeton VITE_GLPI_USER_TOKEN). On l'ouvre une fois en amont.
+    const besoinLegacy = donnees.assets.some((a) => ITEM_TYPES[a.itemType].viaLegacy)
+    if (besoinLegacy) {
+      if (!uploadDisponible()) {
+        throw new Error(
+          'Cartouches/Consommables présents mais jeton legacy (VITE_GLPI_USER_TOKEN) absent — impossible de les créer.',
+        )
+      }
+      await ouvrirSession()
+    }
+
     const etape1 = 'Matériel (assets)'
     let faits1 = 0
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
@@ -357,6 +372,30 @@ export async function importer(
       if (dejaId !== undefined) {
         assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
         rapport.materielReutilise++
+        onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
+        return
+      }
+
+      // ── Types sans route HL (Cartouches/Consommables) : création legacy. ──
+      if (config.viaLegacy) {
+        const champsL = new Set(config.champs)
+        const [locId, manuId] = await Promise.all([
+          champsL.has('location') && a.location
+            ? trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
+            : Promise.resolve(undefined),
+          champsL.has('manufacturer') && a.manufacturer
+            ? trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
+            : Promise.resolve(undefined),
+        ])
+        // Corps legacy : champs `*_id` (ids GLPI résolus via l'API HL ci-dessus).
+        const input: Record<string, unknown> = { name: a.name }
+        if (locId !== undefined) input.locations_id = locId
+        if (manuId !== undefined) input.manufacturers_id = manuId
+
+        const id = await creerItemLegacy(config.itemType, input)
+        annulations.push(() => supprimerItemLegacy(config.itemType, id))
+        assetParNom.set(a.name, { id, itemType: a.itemType })
+        rapport.cree.materiel++
         onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
         return
       }

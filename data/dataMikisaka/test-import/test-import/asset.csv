@@ -1,0 +1,101 @@
+Name,Status,Location,Manufacturer,Item_Type,Model,Inventory_Number,User
+PAS-TEST-001,En stock,Laboratoire IA,APC,PassiveDCEquipment,Patch Panel 24,INV-DC-0001,
+PHO-TEST-002,En panne,Laboratoire IA,APC,Phone,SIP-T46U,INV-IT-0002,Rasoanaivo Marie
+CAR-TEST-003,,Bibliothèque,HP,CartridgeItem,,,
+CAR-TEST-004,,Magasin Informatique,Microsoft,CartridgeItem,,,
+SOF-TEST-005,,,Microsoft,Software,,,Bibliothèque
+PER-TEST-006,En stock,Bibliothèque,Cisco,Peripheral,MX Master 3,INV-IT-0006,Bibliothèque
+RAC-TEST-007,En panne,Salle Serveur,Logitech,Rack,S-Series 42U,INV-DC-0007,
+CAR-TEST-008,,Administration,Logitech,CartridgeItem,,,
+ENC-TEST-009,En production,Comptabilité,Adobe,Enclosure,PowerEdge M1000e,INV-DC-0009,
+NET-TEST-010,En stock,Salle Serveur,HP,NetworkEquipment,EX2300,INV-IT-0010,Rakoto Michel
+CAR-TEST-011,,Bibliothèque,Cisco,CartridgeItem,,,
+COM-TEST-012,En panne,Salle 301,Dell,Computer,ThinkCentre M70,INV-IT-0012,Bibliothèque
+PER-TEST-013,En panne,Bibliothèque,Lenovo,Peripheral,MX Master 3,INV-IT-0013,Rakotondranaivo Paul
+PAS-TEST-014,En production,Salle Serveur,Microsoft,PassiveDCEquipment,Patch Panel 24,INV-DC-0014,
+RAC-TEST-015,En panne,Laboratoire IA,Cisco,Rack,S-Series 42U,INV-DC-0015,
+NET-TEST-016,En production,Comptabilité,Lenovo,NetworkEquipment,EX2300,INV-IT-0016,Rakotondranaivo Paul
+ENC-TEST-017,En stock,Baie 1,Adobe,Enclosure,BladeSystem c7000,INV-DC-0017,
+PRI-TEST-018,Maintenance,Laboratoire IA,Microsoft,Printer,EcoTank,INV-IT-0018,Rabe Hanitra
+PRI-TEST-019,En stock,Salle 301,Microsoft,Printer,EcoTank,INV-IT-0019,Rakotondranaivo Paul
+COM-TEST-020,En stock,Salle 301,Dell,Computer,OptiPlex 7010,INV-IT-0020,ITU Labs
+PDU-TEST-021,En production,Comptabilité,Logitech,PDU,Metered Rack PDU,INV-DC-0021,
+PHO-TEST-022,En stock,Magasin Informatique,Epson,Phone,SIP-T46U,INV-IT-0022,Rabe Hanitra
+ENC-TEST-023,Maintenance,Salle Serveur,Lenovo,Enclosure,BladeSystem c7000,INV-DC-0023,
+CAB-TEST-024,Déconnecté,,,Cable,,CBL-0024,
+RAC-TEST-025,En stock,Salle Serveur,Lenovo,Rack,S-Series 42U,INV-DC-0025,
+PER-TEST-026,Maintenance,Salle 301,HP,Peripheral,MX Master 3,INV-IT-0026,Bibliothèque
+SOF-TEST-027,,,Oracle,Software,,,Rakotondranaivo Paul
+SOF-TEST-028,,,Oracle,Software,,,Rakotondranaivo Paul
+PER-TEST-029,En panne,Administration,Adobe,Peripheral,Ergonomic Keyboard,INV-IT-0029,Rakotondranaivo Paul
+COM-TEST-030,En production,Salle 301,Cisco,Computer,OptiPlex 7010,INV-IT-0030,Rakoto Michel
+MON-TEST-031,En stock,Baie 1,Lenovo,Monitor,Odyssey G5,INV-IT-0031,Bibliothèque
+CON-TEST-032,,Magasin Informatique,Logitech,ConsumableItem,,,
+PER-TEST-033,En panne,Salle 301,Logitech,Peripheral,MX Master 3,INV-IT-0033,Rakoto Jean
+CAB-TEST-034,Déconnecté,,,Cable,,CBL-0034,
+PER-TEST-035,En panne,Baie 1,Adobe,Peripheral,MX Master 3,INV-IT-0035,Rakoto Michel
+PER-TEST-036,En production,Baie 1,Epson,Peripheral,MX Master 3,INV-IT-0036,Rasoanaivo Marie
+NET-TEST-037,Maintenance,Baie 1,Cisco,NetworkEquipment,EX2300,INV-IT-0037,Rabe Hanitra
+PER-TEST-038,Maintenance,Salle Serveur,Lenovo,Peripheral,MX Master 3,INV-IT-0038,Rakoto Michel
+PAS-TEST-039,En stock,Comptabilité,Epson,PassiveDCEquipment,Fiber Box,INV-DC-0039,
+MON-TEST-040,Maintenance,Magasin Informatique,Microsoft,Monitor,Odyssey G5,INV-IT-0040,Rakoto Jean
+CAB-TEST-041,Déconnecté,,,Cable,,CBL-0041,
+PDU-TEST-042,Maintenance,Magasin Informatique,APC,PDU,Metered Rack PDU,INV-DC-0042,
+CAR-TEST-043,,Administration,HP,CartridgeItem,,,
+CAB-TEST-044,Déconnecté,,,Cable,,CBL-0044,
+PRI-TEST-045,En panne,Baie 1,Epson,Printer,LaserJet Pro,INV-IT-0045,Rakoto Michel
+RAC-TEST-046,En panne,Laboratoire IA,Logitech,Rack,S-Series 42U,INV-DC-0046,
+SOF-TEST-047,,,Oracle,Software,,,Rasoanaivo Marie
+MON-TEST-048,En stock,Salle 301,Microsoft,Monitor,ProDisplay,INV-IT-0048,ITU Labs
+PHO-TEST-049,En panne,Bibliothèque,HP,Phone,SIP-T46U,INV-IT-0049,Rakoto Michel
+PER-TEST-050,En stock,Comptabilité,Microsoft,Peripheral,Ergonomic Keyboard,INV-IT-0050,ITU Labs
+COM-TEST-051,En panne,Salle Serveur,Dell,Computer,OptiPlex 7010,INV-IT-0051,ITU Labs
+CON-TEST-052,,Administration,Cisco,ConsumableItem,,,
+MON-TEST-053,Maintenance,Laboratoire IA,HP,Monitor,Odyssey G5,INV-IT-0053,Bibliothèque
+COM-TEST-054,En stock,Magasin Informatique,HP,Computer,ThinkCentre M70,INV-IT-0054,Rakoto Michel
+PDU-TEST-055,En panne,Bibliothèque,HP,PDU,Switched PDU,INV-DC-0055,
+MON-TEST-056,En stock,Salle 301,Adobe,Monitor,UltraSharp 24,INV-IT-0056,Rasoanaivo Marie
+COM-TEST-057,En production,Salle Serveur,Logitech,Computer,ThinkCentre M70,INV-IT-0057,Bibliothèque
+ENC-TEST-058,En production,Administration,Microsoft,Enclosure,BladeSystem c7000,INV-DC-0058,
+CON-TEST-059,,Comptabilité,Cisco,ConsumableItem,,,
+COM-TEST-060,Maintenance,Bibliothèque,Dell,Computer,OptiPlex 7010,INV-IT-0060,Rakoto Jean
+NET-TEST-061,En production,Laboratoire IA,Epson,NetworkEquipment,EX2300,INV-IT-0061,Rakoto Jean
+PRI-TEST-062,En production,Comptabilité,Logitech,Printer,LaserJet Pro,INV-IT-0062,Rakotondranaivo Paul
+RAC-TEST-063,En stock,Laboratoire IA,Epson,Rack,NetShelter SX,INV-DC-0063,
+ENC-TEST-064,En production,Bibliothèque,HP,Enclosure,PowerEdge M1000e,INV-DC-0064,
+SOF-TEST-065,,,JetBrains,Software,,,Rakoto Michel
+PHO-TEST-066,En stock,Comptabilité,APC,Phone,SIP-T46U,INV-IT-0066,Rabe Hanitra
+CON-TEST-067,,Magasin Informatique,Epson,ConsumableItem,,,
+CON-TEST-068,,Salle 301,HP,ConsumableItem,,,
+PER-TEST-069,Maintenance,Baie 1,Lenovo,Peripheral,MX Master 3,INV-IT-0069,Rakoto Michel
+CAR-TEST-070,,Administration,Cisco,CartridgeItem,,,
+CAR-TEST-071,,Salle 301,Cisco,CartridgeItem,,,
+RAC-TEST-072,En stock,Laboratoire IA,Cisco,Rack,NetShelter SX,INV-DC-0072,
+CON-TEST-073,,Comptabilité,Dell,ConsumableItem,,,
+CAR-TEST-074,,Salle Serveur,Microsoft,CartridgeItem,,,
+PDU-TEST-075,En stock,Comptabilité,Logitech,PDU,Metered Rack PDU,INV-DC-0075,
+RAC-TEST-076,En stock,Magasin Informatique,Adobe,Rack,NetShelter SX,INV-DC-0076,
+CAB-TEST-077,Connecté,,,Cable,,CBL-0077,
+PER-TEST-078,En stock,Magasin Informatique,APC,Peripheral,MX Master 3,INV-IT-0078,Rakoto Michel
+PAS-TEST-079,En panne,Baie 1,Dell,PassiveDCEquipment,Fiber Box,INV-DC-0079,
+NET-TEST-080,En stock,Administration,Adobe,NetworkEquipment,Catalyst 2960,INV-IT-0080,Rasoanaivo Marie
+PAS-TEST-081,En panne,Laboratoire IA,Lenovo,PassiveDCEquipment,Patch Panel 24,INV-DC-0081,
+ENC-TEST-082,Maintenance,Baie 1,APC,Enclosure,BladeSystem c7000,INV-DC-0082,
+CAR-TEST-083,,Magasin Informatique,Lenovo,CartridgeItem,,,
+PAS-TEST-084,En stock,Baie 1,Microsoft,PassiveDCEquipment,Patch Panel 24,INV-DC-0084,
+NET-TEST-085,En stock,Comptabilité,Epson,NetworkEquipment,EX2300,INV-IT-0085,ITU Labs
+RAC-TEST-086,En panne,Bibliothèque,Cisco,Rack,S-Series 42U,INV-DC-0086,
+PDU-TEST-087,Maintenance,Magasin Informatique,Logitech,PDU,Switched PDU,INV-DC-0087,
+SOF-TEST-088,,,JetBrains,Software,,,ITU Labs
+CAB-TEST-089,Déconnecté,,,Cable,,CBL-0089,
+RAC-TEST-090,En panne,Laboratoire IA,HP,Rack,NetShelter SX,INV-DC-0090,
+CON-TEST-091,,Magasin Informatique,Microsoft,ConsumableItem,,,
+NET-TEST-092,Maintenance,Magasin Informatique,HP,NetworkEquipment,EX2300,INV-IT-0092,Rakotondranaivo Paul
+COM-TEST-093,Maintenance,Baie 1,Logitech,Computer,OptiPlex 7010,INV-IT-0093,ITU Labs
+MON-TEST-094,En panne,Salle Serveur,Logitech,Monitor,Odyssey G5,INV-IT-0094,Rakoto Jean
+PAS-TEST-095,En stock,Salle 301,Dell,PassiveDCEquipment,Patch Panel 24,INV-DC-0095,
+NET-TEST-096,Maintenance,Baie 1,Adobe,NetworkEquipment,Catalyst 2960,INV-IT-0096,Rakoto Michel
+CON-TEST-097,,Magasin Informatique,Microsoft,ConsumableItem,,,
+CON-TEST-098,,Bibliothèque,Cisco,ConsumableItem,,,
+SOF-TEST-099,,,Microsoft,Software,,,Rakoto Jean
+ENC-TEST-100,En production,Salle 301,Epson,Enclosure,PowerEdge M1000e,INV-DC-0100,

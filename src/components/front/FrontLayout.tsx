@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Sidebar, type SidebarNavItem } from '../Sidebar'
 
 const NAV = [
   { path: '/front', icon: 'bi bi-box-seam', label: 'Éléments', exact: true },
@@ -37,9 +38,11 @@ export function FrontLayout() {
         })}
       </nav>
 
-      <main className="front-main">
-        <Outlet />
-      </main>
+      <div className="app-content">
+        <main className="front-main">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }

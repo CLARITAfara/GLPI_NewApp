@@ -88,22 +88,43 @@ export function StatsView() {
             group={tickets}
             emptyLabel="Aucun ticket en base."
           />
-        </div>
+        </>
       )}
     </section>
   )
 }
 
-function StatCard({
+function KpiTile({
   icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: string
+  label: string
+  value: number
+  sub: string
+}) {
+  return (
+    <article className="kpi-tile">
+      <span className="kpi-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <div className="kpi-body">
+        <span className="kpi-label">{label}</span>
+        <span className="kpi-value">{value}</span>
+        <span className="muted small">{sub}</span>
+      </div>
+    </article>
+  )
+}
+
+function Breakdown({
   title,
-  unit,
   group,
   emptyLabel,
 }: {
-  icon: string
   title: string
-  unit: string
   group: StatGroup | null
   emptyLabel: string
 }) {
