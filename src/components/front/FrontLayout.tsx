@@ -1,5 +1,4 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
 
 const NAV = [
   { path: '/front', label: '📦 Éléments', exact: true },
@@ -7,13 +6,8 @@ const NAV = [
 ]
 
 export function FrontLayout() {
-  const { session, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-
-  if (!session) return null
-
-  const displayName = session.friendly_name || session.name
 
   return (
     <div className="front-wrap">
@@ -21,13 +15,6 @@ export function FrontLayout() {
         <div className="front-brand">
           <span className="front-brand-icon" aria-hidden="true">📦</span>
           <span className="front-brand-name">Espace utilisateur</span>
-        </div>
-        <div className="front-user">
-          <span className="front-avatar">{displayName.charAt(0).toUpperCase()}</span>
-          <span className="front-username">{displayName}</span>
-          <button type="button" className="front-logout" onClick={logout}>
-            Se déconnecter
-          </button>
         </div>
       </header>
 
