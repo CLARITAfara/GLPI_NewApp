@@ -45,37 +45,69 @@ export function StatsView() {
       )}
 
       {status === 'ready' && (
-        <div className="stats-grid">
-          <StatCard
-            icon="🗄️"
-            title="Éléments"
-            unit="éléments au total"
+        <>
+          <div className="kpi-row">
+            <KpiTile
+              icon="🗄️"
+              label="Matériel total"
+              value={elements?.total ?? 0}
+              sub={`${elements?.parType.length ?? 0} type(s) présent(s)`}
+            />
+            <KpiTile
+              icon="🎫"
+              label="Tickets total"
+              value={tickets?.total ?? 0}
+              sub={`${tickets?.parType.length ?? 0} type(s) présent(s)`}
+            />
+          </div>
+
+          <Breakdown
+            title="Répartition du parc"
             group={elements}
             emptyLabel="Aucun élément en base."
           />
-          <StatCard
-            icon="🎫"
-            title="Tickets"
-            unit="tickets au total"
+          <Breakdown
+            title="Répartition des tickets"
             group={tickets}
             emptyLabel="Aucun ticket en base."
           />
-        </div>
+        </>
       )}
     </section>
   )
 }
 
-function StatCard({
+function KpiTile({
   icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: string
+  label: string
+  value: number
+  sub: string
+}) {
+  return (
+    <article className="kpi-tile">
+      <span className="kpi-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <div className="kpi-body">
+        <span className="kpi-label">{label}</span>
+        <span className="kpi-value">{value}</span>
+        <span className="muted small">{sub}</span>
+      </div>
+    </article>
+  )
+}
+
+function Breakdown({
   title,
-  unit,
   group,
   emptyLabel,
 }: {
-  icon: string
   title: string
-  unit: string
   group: StatGroup | null
   emptyLabel: string
 }) {
@@ -84,29 +116,19 @@ function StatCard({
   const max = types.reduce((m, t) => Math.max(m, t.total), 0) || 1
 
   return (
-    <article className="stat-card">
-      <header className="stat-card-head">
-        <span className="stat-card-icon" aria-hidden="true">
-          {icon}
-        </span>
-        <div>
-          <span className="stat-card-title">{title}</span>
-          <div className="stat-total">{total}</div>
-          <span className="muted small">{unit}</span>
-        </div>
-      </header>
-
+    <section className="stat-breakdown">
+      <h3 className="stat-breakdown-title">{title}</h3>
       {types.length === 0 ? (
         <p className="muted small">{emptyLabel}</p>
       ) : (
-        <ul className="stat-bars">
+        <ul className="stat-bars stat-bars--grid">
           {types.map((t) => {
             const pct = total > 0 ? Math.round((t.total / total) * 100) : 0
             return (
               <li key={t.key} className="stat-bar-row">
                 <div className="stat-bar-label">
                   <span aria-hidden="true">{t.icon}</span>
-                  <span>{t.label}</span>
+                  <span className="stat-bar-name">{t.label}</span>
                   <span className="stat-bar-value">
                     {t.total}
                     <small> · {pct}%</small>
@@ -123,6 +145,6 @@ function StatCard({
           })}
         </ul>
       )}
-    </article>
+    </section>
   )
 }

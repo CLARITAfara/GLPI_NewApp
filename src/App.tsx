@@ -19,6 +19,18 @@ export default function App() {
 
   const isAdmin = ADMIN_PROFILES.includes(session?.active_profile?.name ?? '')
 
+  // Élément du back-office, protégé : redirige selon l'état d'authentification.
+  // Réutilisé par la route racine ET la route par onglet (/:section) pour que
+  // chaque onglet ait sa propre URL.
+  const backOffice =
+    status !== 'authenticated' ? (
+      <Navigate to="/login" replace />
+    ) : !isAdmin ? (
+      <Navigate to="/front" replace />
+    ) : (
+      <DashboardPage />
+    )
+
   return (
     <Routes>
       {/* Login back-office (admin uniquement) */}
@@ -31,19 +43,9 @@ export default function App() {
         }
       />
 
-      {/* Back-office (admin) */}
-      <Route
-        path="/"
-        element={
-          status !== 'authenticated' ? (
-            <Navigate to="/login" replace />
-          ) : !isAdmin ? (
-            <Navigate to="/front" replace />
-          ) : (
-            <DashboardPage />
-          )
-        }
-      />
+      {/* Back-office (admin) — une URL par onglet : /, /tickets, /computers… */}
+      <Route path="/" element={backOffice} />
+      <Route path="/:section" element={backOffice} />
 
       {/* Front-office — session propre, pas de user connecté visible */}
       <Route path="/front" element={<FrontAutoLogin />}>

@@ -30,4 +30,6 @@ dist-ssr
 
 *.sqlite
 vite.config.ts
-vite.config.ts
+
+# Feuilles de style (non suivies sur ce projet)
+*.css

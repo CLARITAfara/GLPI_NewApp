@@ -1,42 +1,35 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Sidebar, type SidebarNavItem } from '../Sidebar'
 
-const NAV = [
-  { path: '/front', label: '📦 Éléments', exact: true },
-  { path: '/front/tickets/create', label: '🎫 Créer un ticket', exact: false },
+const NAV: SidebarNavItem[] = [
+  { id: '/front', label: 'Éléments', icon: '📦' },
+  { id: '/front/tickets/create', label: 'Créer un ticket', icon: '🎫' },
 ]
 
 export function FrontLayout() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
+  // Item actif : on prend le chemin le plus spécifique qui préfixe l'URL
+  // (parcours inversé pour que « /front/tickets/create » l'emporte sur « /front »).
+  const activeId =
+    [...NAV].reverse().find((n) => pathname.startsWith(n.id))?.id ?? '/front'
+
   return (
-    <div className="front-wrap">
-      <header className="front-header">
-        <div className="front-brand">
-          <span className="front-brand-icon" aria-hidden="true">📦</span>
-          <span className="front-brand-name">Espace utilisateur</span>
-        </div>
-      </header>
+    <div className="app-shell">
+      <Sidebar
+        brandIcon="📦"
+        brandName="Espace utilisateur"
+        items={NAV}
+        activeId={activeId}
+        onSelect={(id) => navigate(id)}
+      />
 
-      <nav className="front-page-nav">
-        {NAV.map((item) => {
-          const active = item.exact ? pathname === item.path : pathname.startsWith(item.path)
-          return (
-            <button
-              key={item.path}
-              type="button"
-              className={`front-nav-item${active ? ' active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              {item.label}
-            </button>
-          )
-        })}
-      </nav>
-
-      <main className="front-main">
-        <Outlet />
-      </main>
+      <div className="app-content">
+        <main className="front-main">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
