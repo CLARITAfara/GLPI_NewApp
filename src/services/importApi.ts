@@ -10,6 +10,8 @@
 import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import { extraireImagesZip, type DonneesImport } from './importValidation'
+import { ITEM_TYPES, type ItemType } from './importSchemas'
+import { pool } from './concurrency'
 import {
   fermerSession,
   lierItemTicket,
@@ -49,6 +51,11 @@ export interface RapportImport {
    * lien : "PC ↔ ticket #N — message".
    */
   liensEchecs: string[]
+  /**
+   * Liens volontairement ignorés (information, pas une erreur) : types non
+   * associables aux tickets dans GLPI (Cable, Socket…). Une entrée par lien.
+   */
+  liensIgnoresInfo: string[]
   /** Images non importées (sans asset, jeton legacy absent, ou upload refusé). */
   imagesIgnorees: number
   /**
@@ -63,15 +70,13 @@ export interface RapportImport {
 
 // ─── Endpoints ───────────────────────────────────────────────────────────────
 
+// Les endpoints par itemtype (asset + modèle) vivent dans ITEM_TYPES
+// (importSchemas.ts) ; ici seulement les listes partagées et les tickets.
 const EP = {
   state: '/Dropdowns/State',
   location: '/Dropdowns/Location',
   manufacturer: '/Dropdowns/Manufacturer',
-  computerModel: '/Dropdowns/ComputerModel',
-  monitorModel: '/Dropdowns/MonitorModel',
   user: '/Administration/User',
-  computer: '/Assets/Computer',
-  monitor: '/Assets/Monitor',
   ticket: '/Assistance/Ticket',
 }
 
@@ -92,6 +97,12 @@ async function texteErreur(res: Response): Promise<string> {
   return ''
 }
 
+/** Code GLPI du statut « Nouveau » — seul statut autorisé à la création d'un ticket. */
+const STATUT_NEW = 1
+
+/** Nombre de requêtes HL menées en parallèle dans chaque phase de l'import. */
+const CONCURRENCE = 8
+
 /** Restaure un élément de la corbeille (is_deleted = false) via PATCH. */
 async function restaurer(endpoint: string, id: number): Promise<void> {
   const res = await apiFetch(`${endpoint}/${id}`, {
@@ -102,6 +113,19 @@ async function restaurer(endpoint: string, id: number): Promise<void> {
   if (!res.ok) {
     const detail = await texteErreur(res)
     throw new Error(`PATCH ${endpoint}/${id} → ${res.status}${detail ? ` (${detail})` : ''}`)
+  }
+}
+
+/** Met à jour un élément via PATCH (champs partiels). */
+async function mettreAJour(path: string, corps: Record<string, unknown>): Promise<void> {
+  const res = await apiFetch(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corps),
+  })
+  if (!res.ok) {
+    const detail = await texteErreur(res)
+    throw new Error(`PATCH ${path} → ${res.status}${detail ? ` (${detail})` : ''}`)
   }
 }
 
@@ -130,12 +154,17 @@ async function creer(endpoint: string, corps: Record<string, unknown>): Promise<
  * minuscules pour une comparaison insensible à la casse. La corbeille est
  * exclue (on ne déduplique que sur les éléments actifs).
  */
-async function chargerNomsExistants(endpoint: string): Promise<Map<string, number>> {
+async function chargerNomsExistants(
+  endpoint: string,
+  sansCorbeille = false,
+): Promise<Map<string, number>> {
   const map = new Map<string, number>()
   const pageSize = 500
   let start = 0
   while (true) {
-    const { items, total } = await fetchList(endpoint, { start, limit: pageSize })
+    // Les types sans corbeille (pas de champ is_deleted, ex. Socket) ne
+    // supportent pas le filtre is_deleted==false → on l'omet.
+    const { items, total } = await fetchList(endpoint, { start, limit: pageSize, includeDeleted: sansCorbeille })
     for (const it of items) {
       const nom = String((it as Record<string, unknown>).name ?? '').toLowerCase()
       if (nom && typeof it.id === 'number' && !map.has(nom)) map.set(nom, it.id)
@@ -148,30 +177,58 @@ async function chargerNomsExistants(endpoint: string): Promise<Map<string, numbe
 
 export interface AssetExistant {
   name: string
-  itemType: 'Computer' | 'Monitor'
+  itemType: ItemType
   id: number
 }
 
 /**
- * Détecte, parmi les assets à importer, ceux qui existent DÉJÀ dans GLPI
- * (même nom + même type). Sert à prévenir l'utilisateur à la validation et à
- * éviter les doublons. Une seule requête paginée par type concerné.
+ * Matériels présents dans GLPI, indexés par itemtype puis par nom (minuscule).
+ * Sert à la fois à éviter les doublons, à valider les liens Tickets→matériel
+ * (un asset référencé peut exister en base sans figurer dans la Feuille 1) et à
+ * rattacher ces liens à l'import.
  */
-export async function detecterAssetsExistants(
-  donnees: DonneesImport,
-): Promise<AssetExistant[]> {
-  const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
-  const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
-  const vide = new Map<string, number>()
-  const [computers, monitors] = await Promise.all([
-    besoinComputer ? chargerNomsExistants(EP.computer) : Promise.resolve(vide),
-    besoinMonitor ? chargerNomsExistants(EP.monitor) : Promise.resolve(vide),
-  ])
+export type AssetsBdd = Map<ItemType, Map<string, number>>
 
+/** Charge tous les matériels des types gérés (cf. ITEM_TYPES) présents dans GLPI. */
+export async function chargerAssetsExistants(): Promise<AssetsBdd> {
+  const bdd: AssetsBdd = new Map()
+  const types = Object.keys(ITEM_TYPES) as ItemType[]
+  await Promise.all(
+    types.map(async (t) => {
+      const c = ITEM_TYPES[t]
+      try {
+        bdd.set(t, await chargerNomsExistants(c.assetEndpoint, c.sansCorbeille))
+      } catch {
+        // Type indisponible (désactivé/non autorisé sur cette instance) : on
+        // l'ignore pour la détection plutôt que de faire échouer tout le reste.
+        bdd.set(t, new Map())
+      }
+    }),
+  )
+  return bdd
+}
+
+/** Ensemble des noms (en minuscules) de tous les matériels présents dans GLPI. */
+export function nomsAssetsBdd(bdd: AssetsBdd): Set<string> {
+  const noms = new Set<string>()
+  for (const map of bdd.values()) {
+    for (const nom of map.keys()) noms.add(nom)
+  }
+  return noms
+}
+
+/**
+ * Parmi les assets à importer, ceux qui existent DÉJÀ dans GLPI (même nom +
+ * même type) — calculé à partir d'un chargement déjà effectué, sans nouvelle
+ * requête.
+ */
+export function assetsExistantsDansBdd(
+  donnees: DonneesImport,
+  bdd: AssetsBdd,
+): AssetExistant[] {
   const existants: AssetExistant[] = []
   for (const a of donnees.assets) {
-    const map = a.itemType === 'Computer' ? computers : monitors
-    const id = map.get(a.name.toLowerCase())
+    const id = bdd.get(a.itemType)?.get(a.name.toLowerCase())
     if (id !== undefined) existants.push({ name: a.name, itemType: a.itemType, id })
   }
   return existants
@@ -183,11 +240,15 @@ export async function importer(
   donnees: DonneesImport,
   onProgress: (p: ProgressionImport) => void,
   zip?: ArrayBuffer | null,
+  bdd?: AssetsBdd | null,
 ): Promise<RapportImport> {
   // Pile de rollback : actions de suppression exécutées en ordre inverse.
   const annulations: Array<() => Promise<void>> = []
-  // Cache find-or-create : clé "endpoint::champ::valeur" → id.
-  const cache = new Map<string, number>()
+  // Cache find-or-create : clé "endpoint::champ::valeur" → PROMESSE de l'id.
+  // On mémorise la promesse (pas l'id résolu) pour que des tâches parallèles
+  // demandant la même valeur partagent un unique appel réseau et évitent de
+  // créer des doublons de listes déroulantes.
+  const cache = new Map<string, Promise<number>>()
 
   const totalLiens = donnees.tickets.reduce((s, t) => s + t.items.length, 0)
   const rapport: RapportImport = {
@@ -196,6 +257,7 @@ export async function importer(
     materielReutilise: 0,
     liensIgnores: totalLiens,
     liensEchecs: [],
+    liensIgnoresInfo: [],
     imagesIgnorees: donnees.images.length,
     imagesEchecs: [],
     rollback: false,
@@ -225,30 +287,36 @@ export async function importer(
     const enCache = cache.get(cle)
     if (enCache !== undefined) return enCache
 
-    // Les ressources à corbeille (utilisateurs) doivent être cherchées AUSSI
-    // dans la corbeille : un enregistrement supprimé occupe toujours son nom
-    // unique en base, donc le recréer échoue en 500 ("existe déjà"). On le
-    // retrouve et on le restaure plutôt que de le recréer.
-    const inclureCorbeille = opts.sansCorbeille || opts.restaurer
-    const { items } = await fetchList(endpoint, {
-      filter: `${champ}==${valeur}`,
-      limit: 50,
-      includeDeleted: inclureCorbeille,
-    })
-    const trouve = items.find((it) => String((it as Record<string, unknown>)[champ]) === valeur)
-    if (trouve && typeof trouve.id === 'number') {
-      if (opts.restaurer && (trouve as Record<string, unknown>).is_deleted === true) {
-        await restaurer(endpoint, trouve.id)
+    // La promesse est posée dans le cache AVANT le premier await : un second
+    // appel concurrent pour la même valeur récupère cette promesse au lieu de
+    // relancer une recherche/création (qui créerait un doublon).
+    const promesse = (async (): Promise<number> => {
+      // Les ressources à corbeille (utilisateurs) doivent être cherchées AUSSI
+      // dans la corbeille : un enregistrement supprimé occupe toujours son nom
+      // unique en base, donc le recréer échoue en 500 ("existe déjà"). On le
+      // retrouve et on le restaure plutôt que de le recréer.
+      const inclureCorbeille = opts.sansCorbeille || opts.restaurer
+      const { items } = await fetchList(endpoint, {
+        filter: `${champ}==${valeur}`,
+        limit: 50,
+        includeDeleted: inclureCorbeille,
+      })
+      const trouve = items.find((it) => String((it as Record<string, unknown>)[champ]) === valeur)
+      if (trouve && typeof trouve.id === 'number') {
+        if (opts.restaurer && (trouve as Record<string, unknown>).is_deleted === true) {
+          await restaurer(endpoint, trouve.id)
+        }
+        return trouve.id
       }
-      cache.set(cle, trouve.id)
-      return trouve.id
-    }
 
-    const id = await creer(endpoint, corps)
-    planifierSuppressionHL(`${endpoint}/${id}`)
-    rapport.cree[opts.compteur]++
-    cache.set(cle, id)
-    return id
+      const id = await creer(endpoint, corps)
+      planifierSuppressionHL(`${endpoint}/${id}`)
+      rapport.cree[opts.compteur]++
+      return id
+    })()
+
+    cache.set(cle, promesse)
+    return promesse
   }
 
   const slugLogin = (nom: string): string =>
@@ -260,66 +328,76 @@ export async function importer(
       .replace(/^\.|\.$/g, '')
 
   // Assets créés : name → { id, itemType } (pour rattacher les images).
-  const assetParNom = new Map<string, { id: number; itemType: 'Computer' | 'Monitor' }>()
+  const assetParNom = new Map<string, { id: number; itemType: ItemType }>()
 
   try {
     // ── Étape 1 : matériel (résout listes + utilisateur, puis crée l'asset) ──
     // Anti-doublons : on pré-charge les noms existants par type ; un asset déjà
     // présent (même nom) est réutilisé tel quel au lieu d'être recréé.
-    const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
-    const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
+    // Matériels déjà présents dans GLPI : fournis par l'appelant (chargés une
+    // seule fois pour la validation) ou chargés ici à défaut. Servent au
+    // dédoublonnage (étape 1) ET au rattachement des liens vers des assets qui
+    // existent en base sans figurer dans la Feuille 1 (étape 5).
+    const bddAssets = bdd ?? (await chargerAssetsExistants())
     const videMap = new Map<string, number>()
-    const existantComputer = besoinComputer ? await chargerNomsExistants(EP.computer) : videMap
-    const existantMonitor = besoinMonitor ? await chargerNomsExistants(EP.monitor) : videMap
 
-    const etape1 = 'Matériel (ordinateurs / moniteurs)'
+    const etape1 = 'Matériel (assets)'
+    let faits1 = 0
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
-    for (let i = 0; i < donnees.assets.length; i++) {
-      const a = donnees.assets[i]
+    // Traitement parallèle borné : les listes déroulantes partagées (statut,
+    // localisation, fabricant, modèle, utilisateur) sont dédupliquées via le
+    // cache de promesses de `trouverOuCreer`, donc aucun doublon malgré la
+    // concurrence. Chaque asset enregistre son rollback dès sa création.
+    await pool(donnees.assets, CONCURRENCE, async (a, i) => {
+      const config = ITEM_TYPES[a.itemType]
 
       // Doublon : asset déjà présent dans GLPI → réutilisé, pas recréé.
-      const mapExist = a.itemType === 'Computer' ? existantComputer : existantMonitor
+      const mapExist = bddAssets.get(a.itemType) ?? videMap
       const dejaId = mapExist.get(a.name.toLowerCase())
       if (dejaId !== undefined) {
         assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
         rapport.materielReutilise++
-        onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
-        continue
+        onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
+        return
       }
 
-      const statusId = await trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
-      const locationId = await trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
-      const manuId = await trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
-      const modelEp = a.itemType === 'Computer' ? EP.computerModel : EP.monitorModel
-      const modelId = await trouverOuCreer(modelEp, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
+      // Chaque champ n'est résolu que si le TYPE le supporte (cf. config.champs
+      // / statusField / modelEndpoint) ET si une valeur non vide est fournie.
+      // Les listes partagées sont dédupliquées par le cache de promesses.
+      const champs = new Set(config.champs)
+      const login = a.user ? slugLogin(a.user) || `user${i}` : ''
+      const [statusId, locationId, manuId, modelId, userId] = await Promise.all([
+        config.statusField && a.status
+          ? trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('location') && a.location
+          ? trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('manufacturer') && a.manufacturer
+          ? trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        config.modelEndpoint && a.model
+          ? trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('user') && login
+          ? trouverOuCreer(EP.user, 'username', login, { username: login, realname: a.user }, { compteur: 'utilisateurs', restaurer: true })
+          : Promise.resolve(undefined),
+      ])
 
-      const corps: Record<string, unknown> = {
-        name: a.name,
-        status: { id: statusId },
-        location: { id: locationId },
-        manufacturer: { id: manuId },
-        model: { id: modelId },
-      }
-      if (a.inventoryNumber) corps.otherserial = a.inventoryNumber
-      if (a.user) {
-        const login = slugLogin(a.user) || `user${i}`
-        const userId = await trouverOuCreer(
-          EP.user,
-          'username',
-          login,
-          { username: login, realname: a.user },
-          { compteur: 'utilisateurs', restaurer: true },
-        )
-        corps.user = { id: userId }
-      }
+      const corps: Record<string, unknown> = { name: a.name }
+      if (config.statusField && statusId !== undefined) corps[config.statusField] = { id: statusId }
+      if (locationId !== undefined) corps.location = { id: locationId }
+      if (manuId !== undefined) corps.manufacturer = { id: manuId }
+      if (modelId !== undefined) corps.model = { id: modelId }
+      if (userId !== undefined) corps.user = { id: userId }
+      if (champs.has('otherserial') && a.inventoryNumber) corps.otherserial = a.inventoryNumber
 
-      const endpoint = a.itemType === 'Computer' ? EP.computer : EP.monitor
-      const id = await creer(endpoint, corps)
-      planifierSuppressionHL(`${endpoint}/${id}`)
+      const id = await creer(config.assetEndpoint, corps)
+      planifierSuppressionHL(`${config.assetEndpoint}/${id}`)
       assetParNom.set(a.name, { id, itemType: a.itemType })
       rapport.cree.materiel++
-      onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
-    }
+      onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
+    })
 
     // ── Étape 2 : images → documents liés (API legacy) ──
     if (zip && donnees.images.length > 0 && uploadDisponible()) {
@@ -353,7 +431,7 @@ export async function importer(
               blob: img.blob,
               filename: img.filename,
               name: img.filename,
-              itemtype: asset.itemType,
+              itemtype: ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType,
               items_id: asset.id,
             })
             annulations.push(() => supprimerDocument(docId))
@@ -370,32 +448,37 @@ export async function importer(
     rapport.imagesIgnorees = donnees.images.length - rapport.cree.documents
 
     // ── Étape 3 : tickets ──
+    // GLPI impose le workflow depuis « Nouveau » : créer un ticket directement
+    // dans un statut avancé (résolu, clos…) est refusé, et un ticket clos REFUSE
+    // ensuite l'ajout de coûts ou de matériel lié. On crée donc en statut New (1)
+    // et on applique le statut final tout à la fin (étape 6), une fois coûts et
+    // liens rattachés.
     const etape3 = 'Tickets'
-    const ticketIdParRef = new Map<number, number>()
+    const ticketIdParRef = new Map<string, number>()
+    let faits3 = 0
     onProgress({ etape: etape3, courant: 0, total: donnees.tickets.length })
-    for (let i = 0; i < donnees.tickets.length; i++) {
-      const t = donnees.tickets[i]
+    await pool(donnees.tickets, CONCURRENCE, async (t) => {
       const id = await creer(EP.ticket, {
         name: t.titre,
         content: t.description,
         type: t.type,
         priority: t.priority,
-        status: { id: t.status },
+        status: { id: STATUT_NEW },
         date: t.date,
       })
       planifierSuppressionHL(`${EP.ticket}/${id}`)
       ticketIdParRef.set(t.ref, id)
       rapport.cree.tickets++
-      onProgress({ etape: etape3, courant: i + 1, total: donnees.tickets.length })
-    }
+      onProgress({ etape: etape3, courant: ++faits3, total: donnees.tickets.length })
+    })
 
     // ── Étape 4 : coûts ──
     const etape4 = 'Coûts des tickets'
+    let faits4 = 0
     onProgress({ etape: etape4, courant: 0, total: donnees.couts.length })
-    for (let i = 0; i < donnees.couts.length; i++) {
-      const c = donnees.couts[i]
+    await pool(donnees.couts, CONCURRENCE, async (c) => {
       const ticketId = ticketIdParRef.get(c.numTicket)
-      if (ticketId === undefined) continue // validé en amont
+      if (ticketId === undefined) return // validé en amont
       const id = await creer(`${EP.ticket}/${ticketId}/Cost`, {
         name: 'Coût (import CSV)',
         duration: c.duration,
@@ -404,8 +487,8 @@ export async function importer(
       })
       planifierSuppressionHL(`${EP.ticket}/${ticketId}/Cost/${id}`)
       rapport.cree.couts++
-      onProgress({ etape: etape4, courant: i + 1, total: donnees.couts.length })
-    }
+      onProgress({ etape: etape4, courant: ++faits4, total: donnees.couts.length })
+    })
 
     // ── Étape 5 : liens matériel ↔ ticket (relation Item_Ticket, API legacy) ──
     // Comme les images : best-effort et non bloquant. La colonne Items de la
@@ -415,10 +498,31 @@ export async function importer(
       const ticketId = ticketIdParRef.get(t.ref)
       if (ticketId === undefined) continue
       for (const nom of t.items) {
-        const asset = assetParNom.get(nom)
-        if (!asset) continue // asset absent (improbable : validé en amont)
+        // Asset créé/réutilisé dans cet import, sinon matériel déjà en base
+        // (cas d'un import de la Feuille 2 seule, sans la Feuille 1).
+        let asset = assetParNom.get(nom)
+        if (!asset) {
+          const cle = nom.toLowerCase()
+          for (const [t, map] of bddAssets) {
+            const id = map.get(cle)
+            if (id !== undefined) {
+              asset = { id, itemType: t }
+              break
+            }
+          }
+        }
+        if (!asset) continue // asset introuvable (validé en amont)
+        // Certains types (Cable, Socket…) ne sont pas associables à un ticket
+        // dans GLPI : tenter le lien renvoie une 500. On l'ignore proprement.
+        if (ITEM_TYPES[asset.itemType].associableTicket === false) {
+          rapport.liensIgnoresInfo.push(
+            `${nom} ↔ ticket #${t.ref} — type ${asset.itemType} non associable aux tickets`,
+          )
+          continue
+        }
+        // itemtype = classe GLPI (namespacée pour Socket), pas la clé interne.
         liens.push({
-          itemType: asset.itemType,
+          itemType: ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType,
           itemId: asset.id,
           ticketId,
           libelle: `${nom} ↔ ticket #${t.ref}`,
@@ -446,25 +550,44 @@ export async function importer(
         }
       }
 
-      for (let i = 0; sessionOk && i < liens.length; i++) {
-        const l = liens[i]
-        try {
-          const id = await lierItemTicket({
-            itemtype: l.itemType,
-            items_id: l.itemId,
-            tickets_id: l.ticketId,
-          })
-          annulations.push(() => supprimerItemTicket(id))
-          rapport.cree.liens++
-        } catch (err) {
-          rapport.liensEchecs.push(
-            `${l.libelle} — ${err instanceof Error ? err.message : String(err)}`,
-          )
-        }
-        onProgress({ etape: etape5, courant: i + 1, total: liens.length })
+      let faits5 = 0
+      if (sessionOk) {
+        await pool(liens, CONCURRENCE, async (l) => {
+          try {
+            const id = await lierItemTicket({
+              itemtype: l.itemType,
+              items_id: l.itemId,
+              tickets_id: l.ticketId,
+            })
+            annulations.push(() => supprimerItemTicket(id))
+            rapport.cree.liens++
+          } catch (err) {
+            rapport.liensEchecs.push(
+              `${l.libelle} — ${err instanceof Error ? err.message : String(err)}`,
+            )
+          }
+          onProgress({ etape: etape5, courant: ++faits5, total: liens.length })
+        })
       }
     }
     rapport.liensIgnores = totalLiens - rapport.cree.liens
+
+    // ── Étape 6 : statut final des tickets ──
+    // Appliqué EN DERNIER : un ticket clos/résolu refuse l'ajout de coûts et de
+    // matériel lié, faits aux étapes 4 et 5 pendant que le ticket est « Nouveau ».
+    const aBasculer = donnees.tickets.filter((t) => t.status !== STATUT_NEW)
+    if (aBasculer.length > 0) {
+      const etape6 = 'Statut des tickets'
+      let faits6 = 0
+      onProgress({ etape: etape6, courant: 0, total: aBasculer.length })
+      await pool(aBasculer, CONCURRENCE, async (t) => {
+        const ticketId = ticketIdParRef.get(t.ref)
+        if (ticketId !== undefined) {
+          await mettreAJour(`${EP.ticket}/${ticketId}`, { status: { id: t.status } })
+        }
+        onProgress({ etape: etape6, courant: ++faits6, total: aBasculer.length })
+      })
+    }
 
     rapport.ok = true
     return rapport

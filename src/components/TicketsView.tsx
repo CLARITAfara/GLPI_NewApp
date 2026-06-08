@@ -3,12 +3,15 @@ import { formatDate } from '../format'
 import {
   CLASSE_STATUT,
   getCouts,
+  getHistoriqueStatut,
   getTicket,
+  historiqueDisponible,
   libellePriorite,
   libelleStatut,
   libelleType,
   lireId,
   listerTickets,
+  type ChangementStatut,
   type CoutTicket,
   type Ticket,
 } from '../services/ticketsApi'
@@ -126,11 +129,18 @@ export function TicketsView() {
 
 // ── Fiche détaillée d'un ticket ──────────────────────────────────────────────
 
+type HistoStatus = 'loading' | 'ready' | 'error'
+
 function TicketFiche({ id }: { id: number }) {
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [couts, setCouts] = useState<CoutTicket[]>([])
   const [status, setStatus] = useState<Status>('loading')
   const [error, setError] = useState('')
+  const [historique, setHistorique] = useState<ChangementStatut[]>([])
+  const [histoStatus, setHistoStatus] = useState<HistoStatus>('loading')
+  // Stable sur la session (dépend uniquement de la config) : calculé au rendu
+  // plutôt que stocké, pour piloter l'affichage sans setState dans l'effet.
+  const histoDispo = historiqueDisponible()
 
   useEffect(() => {
     let active = true
@@ -151,6 +161,27 @@ function TicketFiche({ id }: { id: number }) {
       active = false
     }
   }, [id])
+
+  // Historique de statut chargé à part : son indisponibilité (jeton legacy
+  // absent, ou échec API) ne doit pas empêcher l'affichage de la fiche.
+  useEffect(() => {
+    if (!histoDispo) return
+    let active = true
+    setHistoStatus('loading')
+    getHistoriqueStatut(id)
+      .then((h) => {
+        if (!active) return
+        setHistorique(h)
+        setHistoStatus('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setHistoStatus('error')
+      })
+    return () => {
+      active = false
+    }
+  }, [id, histoDispo])
 
   if (status === 'loading') return <p className="muted">Chargement de la fiche…</p>
   if (status === 'error')
@@ -199,6 +230,15 @@ function TicketFiche({ id }: { id: number }) {
         )}
       </div>
 
+      <div className="fiche-section">
+        <h4>Historique du statut</h4>
+        <HistoriqueStatut
+          disponible={histoDispo}
+          statut={histoStatus}
+          historique={historique}
+        />
+      </div>
+
       {couts.length > 0 && (
         <div className="fiche-section">
           <h4>Coûts</h4>
@@ -236,6 +276,53 @@ function Champ({ label, valeur }: { label: string; valeur: string }) {
       <dt>{label}</dt>
       <dd>{valeur}</dd>
     </div>
+  )
+}
+
+/** Badge de statut à partir d'un id (1..6), « — » si absent. */
+function BadgeStatut({ id }: { id?: number }) {
+  return (
+    <span className={`statut-badge ${id ? CLASSE_STATUT[id] ?? '' : ''}`}>
+      {libelleStatut(id)}
+    </span>
+  )
+}
+
+function HistoriqueStatut({
+  disponible,
+  statut,
+  historique,
+}: {
+  disponible: boolean
+  statut: HistoStatus
+  historique: ChangementStatut[]
+}) {
+  if (!disponible)
+    return (
+      <p className="muted small">
+        Historique indisponible : jeton API GLPI non configuré.
+      </p>
+    )
+  if (statut === 'loading') return <p className="muted small">Chargement de l'historique…</p>
+  if (statut === 'error')
+    return <p className="muted small">Historique du statut indisponible.</p>
+  if (historique.length === 0)
+    return <p className="muted small">Aucun changement de statut enregistré.</p>
+
+  return (
+    <ol className="statut-timeline">
+      {historique.map((h) => (
+        <li key={h.id} className="statut-timeline-item">
+          <span className="statut-timeline-date">{formatDate(h.date)}</span>
+          <span className="statut-timeline-change">
+            <BadgeStatut id={h.ancien} />
+            <span className="statut-timeline-arrow">→</span>
+            <BadgeStatut id={h.nouveau} />
+          </span>
+          <span className="statut-timeline-user muted">par {h.auteur}</span>
+        </li>
+      ))}
+    </ol>
   )
 }
 

@@ -168,9 +168,9 @@ function PhaseSelection({
   return (
     <div>
       <p className="muted reset-intro">
-        Ressources concernées par les imports Excel/CSV (tickets, ordinateurs,
-        moniteurs). Le nombre indiqué correspond aux enregistrements actuellement
-        en base GLPI.
+        Ressources concernées par les imports Excel/CSV (tickets, matériel de
+        tous types, utilisateurs, localisations…). Le nombre indiqué correspond
+        aux enregistrements actuellement en base GLPI.
       </p>
       <div className="reset-warning">
         ⚠️ Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.

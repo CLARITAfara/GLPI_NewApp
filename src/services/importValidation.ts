@@ -10,6 +10,7 @@ import {
   normaliser,
   type ColonneSchema,
   type FichierSchema,
+  type ItemType,
 } from './importSchemas'
 
 // ─── Types de sortie ─────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ export interface ErreurValidation {
 export interface AssetImport {
   numLigne: number
   name: string
-  itemType: 'Computer' | 'Monitor'
+  itemType: ItemType
   status: string
   location: string
   manufacturer: string
@@ -40,7 +41,8 @@ export interface AssetImport {
 
 export interface TicketImport {
   numLigne: number
-  ref: number
+  /** Référence libre (clé de liaison interne, ex. « TK-001 »). */
+  ref: string
   /** "YYYY-MM-DD HH:MM:SS" */
   date: string
   type: number
@@ -53,7 +55,7 @@ export interface TicketImport {
 
 export interface CoutImport {
   numLigne: number
-  numTicket: number
+  numTicket: string
   duration: number
   costTime: number
   costFixed: number
@@ -410,7 +412,17 @@ function baseSansExt(chemin: string): string {
 
 // ─── Point d'entrée ──────────────────────────────────────────────────────────
 
-export function validerImport(entrees: EntreesImport): ResultatValidation {
+/**
+ * @param entrees       Contenu des feuilles CSV (et ZIP) à valider.
+ * @param assetsBddNoms Noms (en minuscules) des matériels déjà présents dans
+ *   GLPI. Un `Items` de la Feuille 2 est valide s'il figure dans la Feuille 1
+ *   OU dans cet ensemble. `null` = GLPI injoignable : la vérification se limite
+ *   alors à la Feuille 1 (tout matériel absent de la Feuille 1 est bloqué).
+ */
+export function validerImport(
+  entrees: EntreesImport,
+  assetsBddNoms?: Set<string> | null,
+): ResultatValidation {
   const erreurs: ErreurValidation[] = []
 
   const donnees: DonneesImport = {
@@ -422,22 +434,18 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
     assetsSansImage: [],
   }
 
-  // Fichiers CSV obligatoires
-  const requis: [keyof EntreesImport, FichierSchema][] = [
-    ['inventaire', SCHEMA_INVENTAIRE],
-    ['tickets', SCHEMA_TICKETS],
-    ['couts', SCHEMA_COUTS],
-  ]
-  for (const [cle, schema] of requis) {
-    if (!entrees[cle]) {
-      erreurs.push({
-        fichier: schema.libelle,
-        ligne: null,
-        colonne: '—',
-        valeur: '',
-        message: 'fichier manquant',
-      })
-    }
+  // Chaque feuille peut être importée seule : au moins un CSV suffit.
+  // Les dépendances entre feuilles (Items→Inventaire, Num_Ticket→Tickets) sont
+  // vérifiées plus bas — un import partiel est BLOQUÉ s'il contient des lignes
+  // qui référencent une feuille non fournie.
+  if (!entrees.inventaire && !entrees.tickets && !entrees.couts) {
+    erreurs.push({
+      fichier: '—',
+      ligne: null,
+      colonne: '—',
+      valeur: '',
+      message: 'aucun fichier CSV fourni — sélectionnez au moins une feuille',
+    })
   }
 
   const invAnalyse = entrees.inventaire
@@ -468,7 +476,7 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
     donnees.assets.push({
       numLigne,
       name,
-      itemType: valeurs.Item_Type as 'Computer' | 'Monitor',
+      itemType: valeurs.Item_Type as ItemType,
       status: String(valeurs.Status),
       location: String(valeurs.Location),
       manufacturer: String(valeurs.Manufacturer),
@@ -479,29 +487,35 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
   }
 
   // ── Construction des tickets + doublons de Ref + cohérence Items ──
-  const refsTickets = new Set<number>()
+  const refsTickets = new Set<string>()
   for (const { numLigne, valeurs } of tickAnalyse.lignes) {
-    const ref = Number(valeurs.Ref_Ticket)
+    const ref = String(valeurs.Ref_Ticket)
     if (refsTickets.has(ref)) {
       erreurs.push({
         fichier: SCHEMA_TICKETS.libelle,
         ligne: numLigne,
         colonne: 'Ref_Ticket',
-        valeur: String(ref),
+        valeur: ref,
         message: 'référence en double',
       })
       continue
     }
 
     const items = valeurs.Items as string[]
-    const inconnus = items.filter((it) => !nomsAssets.has(it))
+    // Un matériel lié est valide s'il est dans la Feuille 1 OU déjà présent en
+    // base GLPI. Sinon le ticket est bloqué.
+    const inconnus = items.filter(
+      (it) => !nomsAssets.has(it) && !(assetsBddNoms?.has(it.toLowerCase()) ?? false),
+    )
     if (inconnus.length > 0) {
+      const ou = entrees.inventaire ? 'la Feuille 1' : 'la Feuille 1 (non fournie)'
+      const bdd = assetsBddNoms === null ? ' (vérification GLPI impossible)' : ' ni dans GLPI'
       erreurs.push({
         fichier: SCHEMA_TICKETS.libelle,
         ligne: numLigne,
         colonne: 'Items',
         valeur: tronquer(inconnus.join(', ')),
-        message: `asset(s) introuvable(s) dans la Feuille 1 : ${inconnus.join(', ')}`,
+        message: `matériel(s) introuvable(s) dans ${ou}${bdd} : ${inconnus.join(', ')}`,
       })
       continue
     }
@@ -522,14 +536,16 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
 
   // ── Construction des coûts + cohérence Num_Ticket ──
   for (const { numLigne, valeurs } of coutAnalyse.lignes) {
-    const numTicket = Number(valeurs.Num_Ticket)
+    const numTicket = String(valeurs.Num_Ticket)
     if (!refsTickets.has(numTicket)) {
       erreurs.push({
         fichier: SCHEMA_COUTS.libelle,
         ligne: numLigne,
         colonne: 'Num_Ticket',
-        valeur: String(numTicket),
-        message: 'ticket introuvable dans la Feuille 2',
+        valeur: numTicket,
+        message: entrees.tickets
+          ? 'ticket introuvable dans la Feuille 2'
+          : 'Feuille 2 (Tickets) non fournie — requise pour rattacher ce coût',
       })
       continue
     }
