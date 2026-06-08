@@ -203,6 +203,64 @@ export async function compterItemLegacy(itemtype: string): Promise<number> {
 }
 
 /**
+ * Liste tous les IDs d'un itemtype via l'API legacy, pour les types que l'API
+ * High-Level n'expose pas (CartridgeItem, ConsumableItem). Pagine via l'en-tête
+ * `range` (start-end inclusif) et le Content-Range. Nécessite VITE_GLPI_USER_TOKEN.
+ */
+export async function listerIdsLegacy(itemtype: string): Promise<number[]> {
+  await ouvrirSession()
+
+  const ids: number[] = []
+  const pageSize = 500
+  let start = 0
+
+  while (true) {
+    const end = start + pageSize - 1
+    const res = await fetch(`${BASE}/${itemtype}?range=${start}-${end}&only_id=true`, {
+      headers: entetes({ 'Session-Token': sessionToken! }),
+    })
+    // Liste vide / plage dépassée → 400 (ERROR_RANGE_EXCEED_TOTAL) : on s'arrête.
+    if (res.status === 400) break
+    if (!res.ok && res.status !== 206) {
+      const detail = detailErreur(await res.text().catch(() => ''))
+      throw new Error(`GET ${itemtype} (list) → ${res.status}${detail ? ` (${detail})` : ''}`)
+    }
+
+    const data = (await res.json()) as Array<Record<string, unknown>>
+    for (const row of data) {
+      const id = Number(row.id)
+      if (Number.isFinite(id)) ids.push(id)
+    }
+
+    const range = res.headers.get('Content-Range')
+    const total = range ? Number(range.slice(range.lastIndexOf('/') + 1)) : ids.length
+    start += data.length
+    if (data.length === 0 || start >= total) break
+  }
+
+  return ids
+}
+
+/**
+ * Supprime définitivement un élément legacy (CartridgeItem, ConsumableItem) en
+ * remontant les erreurs — destiné à la réinitialisation (contrairement à
+ * `supprimerItemLegacy`, best-effort utilisé pour les rollbacks). Un 404 est
+ * traité comme succès (déjà supprimé). Nécessite VITE_GLPI_USER_TOKEN.
+ */
+export async function purgerItemLegacy(itemtype: string, id: number): Promise<void> {
+  await ouvrirSession()
+
+  const res = await fetch(`${BASE}/${itemtype}/${id}?force_purge=true`, {
+    method: 'DELETE',
+    headers: entetes({ 'Session-Token': sessionToken! }),
+  })
+  if (res.ok || res.status === 404) return
+
+  const detail = detailErreur(await res.text().catch(() => ''))
+  throw new Error(`DELETE ${itemtype}/${id} → ${res.status}${detail ? ` (${detail})` : ''}`)
+}
+
+/**
  * Une ligne brute de la table `glpi_logs`, telle que renvoyée par l'API legacy
  * dans le champ `_logs` quand on passe `with_logs=true`.
  */

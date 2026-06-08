@@ -104,8 +104,11 @@ export function ResetPanel() {
 
   return (
     <section className="panel">
-      <div className="panel-head">
-        <h2>🗑️ Réinitialisation</h2>
+      <div className="panel-head reset-panel-head">
+        <h2>
+          <span className="reset-head-icon">🗑️</span>
+          Réinitialisation
+        </h2>
       </div>
 
       {phase === 'selection' && (
@@ -173,7 +176,7 @@ function PhaseSelection({
         aux enregistrements actuellement en base GLPI.
       </p>
       <div className="reset-warning">
-        ⚠️ Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
+        Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
       </div>
 
       <label className="reset-select-all">
@@ -208,7 +211,9 @@ function PhaseSelection({
               <span className="reset-ressource-icone">{m.icone}</span>
               <span className="reset-module-info">
                 <span className="reset-ressource-label">{m.label}</span>
-                <span className="muted" style={{ fontSize: 13 }}>{m.description}</span>
+                <span className="reset-ressource-desc muted" title={m.description}>
+                  {m.description}
+                </span>
               </span>
               <span className="reset-ep-count" title={labelNombre}>{texte}</span>
             </label>
