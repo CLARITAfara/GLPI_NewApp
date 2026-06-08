@@ -51,6 +51,11 @@ export interface RapportImport {
    * lien : "PC ↔ ticket #N — message".
    */
   liensEchecs: string[]
+  /**
+   * Liens volontairement ignorés (information, pas une erreur) : types non
+   * associables aux tickets dans GLPI (Cable, Socket…). Une entrée par lien.
+   */
+  liensIgnoresInfo: string[]
   /** Images non importées (sans asset, jeton legacy absent, ou upload refusé). */
   imagesIgnorees: number
   /**
@@ -149,12 +154,17 @@ async function creer(endpoint: string, corps: Record<string, unknown>): Promise<
  * minuscules pour une comparaison insensible à la casse. La corbeille est
  * exclue (on ne déduplique que sur les éléments actifs).
  */
-async function chargerNomsExistants(endpoint: string): Promise<Map<string, number>> {
+async function chargerNomsExistants(
+  endpoint: string,
+  sansCorbeille = false,
+): Promise<Map<string, number>> {
   const map = new Map<string, number>()
   const pageSize = 500
   let start = 0
   while (true) {
-    const { items, total } = await fetchList(endpoint, { start, limit: pageSize })
+    // Les types sans corbeille (pas de champ is_deleted, ex. Socket) ne
+    // supportent pas le filtre is_deleted==false → on l'omet.
+    const { items, total } = await fetchList(endpoint, { start, limit: pageSize, includeDeleted: sansCorbeille })
     for (const it of items) {
       const nom = String((it as Record<string, unknown>).name ?? '').toLowerCase()
       if (nom && typeof it.id === 'number' && !map.has(nom)) map.set(nom, it.id)
@@ -185,7 +195,14 @@ export async function chargerAssetsExistants(): Promise<AssetsBdd> {
   const types = Object.keys(ITEM_TYPES) as ItemType[]
   await Promise.all(
     types.map(async (t) => {
-      bdd.set(t, await chargerNomsExistants(ITEM_TYPES[t].assetEndpoint))
+      const c = ITEM_TYPES[t]
+      try {
+        bdd.set(t, await chargerNomsExistants(c.assetEndpoint, c.sansCorbeille))
+      } catch {
+        // Type indisponible (désactivé/non autorisé sur cette instance) : on
+        // l'ignore pour la détection plutôt que de faire échouer tout le reste.
+        bdd.set(t, new Map())
+      }
     }),
   )
   return bdd
@@ -240,6 +257,7 @@ export async function importer(
     materielReutilise: 0,
     liensIgnores: totalLiens,
     liensEchecs: [],
+    liensIgnoresInfo: [],
     imagesIgnorees: donnees.images.length,
     imagesEchecs: [],
     rollback: false,
@@ -343,32 +361,36 @@ export async function importer(
         return
       }
 
-      const [statusId, locationId, manuId, modelId] = await Promise.all([
-        trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' }),
-        trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' }),
-        trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' }),
-        trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' }),
+      // Chaque champ n'est résolu que si le TYPE le supporte (cf. config.champs
+      // / statusField / modelEndpoint) ET si une valeur non vide est fournie.
+      // Les listes partagées sont dédupliquées par le cache de promesses.
+      const champs = new Set(config.champs)
+      const login = a.user ? slugLogin(a.user) || `user${i}` : ''
+      const [statusId, locationId, manuId, modelId, userId] = await Promise.all([
+        config.statusField && a.status
+          ? trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('location') && a.location
+          ? trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('manufacturer') && a.manufacturer
+          ? trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        config.modelEndpoint && a.model
+          ? trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
+          : Promise.resolve(undefined),
+        champs.has('user') && login
+          ? trouverOuCreer(EP.user, 'username', login, { username: login, realname: a.user }, { compteur: 'utilisateurs', restaurer: true })
+          : Promise.resolve(undefined),
       ])
 
-      const corps: Record<string, unknown> = {
-        name: a.name,
-        status: { id: statusId },
-        location: { id: locationId },
-        manufacturer: { id: manuId },
-        model: { id: modelId },
-      }
-      if (a.inventoryNumber) corps.otherserial = a.inventoryNumber
-      if (a.user) {
-        const login = slugLogin(a.user) || `user${i}`
-        const userId = await trouverOuCreer(
-          EP.user,
-          'username',
-          login,
-          { username: login, realname: a.user },
-          { compteur: 'utilisateurs', restaurer: true },
-        )
-        corps.user = { id: userId }
-      }
+      const corps: Record<string, unknown> = { name: a.name }
+      if (config.statusField && statusId !== undefined) corps[config.statusField] = { id: statusId }
+      if (locationId !== undefined) corps.location = { id: locationId }
+      if (manuId !== undefined) corps.manufacturer = { id: manuId }
+      if (modelId !== undefined) corps.model = { id: modelId }
+      if (userId !== undefined) corps.user = { id: userId }
+      if (champs.has('otherserial') && a.inventoryNumber) corps.otherserial = a.inventoryNumber
 
       const id = await creer(config.assetEndpoint, corps)
       planifierSuppressionHL(`${config.assetEndpoint}/${id}`)
@@ -409,7 +431,7 @@ export async function importer(
               blob: img.blob,
               filename: img.filename,
               name: img.filename,
-              itemtype: asset.itemType,
+              itemtype: ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType,
               items_id: asset.id,
             })
             annulations.push(() => supprimerDocument(docId))
@@ -432,7 +454,7 @@ export async function importer(
     // et on applique le statut final tout à la fin (étape 6), une fois coûts et
     // liens rattachés.
     const etape3 = 'Tickets'
-    const ticketIdParRef = new Map<number, number>()
+    const ticketIdParRef = new Map<string, number>()
     let faits3 = 0
     onProgress({ etape: etape3, courant: 0, total: donnees.tickets.length })
     await pool(donnees.tickets, CONCURRENCE, async (t) => {
@@ -490,8 +512,17 @@ export async function importer(
           }
         }
         if (!asset) continue // asset introuvable (validé en amont)
+        // Certains types (Cable, Socket…) ne sont pas associables à un ticket
+        // dans GLPI : tenter le lien renvoie une 500. On l'ignore proprement.
+        if (ITEM_TYPES[asset.itemType].associableTicket === false) {
+          rapport.liensIgnoresInfo.push(
+            `${nom} ↔ ticket #${t.ref} — type ${asset.itemType} non associable aux tickets`,
+          )
+          continue
+        }
+        // itemtype = classe GLPI (namespacée pour Socket), pas la clé interne.
         liens.push({
-          itemType: asset.itemType,
+          itemType: ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType,
           itemId: asset.id,
           ticketId,
           libelle: `${nom} ↔ ticket #${t.ref}`,

@@ -7,6 +7,17 @@ import { config } from '../config'
 
 const BASE = `${config.apiBaseUrl}/v1`
 
+/**
+ * Condense un corps d'erreur legacy en message court. GLPI renvoie parfois une
+ * page HTML complète (erreur 500) : inutile de la déverser dans le rapport.
+ */
+function detailErreur(corps: string): string {
+  const t = corps.trim()
+  if (t === '') return ''
+  if (/^\s*<(!doctype|html)/i.test(t)) return 'erreur interne GLPI (HTML)'
+  return t.slice(0, 200)
+}
+
 let sessionToken: string | null = null
 
 /** True si un jeton est configuré (sinon l'upload d'images est désactivé). */
@@ -156,8 +167,8 @@ export async function lierItemTicket(opts: {
     }),
   })
   if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    throw new Error(`POST Item_Ticket → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+    const detail = detailErreur(await res.text().catch(() => ''))
+    throw new Error(`POST Item_Ticket → ${res.status}${detail ? ` (${detail})` : ''}`)
   }
   const data: unknown = await res.json()
   const id = Array.isArray(data)

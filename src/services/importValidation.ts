@@ -41,7 +41,8 @@ export interface AssetImport {
 
 export interface TicketImport {
   numLigne: number
-  ref: number
+  /** Référence libre (clé de liaison interne, ex. « TK-001 »). */
+  ref: string
   /** "YYYY-MM-DD HH:MM:SS" */
   date: string
   type: number
@@ -54,7 +55,7 @@ export interface TicketImport {
 
 export interface CoutImport {
   numLigne: number
-  numTicket: number
+  numTicket: string
   duration: number
   costTime: number
   costFixed: number
@@ -486,15 +487,15 @@ export function validerImport(
   }
 
   // ── Construction des tickets + doublons de Ref + cohérence Items ──
-  const refsTickets = new Set<number>()
+  const refsTickets = new Set<string>()
   for (const { numLigne, valeurs } of tickAnalyse.lignes) {
-    const ref = Number(valeurs.Ref_Ticket)
+    const ref = String(valeurs.Ref_Ticket)
     if (refsTickets.has(ref)) {
       erreurs.push({
         fichier: SCHEMA_TICKETS.libelle,
         ligne: numLigne,
         colonne: 'Ref_Ticket',
-        valeur: String(ref),
+        valeur: ref,
         message: 'référence en double',
       })
       continue
@@ -535,13 +536,13 @@ export function validerImport(
 
   // ── Construction des coûts + cohérence Num_Ticket ──
   for (const { numLigne, valeurs } of coutAnalyse.lignes) {
-    const numTicket = Number(valeurs.Num_Ticket)
+    const numTicket = String(valeurs.Num_Ticket)
     if (!refsTickets.has(numTicket)) {
       erreurs.push({
         fichier: SCHEMA_COUTS.libelle,
         ligne: numLigne,
         colonne: 'Num_Ticket',
-        valeur: String(numTicket),
+        valeur: numTicket,
         message: entrees.tickets
           ? 'ticket introuvable dans la Feuille 2'
           : 'Feuille 2 (Tickets) non fournie — requise pour rattacher ce coût',

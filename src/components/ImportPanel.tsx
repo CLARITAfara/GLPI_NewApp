@@ -448,6 +448,18 @@ function PhaseRapport({
         </div>
       )}
 
+      {rapport.liensIgnoresInfo.length > 0 && (
+        <div className="reset-msg">
+          ℹ️ {rapport.liensIgnoresInfo.length} lien(s) ignoré(s) — type non associable aux tickets
+          dans GLPI (normal, ce n'est pas une erreur) :
+          <ul className="import-resume" style={{ marginTop: 8 }}>
+            {rapport.liensIgnoresInfo.map((m, i) => (
+              <li key={i} className="small">{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {rapport.imagesEchecs.length > 0 && (
         <div className="reset-warning">
           ⚠️ {rapport.imagesEchecs.length} image(s) non importée(s) (sans bloquer l'import) :

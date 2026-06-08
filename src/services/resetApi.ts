@@ -171,7 +171,7 @@ const MODULES_ASSETS: ModuleReset[] = (Object.keys(ITEM_TYPES) as ItemType[]).ma
       label: c.libelle,
       icone: c.icone,
       description: `${c.libelle} de l'inventaire (Item_Type = ${t})`,
-      endpoints: [{ endpoint: c.assetEndpoint, label: c.libelle }],
+      endpoints: [{ endpoint: c.assetEndpoint, label: c.libelle, sansCorbeille: c.sansCorbeille }],
     }
   },
 )
