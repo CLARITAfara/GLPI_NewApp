@@ -10,6 +10,7 @@ import {
   normaliser,
   type ColonneSchema,
   type FichierSchema,
+  type ItemType,
 } from './importSchemas'
 
 // ─── Types de sortie ─────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ export interface ErreurValidation {
 export interface AssetImport {
   numLigne: number
   name: string
-  itemType: 'Computer' | 'Monitor'
+  itemType: ItemType
   status: string
   location: string
   manufacturer: string
@@ -468,7 +469,7 @@ export function validerImport(entrees: EntreesImport): ResultatValidation {
     donnees.assets.push({
       numLigne,
       name,
-      itemType: valeurs.Item_Type as 'Computer' | 'Monitor',
+      itemType: valeurs.Item_Type as ItemType,
       status: String(valeurs.Status),
       location: String(valeurs.Location),
       manufacturer: String(valeurs.Manufacturer),

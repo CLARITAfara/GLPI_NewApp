@@ -29,16 +29,87 @@ export interface FichierSchema {
   colonnes: ColonneSchema[]
 }
 
+// ─── Types de matériel gérés (Feuille 1) ─────────────────────────────────────
+
+/**
+ * itemtypes GLPI gérés par l'import. Tous partagent le même jeu de champs
+ * (name / status / location / manufacturer / model / otherserial / user) et
+ * exposent à la fois un endpoint High-Level d'asset et un Dropdown de modèle.
+ */
+export type ItemType =
+  | 'Computer'
+  | 'Monitor'
+  | 'NetworkEquipment'
+  | 'Peripheral'
+  | 'Phone'
+  | 'Printer'
+
+export interface ItemTypeConfig {
+  itemType: ItemType
+  /** Endpoint High-Level de l'asset (liste / création). */
+  assetEndpoint: string
+  /** Endpoint High-Level du modèle associé (Dropdown). */
+  modelEndpoint: string
+  /** Pictogramme affiché dans l'UI. */
+  icone: string
+}
+
+/** Registre des itemtypes gérés → endpoints API + icône. */
+export const ITEM_TYPES: Record<ItemType, ItemTypeConfig> = {
+  Computer: { itemType: 'Computer', assetEndpoint: '/Assets/Computer', modelEndpoint: '/Dropdowns/ComputerModel', icone: '💻' },
+  Monitor: { itemType: 'Monitor', assetEndpoint: '/Assets/Monitor', modelEndpoint: '/Dropdowns/MonitorModel', icone: '🖥️' },
+  NetworkEquipment: { itemType: 'NetworkEquipment', assetEndpoint: '/Assets/NetworkEquipment', modelEndpoint: '/Dropdowns/NetworkEquipmentModel', icone: '🌐' },
+  Peripheral: { itemType: 'Peripheral', assetEndpoint: '/Assets/Peripheral', modelEndpoint: '/Dropdowns/PeripheralModel', icone: '🖱️' },
+  Phone: { itemType: 'Phone', assetEndpoint: '/Assets/Phone', modelEndpoint: '/Dropdowns/PhoneModel', icone: '📱' },
+  Printer: { itemType: 'Printer', assetEndpoint: '/Assets/Printer', modelEndpoint: '/Dropdowns/PrinterModel', icone: '🖨️' },
+}
+
 // ─── Tables de correspondance ────────────────────────────────────────────────
 
-/** Item_Type (Feuille 1) → itemtype GLPI géré par l'import. */
-export const TYPES_ITEM: Record<string, 'Computer' | 'Monitor'> = {
+/**
+ * Item_Type (Feuille 1) → itemtype GLPI géré par l'import. Plusieurs libellés
+ * (FR/EN, synonymes) pointent vers le même itemtype ; la comparaison est
+ * insensible à la casse (cf. `normaliser`).
+ */
+export const TYPES_ITEM: Record<string, ItemType> = {
+  // Computer
   computer: 'Computer',
   ordinateur: 'Computer',
+  pc: 'Computer',
+  laptop: 'Computer',
+  portable: 'Computer',
+  server: 'Computer',
+  serveur: 'Computer',
+  // Monitor
   monitor: 'Monitor',
   moniteur: 'Monitor',
   ecran: 'Monitor',
   écran: 'Monitor',
+  screen: 'Monitor',
+  // NetworkEquipment
+  networkequipment: 'NetworkEquipment',
+  'network equipment': 'NetworkEquipment',
+  'equipement reseau': 'NetworkEquipment',
+  'équipement réseau': 'NetworkEquipment',
+  reseau: 'NetworkEquipment',
+  réseau: 'NetworkEquipment',
+  switch: 'NetworkEquipment',
+  router: 'NetworkEquipment',
+  routeur: 'NetworkEquipment',
+  // Peripheral
+  peripheral: 'Peripheral',
+  peripherique: 'Peripheral',
+  périphérique: 'Peripheral',
+  device: 'Peripheral',
+  // Phone
+  phone: 'Phone',
+  telephone: 'Phone',
+  téléphone: 'Phone',
+  smartphone: 'Phone',
+  mobile: 'Phone',
+  // Printer
+  printer: 'Printer',
+  imprimante: 'Printer',
 }
 
 /** Type de ticket → code GLPI (1 = Incident, 2 = Demande). */

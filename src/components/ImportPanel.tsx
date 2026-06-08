@@ -12,6 +12,7 @@ import {
   type AssetExistant,
 } from '../services/importApi'
 import { uploadDisponible } from '../services/legacyApi'
+import { ITEM_TYPES } from '../services/importSchemas'
 
 type Phase = 'selection' | 'erreurs' | 'apercu' | 'execution' | 'rapport'
 
@@ -284,7 +285,7 @@ function PhaseApercu({
           <ul className="import-resume" style={{ marginTop: 8 }}>
             {assetsExistants.map((a) => (
               <li key={`${a.itemType}-${a.id}`} className="small">
-                {a.itemType === 'Computer' ? '💻' : '🖥️'} {a.name} (déjà présent, #{a.id})
+                {ITEM_TYPES[a.itemType].icone} {a.name} (déjà présent, #{a.id})
               </li>
             ))}
           </ul>

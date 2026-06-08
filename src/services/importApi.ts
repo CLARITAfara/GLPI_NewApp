@@ -10,6 +10,7 @@
 import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import { extraireImagesZip, type DonneesImport } from './importValidation'
+import { ITEM_TYPES, type ItemType } from './importSchemas'
 import {
   fermerSession,
   lierItemTicket,
@@ -63,15 +64,13 @@ export interface RapportImport {
 
 // ─── Endpoints ───────────────────────────────────────────────────────────────
 
+// Les endpoints par itemtype (asset + modèle) vivent dans ITEM_TYPES
+// (importSchemas.ts) ; ici seulement les listes partagées et les tickets.
 const EP = {
   state: '/Dropdowns/State',
   location: '/Dropdowns/Location',
   manufacturer: '/Dropdowns/Manufacturer',
-  computerModel: '/Dropdowns/ComputerModel',
-  monitorModel: '/Dropdowns/MonitorModel',
   user: '/Administration/User',
-  computer: '/Assets/Computer',
-  monitor: '/Assets/Monitor',
   ticket: '/Assistance/Ticket',
 }
 
@@ -148,30 +147,40 @@ async function chargerNomsExistants(endpoint: string): Promise<Map<string, numbe
 
 export interface AssetExistant {
   name: string
-  itemType: 'Computer' | 'Monitor'
+  itemType: ItemType
   id: number
+}
+
+/**
+ * Pré-charge les noms existants (nom→id) pour chaque itemtype présent dans les
+ * assets à importer. Une seule requête paginée par type concerné.
+ */
+async function chargerNomsParType(
+  donnees: DonneesImport,
+): Promise<Map<ItemType, Map<string, number>>> {
+  const typesPresents = [...new Set(donnees.assets.map((a) => a.itemType))]
+  const resultat = new Map<ItemType, Map<string, number>>()
+  await Promise.all(
+    typesPresents.map(async (t) => {
+      resultat.set(t, await chargerNomsExistants(ITEM_TYPES[t].assetEndpoint))
+    }),
+  )
+  return resultat
 }
 
 /**
  * Détecte, parmi les assets à importer, ceux qui existent DÉJÀ dans GLPI
  * (même nom + même type). Sert à prévenir l'utilisateur à la validation et à
- * éviter les doublons. Une seule requête paginée par type concerné.
+ * éviter les doublons.
  */
 export async function detecterAssetsExistants(
   donnees: DonneesImport,
 ): Promise<AssetExistant[]> {
-  const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
-  const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
-  const vide = new Map<string, number>()
-  const [computers, monitors] = await Promise.all([
-    besoinComputer ? chargerNomsExistants(EP.computer) : Promise.resolve(vide),
-    besoinMonitor ? chargerNomsExistants(EP.monitor) : Promise.resolve(vide),
-  ])
+  const nomsParType = await chargerNomsParType(donnees)
 
   const existants: AssetExistant[] = []
   for (const a of donnees.assets) {
-    const map = a.itemType === 'Computer' ? computers : monitors
-    const id = map.get(a.name.toLowerCase())
+    const id = nomsParType.get(a.itemType)?.get(a.name.toLowerCase())
     if (id !== undefined) existants.push({ name: a.name, itemType: a.itemType, id })
   }
   return existants
@@ -260,25 +269,23 @@ export async function importer(
       .replace(/^\.|\.$/g, '')
 
   // Assets créés : name → { id, itemType } (pour rattacher les images).
-  const assetParNom = new Map<string, { id: number; itemType: 'Computer' | 'Monitor' }>()
+  const assetParNom = new Map<string, { id: number; itemType: ItemType }>()
 
   try {
     // ── Étape 1 : matériel (résout listes + utilisateur, puis crée l'asset) ──
     // Anti-doublons : on pré-charge les noms existants par type ; un asset déjà
     // présent (même nom) est réutilisé tel quel au lieu d'être recréé.
-    const besoinComputer = donnees.assets.some((a) => a.itemType === 'Computer')
-    const besoinMonitor = donnees.assets.some((a) => a.itemType === 'Monitor')
+    const existantParType = await chargerNomsParType(donnees)
     const videMap = new Map<string, number>()
-    const existantComputer = besoinComputer ? await chargerNomsExistants(EP.computer) : videMap
-    const existantMonitor = besoinMonitor ? await chargerNomsExistants(EP.monitor) : videMap
 
-    const etape1 = 'Matériel (ordinateurs / moniteurs)'
+    const etape1 = 'Matériel (assets)'
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
     for (let i = 0; i < donnees.assets.length; i++) {
       const a = donnees.assets[i]
+      const config = ITEM_TYPES[a.itemType]
 
       // Doublon : asset déjà présent dans GLPI → réutilisé, pas recréé.
-      const mapExist = a.itemType === 'Computer' ? existantComputer : existantMonitor
+      const mapExist = existantParType.get(a.itemType) ?? videMap
       const dejaId = mapExist.get(a.name.toLowerCase())
       if (dejaId !== undefined) {
         assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
@@ -290,8 +297,7 @@ export async function importer(
       const statusId = await trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
       const locationId = await trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
       const manuId = await trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
-      const modelEp = a.itemType === 'Computer' ? EP.computerModel : EP.monitorModel
-      const modelId = await trouverOuCreer(modelEp, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
+      const modelId = await trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
 
       const corps: Record<string, unknown> = {
         name: a.name,
@@ -313,9 +319,8 @@ export async function importer(
         corps.user = { id: userId }
       }
 
-      const endpoint = a.itemType === 'Computer' ? EP.computer : EP.monitor
-      const id = await creer(endpoint, corps)
-      planifierSuppressionHL(`${endpoint}/${id}`)
+      const id = await creer(config.assetEndpoint, corps)
+      planifierSuppressionHL(`${config.assetEndpoint}/${id}`)
       assetParNom.set(a.name, { id, itemType: a.itemType })
       rapport.cree.materiel++
       onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
