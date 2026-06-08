@@ -57,7 +57,10 @@ export function TicketsView() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🎫 Tickets</h2>
+        <h2>
+          <i className="bi bi-ticket-detailed me-2" aria-hidden="true" />
+          Tickets
+        </h2>
         {status === 'ready' && <span className="count-badge">{total}</span>}
       </div>
 
@@ -144,6 +147,7 @@ function TicketFiche({ id }: { id: number }) {
 
   useEffect(() => {
     let active = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus('loading')
     Promise.all([getTicket(id), getCouts(id)])
       .then(([t, c]) => {
@@ -167,6 +171,7 @@ function TicketFiche({ id }: { id: number }) {
   useEffect(() => {
     if (!histoDispo) return
     let active = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistoStatus('loading')
     getHistoriqueStatut(id)
       .then((h) => {
@@ -197,17 +202,16 @@ function TicketFiche({ id }: { id: number }) {
 
   return (
     <article className="ticket-fiche">
-      <header className="fiche-head">
+      <div className="ticket-fiche-header">
         <div>
-          <span className="ticket-ref">#{ticket.id}</span>
+          <span className="ticket-fiche-id">#{ticket.id}</span>
           <h3>{ticket.name || '(sans titre)'}</h3>
         </div>
-        <span className={`statut-badge ${sid ? CLASSE_STATUT[sid] ?? '' : ''}`}>
-          {libelleStatut(ticket.status)}
-        </span>
-      </header>
 
-      <dl className="fiche-grid">
+        <BadgeStatut id={sid} />
+      </div>
+
+      <div className="ticket-grid">
         <Champ label="Type" valeur={libelleType(ticket.type)} />
         <Champ label="Priorité" valeur={libellePriorite(ticket.priority)} />
         <Champ label="Urgence" valeur={libellePriorite(ticket.urgency)} />
@@ -219,19 +223,21 @@ function TicketFiche({ id }: { id: number }) {
         <Champ label="Modifié le" valeur={formatDate(ticket.date_mod)} />
         {ticket.date_solve && <Champ label="Résolu le" valeur={formatDate(ticket.date_solve)} />}
         {ticket.date_close && <Champ label="Clos le" valeur={formatDate(ticket.date_close)} />}
-      </dl>
+      </div>
 
-      <div className="fiche-section">
-        <h4>Description</h4>
+      <div className="ticket-section">
+        <h5>Description</h5>
+
         {description ? (
-          <p className="fiche-description">{description}</p>
+          <div className="ticket-description">{description}</div>
         ) : (
-          <p className="muted small">Aucune description.</p>
+          <div className="alert alert-light mb-0">Aucune description</div>
         )}
       </div>
 
-      <div className="fiche-section">
-        <h4>Historique du statut</h4>
+      <div className="ticket-section">
+        <h5>Historique du statut</h5>
+
         <HistoriqueStatut
           disponible={histoDispo}
           statut={histoStatus}
@@ -240,10 +246,11 @@ function TicketFiche({ id }: { id: number }) {
       </div>
 
       {couts.length > 0 && (
-        <div className="fiche-section">
-          <h4>Coûts</h4>
-          <div className="table-scroll">
-            <table className="data-table">
+        <div className="ticket-section">
+          <h5>Coûts associés</h5>
+
+          <div className="table-responsive">
+            <table className="table table-sm align-middle data-table">
               <thead>
                 <tr>
                   <th>Libellé</th>
@@ -252,6 +259,7 @@ function TicketFiche({ id }: { id: number }) {
                   <th>Coût fixe</th>
                 </tr>
               </thead>
+
               <tbody>
                 {couts.map((c) => (
                   <tr key={c.id}>
