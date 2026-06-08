@@ -167,6 +167,52 @@ export async function lierItemTicket(opts: {
   return id
 }
 
+/**
+ * Une ligne brute de la table `glpi_logs`, telle que renvoyée par l'API legacy
+ * dans le champ `_logs` quand on passe `with_logs=true`.
+ */
+export interface LegacyLog {
+  id: number
+  itemtype: string
+  items_id: number
+  itemtype_link: string
+  /** 0 = modification d'un champ ; >0 = action interne (voir constantes Log::HISTORY_*). */
+  linked_action: number
+  /** Auteur, préformaté par GLPI (ex. « glpi glpi (2) »). */
+  user_name: string
+  date_mod: string
+  /** ID de la search option du champ modifié (ex. 12 = statut d'un ticket). */
+  id_search_option: number
+  old_value: string
+  new_value: string
+}
+
+/**
+ * Récupère l'historique (table `glpi_logs`) d'un item via l'API legacy
+ * (`GET /{itemtype}/{id}?with_logs=true`). L'API OAuth High-Level n'expose pas
+ * les logs ; seule l'API legacy le permet, ce qui nécessite VITE_GLPI_USER_TOKEN.
+ * Renvoie un tableau vide si l'item n'a pas de logs.
+ */
+export async function getItemLogs(itemtype: string, itemsId: number): Promise<LegacyLog[]> {
+  await ouvrirSession()
+
+  const res = await fetch(`${BASE}/${itemtype}/${itemsId}?with_logs=true&expand_dropdowns=false`, {
+    headers: entetes({ 'Session-Token': sessionToken! }),
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`GET ${itemtype}/${itemsId} logs → ${res.status}${detail ? ` (${detail.slice(0, 200)})` : ''}`)
+  }
+
+  const data = (await res.json()) as Record<string, unknown>
+  const logs = data._logs
+  // `_logs` provient d'un tableau associatif PHP (getAllDataFromTable) : il est
+  // sérialisé en OBJET indexé par id ({"951": {...}}), pas en tableau JSON.
+  if (Array.isArray(logs)) return logs as LegacyLog[]
+  if (logs && typeof logs === 'object') return Object.values(logs) as LegacyLog[]
+  return []
+}
+
 /** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
 export async function supprimerItemTicket(id: number): Promise<void> {
   if (!sessionToken) return

@@ -4,8 +4,12 @@
 import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import type { GlpiRow } from './glpiApi'
+import { getItemLogs, uploadDisponible } from './legacyApi'
 
 const ENDPOINT = '/Assistance/Ticket'
+
+/** Search option du champ `status` d'un ticket (cf. CommonITILObject). */
+const SEARCHOPT_STATUT = 12
 
 /** Type de ticket GLPI : 1 = Incident, 2 = Demande. */
 export const LIBELLES_TYPE: Record<number, string> = {
@@ -13,7 +17,11 @@ export const LIBELLES_TYPE: Record<number, string> = {
   2: 'Demande',
 }
 
-/** Statut GLPI (1..6). */
+/**
+ * Statut GLPI d'un ticket. Valeurs et libellés alignés sur
+ * Ticket::getAllStatusArray() (le 10 « Validation/Approbation » n'est pas
+ * contigu : c'est la constante APPROVAL de CommonITILObject).
+ */
 export const LIBELLES_STATUT: Record<number, string> = {
   1: 'Nouveau',
   2: 'En cours (attribué)',
@@ -21,6 +29,7 @@ export const LIBELLES_STATUT: Record<number, string> = {
   4: 'En attente',
   5: 'Résolu',
   6: 'Clos',
+  10: 'Validation',
 }
 
 /** Classe CSS du badge de statut (couleur). */
@@ -31,6 +40,7 @@ export const CLASSE_STATUT: Record<number, string> = {
   4: 'st-pending',
   5: 'st-solved',
   6: 'st-closed',
+  10: 'st-approval',
 }
 
 /** Priorité GLPI (1..6). */
@@ -117,6 +127,59 @@ export async function getTicket(id: number): Promise<Ticket> {
   const res = await apiFetch(`${ENDPOINT}/${id}`)
   if (!res.ok) throw new Error(`Erreur ${res.status} lors du chargement du ticket.`)
   return (await res.json()) as Ticket
+}
+
+/** Une transition de statut, reconstruite depuis l'historique GLPI. */
+export interface ChangementStatut {
+  /** id de la ligne glpi_logs (sert de clé et d'ordre chronologique). */
+  id: number
+  date: string
+  /** Auteur du changement (« — » si système/inconnu). */
+  auteur: string
+  /** Ancien statut (id 1..6) ou undefined si illisible. */
+  ancien?: number
+  /** Nouveau statut (id 1..6) ou undefined si illisible. */
+  nouveau?: number
+}
+
+/** Indique si l'historique de statut est récupérable (jeton legacy requis). */
+export function historiqueDisponible(): boolean {
+  return uploadDisponible()
+}
+
+/** Extrait l'id de statut (1..6) d'une valeur brute de log (« 4 » → 4). */
+function statutDepuisLog(valeur: unknown): number | undefined {
+  const n = Number.parseInt(String(valeur ?? '').trim(), 10)
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
+
+/** Retire l'id entre parenthèses ajouté par GLPI (« glpi glpi (2) » → « glpi glpi »). */
+function nettoyerAuteur(valeur: string): string {
+  const propre = valeur.replace(/\s*\(\d+\)\s*$/, '').trim()
+  return propre || '—'
+}
+
+/**
+ * Historique des changements de statut d'un ticket, du plus ancien au plus
+ * récent. Passe par l'API legacy (`with_logs`) ; renvoie un tableau vide si le
+ * jeton n'est pas configuré ou si aucun changement n'a été enregistré.
+ */
+export async function getHistoriqueStatut(id: number): Promise<ChangementStatut[]> {
+  if (!historiqueDisponible()) return []
+
+  const logs = await getItemLogs('Ticket', id)
+  return logs
+    .filter(
+      (l) => Number(l.linked_action) === 0 && Number(l.id_search_option) === SEARCHOPT_STATUT,
+    )
+    .map((l) => ({
+      id: Number(l.id),
+      date: String(l.date_mod),
+      auteur: nettoyerAuteur(String(l.user_name ?? '')),
+      ancien: statutDepuisLog(l.old_value),
+      nouveau: statutDepuisLog(l.new_value),
+    }))
+    .sort((a, b) => a.id - b.id)
 }
 
 /** Coûts liés à un ticket (best-effort : tableau vide si indisponible). */
