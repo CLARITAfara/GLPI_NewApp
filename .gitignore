@@ -30,3 +30,4 @@ dist-ssr
 
 *.sqlite
 vite.config.ts
+vite.config.ts
