@@ -61,13 +61,11 @@ export function CreateTicketPanel() {
     const key = itemKey(item)
     setSelectedKeys((prev) => {
       const next = new Set(prev)
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       next.has(key) ? next.delete(key) : next.add(key)
       return next
     })
     setSelectedItems((prev) => {
       const next = new Map(prev)
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       next.has(key) ? next.delete(key) : next.set(key, item)
       return next
     })
@@ -159,10 +157,7 @@ export function CreateTicketPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>
-          <i className="bi bi-ticket-detailed me-2" aria-hidden="true" />
-          Créer un ticket
-        </h2>
+        <h2>🎫 Créer un ticket</h2>
       </div>
 
       <form className="ticket-form" onSubmit={handleSubmit} noValidate>

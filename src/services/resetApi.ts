@@ -75,7 +75,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'assistance',
     label: 'Assistance',
-    icone: 'bi bi-ticket',
+    icone: '🎫',
     description: 'Tickets, changements et problèmes',
     endpoints: [
       { endpoint: '/Assistance/Ticket', label: 'Tickets' },
@@ -86,7 +86,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'parc',
     label: 'Parc matériel',
-    icone: 'bi bi-laptop',
+    icone: '💻',
     description: 'Ordinateurs, écrans, imprimantes et périphériques',
     endpoints: [
       { endpoint: '/Assets/Computer', label: 'Ordinateurs' },
@@ -106,7 +106,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'logiciels',
     label: 'Logiciels',
-    icone: 'bi bi-stack',
+    icone: '📦',
     description: 'Logiciels installés et licences',
     endpoints: [
       { endpoint: '/Assets/Software', label: 'Logiciels' },
@@ -116,7 +116,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'gestion',
     label: 'Gestion',
-    icone: 'bi bi-gear',
+    icone: '📋',
     description: 'Contrats, fournisseurs, contacts, documents et budgets',
     endpoints: [
       { endpoint: '/Management/Contract', label: 'Contrats' },
@@ -132,7 +132,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'knowledgebase',
     label: 'Base de connaissances',
-    icone: 'bi bi-book',
+    icone: '📚',
     description: 'Articles de la base de connaissances',
     endpoints: [
       { endpoint: '/Knowledgebase/Article', label: 'Articles' },
@@ -141,7 +141,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'projets',
     label: 'Projets',
-    icone: 'bi bi-kanban',
+    icone: '📁',
     description: 'Tâches de projet',
     endpoints: [
       { endpoint: '/Project/Task', label: 'Tâches' },
@@ -150,7 +150,7 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
   {
     id: 'journaux',
     label: 'Journaux',
-    icone: 'bi bi-journal-text',
+    icone: '📝',
     description: 'Événements et logs système',
     endpoints: [
       { endpoint: '/Administration/EventLog', label: 'Événements' },
@@ -184,7 +184,7 @@ export const MODULES_RESET: ModuleReset[] = [
   {
     id: 'tickets',
     label: 'Tickets',
-    icone: 'bi bi-ticket',
+    icone: '🎫',
     description: 'Tickets importés (avec leurs coûts et liens d\'objets)',
     endpoints: [{ endpoint: '/Assistance/Ticket', label: 'Tickets' }],
   },
@@ -192,7 +192,7 @@ export const MODULES_RESET: ModuleReset[] = [
   {
     id: 'utilisateurs',
     label: 'Utilisateurs',
-    icone: 'bi bi-people',
+    icone: '👤',
     description: 'Utilisateurs (colonne User de l\'inventaire)',
     endpoints: [
       {
@@ -205,7 +205,7 @@ export const MODULES_RESET: ModuleReset[] = [
   {
     id: 'localisations',
     label: 'Localisations',
-    icone: 'bi bi-geo',
+    icone: '📍',
     description: 'Localisations (colonne Location)',
     endpoints: [
       { endpoint: '/Dropdowns/Location', label: 'Localisations', sansCorbeille: true },
@@ -214,7 +214,7 @@ export const MODULES_RESET: ModuleReset[] = [
   {
     id: 'statuts',
     label: 'Statuts',
-    icone: 'bi bi-tags',
+    icone: '🏷️',
     description: 'Statuts (colonne Status : En production, Maintenance…)',
     endpoints: [
       { endpoint: '/Dropdowns/State', label: 'Statuts', sansCorbeille: true },
@@ -223,7 +223,7 @@ export const MODULES_RESET: ModuleReset[] = [
   {
     id: 'fabricants',
     label: 'Fabricants',
-    icone: 'bi bi-building',
+    icone: '🏭',
     description: 'Fabricants (colonne Manufacturer : Dell, HP, Lenovo)',
     endpoints: [
       { endpoint: '/Dropdowns/Manufacturer', label: 'Fabricants', sansCorbeille: true },

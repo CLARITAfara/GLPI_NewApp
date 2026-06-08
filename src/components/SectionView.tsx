@@ -33,117 +33,54 @@ export function SectionView({ section }: { section: Section }) {
   }, [section.endpoint])
 
   return (
-  <section className="section-panel">
-    <div className="card shadow-sm border-0">
-      <div className="card-body">
-        <div className="section-header">
-          <div className="section-title">
-            <span className="section-icon">
-              <i className={section.icon} aria-hidden="true" />
-            </span>
+    <section className="panel">
+      <div className="panel-head">
+        <h2>
+          {section.icon} {section.label}
+        </h2>
+        {status === 'ready' && <span className="count-badge">{total}</span>}
+      </div>
 
-            <div>
-              <h2>{section.label}</h2>
+      {status === 'loading' && <p className="muted">Chargement…</p>}
+      {status === 'error' && (
+        <p className="login-error" role="alert">
+          {error}
+        </p>
+      )}
 
-              <small className="text-muted">
-                Données GLPI 
-              </small>
-            </div>
-          </div>
+      {status === 'ready' && rows.length === 0 && (
+        <p className="muted">Aucun élément à afficher.</p>
+      )}
 
-          {status === 'ready' && (
-            <span className="badge section-count">
-              {total}
-            </span>
+      {status === 'ready' && rows.length > 0 && (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                {section.columns.map((col) => (
+                  <th key={col.key}>{col.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={String(row.id ?? i)}>
+                  {section.columns.map((col) => (
+                    <td key={col.key}>
+                      {col.accessor ? col.accessor(row) : String(row[col.key] ?? '—')}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {total > rows.length && (
+            <p className="muted small">
+              {rows.length} premiers éléments affichés sur {total}.
+            </p>
           )}
         </div>
-
-        {status === 'loading' && (
-          <div className="loading-state">
-            <div
-              className="spinner-border text-primary"
-              role="status"
-            />
-
-            <p>Chargement des données...</p>
-          </div>
-        )}
-
-        {status === 'error' && (
-          <div
-            className="alert alert-danger"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        {status === 'ready' &&
-          rows.length === 0 && (
-            <div className="empty-state">
-              <h5>Aucune donnée</h5>
-
-              <p className="text-muted">
-                Aucun élément disponible.
-              </p>
-            </div>
-          )}
-
-        {status === 'ready' &&
-          rows.length > 0 && (
-            <>
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead>
-                    <tr>
-                      {section.columns.map((col) => (
-                        <th key={col.key}>
-                          {col.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr
-                        key={String(
-                          row.id ?? i
-                        )}
-                      >
-                        {section.columns.map(
-                          (col) => (
-                            <td key={col.key}>
-                              {col.accessor
-                                ? col.accessor(
-                                    row
-                                  )
-                                : String(
-                                    row[
-                                      col.key
-                                    ] ?? '—'
-                                  )}
-                            </td>
-                          )
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {total > rows.length && (
-                <div className="section-footer">
-                  <span className="text-muted">
-                    {rows.length} éléments
-                    affichés sur {total}
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-      </div>
-    </div>
-  </section>
-)
+      )}
+    </section>
+  )
 }

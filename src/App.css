@@ -13,82 +13,93 @@
 
 /* ===== Formulaire de connexion ===== */
 .login-wrap {
-  min-height: 100vh;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  background: linear-gradient(
-    135deg,
-    #0d6efd,
-    #4f8cff
-  );
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .login-card {
   width: 100%;
-  max-width: 430px;
-
-  border: none !important;
-  border-radius: 18px !important;
-
-  padding: 2rem;
-
-  animation: fadeIn 0.3s ease;
-}
-
-.login-logo {
-  width: 70px;
-  height: 70px;
-
-  margin: auto;
-
+  max-width: 380px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 32px;
-
-  border-radius: 50%;
-
-  background: rgba(13, 110, 253, 0.1);
-
-  color: #0d6efd;
+  flex-direction: column;
+  gap: 6px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
 }
 
-.form-control {
-  height: 48px;
-  border-radius: 10px;
+.login-card h1 {
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.form-control:focus {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+.login-card .subtitle {
+  margin: 0 0 18px;
+  font-size: 15px;
+  color: var(--text);
 }
 
-.btn-login {
-  height: 48px;
+.login-card label {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.login-card input {
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.login-card input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.login-card button {
+  margin-top: 22px;
+  padding: 12px;
+  font: inherit;
+  font-size: 15px;
   font-weight: 600;
-  border-radius: 10px;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
 
-.btn-login:hover:not(:disabled) {
-  transform: translateY(-2px);
-  transition: all 0.2s;
+.login-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.login-error {
+  margin-top: 14px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.25);
+  border-radius: 8px;
 }
 
+<<<<<<< HEAD
 /* ==========================
    DASHBOARD LAYOUT
 ========================== */
@@ -96,10 +107,16 @@
 .dash-wrap {
   min-height: 100vh;
   background: #f8fafc;
+=======
+/* ===== App shell : barre latérale + contenu ===== */
+.app-shell {
+  flex: 1;
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
   display: flex;
   flex-direction: column;
 }
 
+<<<<<<< HEAD
 /* ==========================
    HEADER
 ========================== */
@@ -148,92 +165,228 @@
 }
 
 .brand-info {
+=======
+/* --- Barre latérale (sticky, hauteur plein écran, scroll interne) --- */
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: 250px;
+  height: 100svh;
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
   display: flex;
   flex-direction: column;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
 }
 
-.brand-info strong {
-  color: var(--text-h);
-  font-size: 16px;
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  font-size: 20px;
+  border-radius: 12px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-brand-text strong {
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-h);
 }
 
-.brand-info span {
-  color: var(--text);
+.sidebar-brand-text small {
   font-size: 12px;
+  color: var(--text);
 }
 
+<<<<<<< HEAD
 /* ==========================
    USER CARD
 ========================== */
+=======
+/* La navigation occupe l'espace restant et défile si la liste est longue,
+   ce qui garde le pied de barre (profil / déconnexion) toujours visible. */
+.sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+}
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 
-.dash-user-card {
+.nav-item-icon {
+  font-size: 17px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sidebar-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-user {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.user-info {
+.sidebar-user-info {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-.user-info strong {
-  color: var(--text-h);
+.sidebar-user-info strong {
   font-size: 14px;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-block {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+/* --- Barre supérieure mobile + tiroir --- */
+.sidebar-topbar {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-topbar-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-h);
+  }
+
+  .sidebar-burger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 38px;
+    height: 38px;
+    padding: 0 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .sidebar-burger span {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text-h);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: 270px;
+    max-width: 80vw;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
 }
 
 .avatar {
+  display: grid;
+  place-items: center;
   width: 42px;
   height: 42px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   border-radius: 50%;
-
-  font-weight: 700;
-  font-size: 15px;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    var(--accent),
-    #1d4ed8
-  );
-
-  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
 }
-
-/* ==========================
-   ROLE BADGE
-========================== */
 
 .role-badge {
   width: fit-content;
-
-  padding: 3px 10px;
-
-  border-radius: 999px;
-
-  font-size: 11px;
+  padding: 2px 9px;
+  font-size: 12px;
   font-weight: 600;
-
+  border-radius: 999px;
   color: var(--accent);
-
   background: var(--accent-bg);
-
   border: 1px solid var(--accent-border);
 }
 
 .role-badge.role-helpdesk {
-  color: #2563eb;
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.3);
+  color: #1570ef;
+  background: rgba(21, 112, 239, 0.1);
+  border-color: rgba(21, 112, 239, 0.4);
 }
 
+<<<<<<< HEAD
 /* ==========================
    BODY
 ========================== */
@@ -353,40 +506,54 @@
    BUTTONS
 ========================== */
 
+=======
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 .btn-ghost {
-  padding: 8px 16px;
-
-  border-radius: 8px;
-
-  border: 1px solid var(--border);
-
-  background: white;
-
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-h);
-
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   cursor: pointer;
-
-  transition: all 0.2s;
 }
 
 .btn-ghost:hover {
   border-color: var(--accent);
-
   color: var(--accent);
 }
 
+<<<<<<< HEAD
 /* ==========================
    CARDS
 ========================== */
 
 .card {
   border-radius: 14px !important;
+=======
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--text-h);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 }
 
-.card-body {
-  padding: 24px !important;
+.nav-item:hover {
+  background: var(--social-bg);
 }
 
+<<<<<<< HEAD
 /* ==========================
    RESPONSIVE
 ========================== */
@@ -395,178 +562,69 @@
   .dash-body {
     grid-template-columns: 220px 1fr;
   }
+=======
+.nav-item.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 }
 
-@media (max-width: 768px) {
-  .dash-header {
-    height: auto;
+.dash-main {
+  padding: 28px;
+  min-width: 0;
+}
 
-    flex-direction: column;
-
-    align-items: flex-start;
-
-    padding: 16px;
-
-    gap: 16px;
-  }
-
-  .header-right {
-    width: 100%;
-
-    justify-content: space-between;
-
-    flex-wrap: wrap;
-  }
-
-  .dash-body {
-    grid-template-columns: 1fr;
-  }
-
-  .dash-nav {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-
-    flex-direction: row;
-
-    overflow-x: auto;
-
-    padding: 10px;
-  }
-
-  .nav-title {
-    display: none;
-  }
-
-  .nav-item {
-    min-width: fit-content;
-  }
-
+@media (max-width: 720px) {
   .dash-main {
-    padding: 18px;
+    padding: 18px 16px;
   }
 }
 
 /* Panneau d'une section */
-.section-panel {
-  width: 100%;
+.panel {
+  animation: panel-fade 0.2s ease;
 }
 
-.section-header {
+@keyframes panel-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.section-title h2 {
+.panel-head h2 {
   margin: 0;
-
-  font-size: 22px;
-  font-weight: 700;
-
-  color: var(--text-h);
 }
 
-.section-icon {
-  width: 48px;
-  height: 48px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 22px;
-
-  border-radius: 12px;
-
-  background: var(--accent-bg);
-
+.count-badge {
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
   color: var(--accent);
-
+  background: var(--accent-bg);
   border: 1px solid var(--accent-border);
 }
 
-.section-count {
-  padding: 8px 14px;
-
-  font-size: 14px;
-
-  background: var(--accent);
-
-  color: white;
-
-  border-radius: 999px;
-}
-
-.loading-state {
-  min-height: 240px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 16px;
-}
-
-.loading-state p {
-  margin: 0;
-}
-
-.empty-state {
-  padding: 60px 20px;
-
-  text-align: center;
-}
-
-.empty-state h5 {
-  margin-bottom: 8px;
-}
-
-.table {
-  margin-bottom: 0;
-}
-
-.table thead th {
-  background: #f8fafc;
-
+.muted {
   color: var(--text);
-
-  font-size: 12px;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.5px;
-
-  border-bottom-width: 1px;
 }
 
-.table tbody tr {
-  transition: background 0.15s ease;
-}
-
-.table tbody tr:hover {
-  background: rgba(37, 99, 235, 0.03);
-}
-
-.table td {
-  color: var(--text-h);
-  vertical-align: middle;
-}
-
-.section-footer {
-  padding-top: 16px;
-
-  border-top: 1px solid var(--border);
-
-  margin-top: 12px;
+.muted.small {
+  font-size: 13px;
+  margin-top: 10px;
 }
 
 /* Tableau de données */
@@ -607,6 +665,7 @@
 }
 
 /* ===== Vue d'ensemble (statistiques) ===== */
+<<<<<<< HEAD
 /* ==========================
    DASHBOARD STATS
 ========================== */
@@ -642,58 +701,53 @@
 .stats-card-header {
   display: flex;
   align-items: center;
+=======
+/* Cartes KPI : grandes valeurs en tête de page. */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
   gap: 18px;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
 }
 
-.stats-icon {
-  width: 72px;
-  height: 72px;
-
+.kpi-tile {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
 
-  border-radius: 18px;
-
-  background: linear-gradient(
-    135deg,
-    var(--accent-bg),
-    rgba(170, 59, 255, 0.18)
-  );
-
-  color: #fff;
-
-  font-size: 30px;
-
+.kpi-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  font-size: 26px;
+  border-radius: 14px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
   flex-shrink: 0;
 }
 
-.stats-card-header h5 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-h);
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.stats-total {
-  margin-top: 4px;
-
-  font-size: 2.4rem;
-  font-weight: 800;
-  line-height: 1;
-
-  color: var(--accent);
-}
-
-.stats-card-header small {
-  display: block;
-  margin-top: 6px;
+.kpi-label {
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text);
 }
 
+<<<<<<< HEAD
 /* ==========================
    LISTE DES STATS
 ========================== */
@@ -702,81 +756,102 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+=======
+.kpi-value {
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+  color: var(--text-h);
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 }
 
-.stats-item {
-  width: 100%;
+/* Sections de répartition : une carte par catégorie. */
+.stat-breakdown {
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
 }
 
-.stats-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  margin-bottom: 8px;
+.stat-breakdown + .stat-breakdown {
+  margin-top: 20px;
 }
 
-.stats-item-name {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  font-size: 14px;
+.stat-breakdown-title {
+  margin: 0 0 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-h);
 }
 
-.stats-item-name i {
-  font-size: 1.1rem;
-  color: var(--accent);
+.stat-bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.stats-item-value {
+/* Variante grille : deux colonnes de barres quand la place le permet. */
+.stat-bars--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px 28px;
+}
+
+.stat-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.stat-bar-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-
+  gap: 9px;
   font-size: 14px;
-  font-weight: 700;
-
   color: var(--text-h);
 }
 
-.stats-item-value small {
-  color: var(--text);
-  font-size: 12px;
+.stat-bar-name {
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ==========================
-   BARRES
-========================== */
+.stat-bar-value {
+  margin-left: auto;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text-h);
+}
+
+.stat-bar-value small {
+  font-weight: 500;
+  color: var(--text);
+}
 
 .stat-bar-track {
-  width: 100%;
-  height: 10px;
-
+  height: 9px;
+  background: var(--social-bg);
   border-radius: 999px;
-
-  background: #edf1f7;
-
   overflow: hidden;
+  border: 1px solid var(--border);
 }
 
 .stat-bar-fill {
   height: 100%;
-
+  min-width: 5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-border));
   border-radius: 999px;
-
-  background: linear-gradient(
-    90deg,
-    var(--accent),
-    #7b2fff
-  );
-
   transition: width 0.4s ease;
 }
 
+<<<<<<< HEAD
 /* ==========================
    ALERTES
 ========================== */
@@ -857,6 +932,8 @@
     margin-left: 28px;
   }
 }
+=======
+>>>>>>> parent of 031ed80 (Merge branch 'css_kanto_fiaro' into UX_Cla)
 /* ===== Tickets (liste + fiche) ===== */
 .tickets-layout {
   display: grid;
@@ -1006,56 +1083,6 @@
   box-shadow: var(--shadow);
 }
 
-.ticket-fiche-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.ticket-fiche-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--text-h);
-}
-
-.ticket-fiche-id {
-  display: inline-block;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 0.5rem;
-}
-
-.ticket-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.ticket-fiche .ticket-section {
-  margin-top: 2rem;
-  padding: 0;
-  border: none;
-}
-
-.ticket-fiche .ticket-section h5 {
-  margin: 0 0 1rem;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.ticket-description {
-  margin: 0;
-  padding: 1rem;
-  border-radius: 10px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  white-space: pre-wrap;
-}
-
 .fiche-head {
   display: flex;
   align-items: flex-start;
@@ -1173,229 +1200,352 @@
 }
 
 /* ===== Reset Panel ===== */
-/* ==========================
-   RESET MODULE
-========================== */
-
-.reset-card {
-  position: relative;
-
-  background: #fff;
-
-  border: 2px solid transparent;
-
-  border-radius: 16px;
-
-  padding: 1.25rem;
-
-  height: 100%;
-
-  cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+.reset-intro {
+  font-size: 14px;
+  margin-bottom: 0.75rem;
 }
 
-.reset-card:hover {
-  transform: translateY(-3px);
-
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.08),
-    0 4px 6px -2px rgba(0, 0, 0, 0.04);
+.reset-warning {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 35, 24, 0.3);
+  background: rgba(180, 35, 24, 0.06);
+  color: #b42318;
+  margin-bottom: 1.25rem;
+  max-width: 480px;
 }
 
-.reset-card.selected {
-  border-color: var(--accent);
-
-  background: var(--accent-bg);
+.reset-ressources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 480px;
+  margin-bottom: 1.25rem;
 }
 
-.reset-card .form-check-input {
-  margin-bottom: 1rem;
-}
-
-.reset-card-icon {
-  width: 56px;
-  height: 56px;
-
+.reset-ressource-card {
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  font-size: 1.75rem;
-
-  border-radius: 12px;
-
-  background: rgba(59, 130, 246, 0.08);
-  color: #2563eb;
-
-  margin-bottom: 1rem;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  user-select: none;
 }
 
-.reset-card-icon i {
-  color: inherit;
+.reset-ressource-card:hover {
+  border-color: var(--accent);
 }
 
-.reset-card h5 {
-  margin-bottom: 0.5rem;
+.reset-ressource-card.selected {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.04);
+}
 
-  font-size: 1rem;
-  font-weight: 600;
+.reset-ressource-card input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #dc3545;
+  flex-shrink: 0;
+}
 
+.reset-ressource-icone {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.reset-module-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reset-ressource-label {
+  font-size: 15px;
+  font-weight: 500;
   color: var(--text-h);
 }
 
-.reset-card p {
-  margin-bottom: 1rem;
-
-  color: var(--text);
-
-  font-size: 0.875rem;
-
-  line-height: 1.5;
-}
-
-/* ==========================
-   CONFIRMATION
-========================== */
-
-.reset-confirm-box {
-  border-left: 4px solid #dc3545;
-
-  padding-left: 1rem;
-}
-
-.reset-confirm-box strong {
-  color: #dc3545;
-}
-
-/* ==========================
-   EXECUTION
-========================== */
-
-.progress {
-  height: 14px;
-
-  border-radius: 999px;
-
-  overflow: hidden;
-
-  background: #e9ecef;
-}
-
-.progress-bar {
-  font-size: 11px;
-
-  font-weight: 600;
-
-  transition: width 0.25s ease;
-}
-
-/* ==========================
-   REPORT
-========================== */
-
-.reset-report-card {
-  border-radius: 14px;
-
-  overflow: hidden;
-
-  transition: transform 0.15s ease;
-}
-
-.reset-report-card:hover {
-  transform: translateY(-2px);
-}
-
-.reset-report-header {
+.reset-ep-tags {
   display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
 
+.reset-ep-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.reset-ep-count {
+  margin-left: auto;
+  min-width: 38px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reset-select-all {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  cursor: pointer;
+  user-select: none;
+}
 
+.reset-select-all input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #dc3545;
+}
+
+/* Bouton de lancement */
+.btn-reset {
+  padding: 10px 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #dc3545;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-reset:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+/* Dialogue de confirmation */
+.reset-dialog {
+  max-width: 480px;
+  padding: 24px 28px;
+  border: 1px solid rgba(180, 35, 24, 0.35);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.reset-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #b42318;
+}
+
+.reset-dialog p {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.reset-dialog-list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+}
+
+.reset-dialog-list li::before {
+  content: '→ ';
+  color: #b42318;
+}
+
+.reset-confirm-field {
+  margin: 16px 0 20px;
+}
+
+.reset-confirm-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+.reset-confirm-field input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.reset-confirm-field input:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.reset-dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Barres de progression */
+.reset-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 480px;
+}
+
+.reset-progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reset-progress-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
 
-  gap: 1rem;
+.reset-progress-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
 
+.reset-progress-count {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.reset-progress-eps {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.reset-progress-bar-wrap {
+  height: 6px;
+  background: var(--social-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.reset-progress-bar-fill {
+  height: 100%;
+  background: #dc3545;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+/* Rapport final */
+.reset-rapport-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin-bottom: 1.25rem;
+}
+
+.reset-rapport-item {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.reset-rapport-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.reset-report-title {
-  display: flex;
-
-  align-items: center;
-
-  gap: 0.75rem;
-
-  font-weight: 600;
-
+.reset-rapport-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.reset-report-title span:first-child {
-  font-size: 1.25rem;
-}
-
-/* ==========================
-   TABLE ERREURS
-========================== */
-
-.table td code {
-  font-size: 0.8rem;
-
-  padding: 2px 6px;
-
-  border-radius: 4px;
-
-  background: #f8f9fa;
-}
-
-.table-sm td,
-.table-sm th {
-  vertical-align: middle;
-}
-
-.table thead th {
-  font-size: 0.75rem;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.5px;
-
-  color: #6c757d;
-}
-
-/* ==========================
-   BADGES
-========================== */
-
-.badge {
+.badge-ok {
+  padding: 2px 10px;
+  font-size: 12px;
   font-weight: 600;
+  border-radius: 999px;
+  color: #155724;
+  background: rgba(21, 87, 36, 0.1);
+  border: 1px solid rgba(21, 87, 36, 0.3);
 }
 
-/* ==========================
-   RESPONSIVE
-========================== */
+.badge-err {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.1);
+  border: 1px solid rgba(180, 35, 24, 0.3);
+}
 
-@media (max-width: 768px) {
-  .reset-card {
-    padding: 1rem;
-  }
+.reset-rapport-echecs {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
 
-  .reset-card-icon {
-    width: 48px;
-    height: 48px;
-
-    font-size: 1.4rem;
-  }
-
-  .reset-report-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.reset-echec-list {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #b42318;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 /* Messages d'état */
@@ -1425,40 +1575,34 @@
 }
 
 /* ===== Import Panel ===== */
-/* ==========================
-   IMPORT - SELECTION
-========================== */
-
 .import-inputs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 640px;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .import-inputs {
+    grid-template-columns: 1fr;
+  }
 }
 
 .import-input {
-  position: relative;
-
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-
-  padding: 1.25rem;
-
-  border: 2px dashed var(--border);
-  border-radius: 16px;
-
-  background: #fff;
-
-  transition: all 0.2s ease;
-
+  gap: 8px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .import-input:hover {
   border-color: var(--accent);
-  background: rgba(170, 59, 255, 0.03);
-  transform: translateY(-2px);
 }
 
 .import-input.rempli {
@@ -1469,247 +1613,44 @@
 .import-input-head {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .import-input-label {
   font-weight: 600;
-  color: var(--text-h);
+  font-size: 14px;
 }
 
 .import-input-aide {
-  font-size: 0.85rem;
+  font-size: 12px;
 }
 
 .import-input input[type='file'] {
-  padding: 0.75rem;
-
-  border: 1px solid var(--border);
-  border-radius: 10px;
-
-  background: white;
+  font-size: 12px;
 }
 
 .import-input-nom {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-h);
-
+  font-size: 12px;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* ==========================
-   IMPORT - APERCU
-========================== */
 
-.import-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.import-stat-card {
-  padding: 1rem;
-
-  background: white;
-
-  border: 1px solid var(--border);
-  border-radius: 14px;
-
-  box-shadow: var(--shadow);
-}
-
-.import-stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.import-stat-label {
-  font-size: 0.9rem;
-  color: var(--text);
-}
-.import-existing-assets {
-  margin-top: 1rem;
-
-  max-height: 250px;
-  overflow-y: auto;
-
-  border: 1px solid var(--border);
-  border-radius: 12px;
-
-  background: white;
-}
-
-.import-existing-assets ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.import-existing-assets li {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.import-existing-assets li:last-child {
-  border-bottom: none;
-}
 .import-resume {
-  margin: 1rem 0;
-  padding: 0;
-
   list-style: none;
-
+  padding: 0;
+  margin: 0 0 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 6px;
+  font-size: 14px;
+  max-width: 480px;
 }
 
 .import-resume li {
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  padding: 12px 14px;
-
-  border: 1px solid var(--border);
-  border-radius: 12px;
-
-  background: white;
-}
-/* ==========================
-   IMPORT - RAPPORT
-========================== */
-
-.import-report-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-
-  margin-bottom: 1.5rem;
-}
-
-.import-report-card {
-  padding: 1rem;
-
-  border-radius: 14px;
-
-  background: white;
-
-  border: 1px solid var(--border);
-
-  box-shadow: var(--shadow);
-
-  text-align: center;
-}
-
-.import-report-card h3 {
-  margin: 0;
-
-  font-size: 2rem;
-  font-weight: 700;
-
-  color: var(--accent);
-}
-
-.import-report-card span {
-  display: block;
-  margin-top: 0.5rem;
-
-  color: var(--text);
-}
-/* ==========================
-   IMPORT - ALERTES
-========================== */
-
-.import-success,
-.import-warning,
-.import-error {
-  padding: 1rem 1.25rem;
-
-  border-radius: 14px;
-
-  margin-bottom: 1rem;
-
-  font-weight: 500;
-}
-
-.import-success {
-  background: rgba(25, 135, 84, 0.08);
-  border: 1px solid rgba(25, 135, 84, 0.2);
-  color: #146c43;
-}
-
-.import-warning {
-  background: rgba(255, 193, 7, 0.08);
-  border: 1px solid rgba(255, 193, 7, 0.2);
-  color: #997404;
-}
-
-.import-error {
-  background: rgba(220, 53, 69, 0.08);
-  border: 1px solid rgba(220, 53, 69, 0.2);
-  color: #b42318;
-}
-/* ==========================
-   IMPORT - EXECUTION
-========================== */
-
-.import-progress-card {
-  max-width: 700px;
-}
-
-.import-progress-step {
-  margin-bottom: 0.5rem;
-
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.import-progress-bar {
-  height: 12px;
-
-  border-radius: 999px;
-
-  overflow: hidden;
-
-  background: #ece8f3;
-}
-
-.import-progress-fill {
-  height: 100%;
-
-  background: linear-gradient(
-    90deg,
-    #aa3bff,
-    #8c2be2
-  );
-
-  transition: width 0.3s ease;
-}
-
-.import-progress-count {
-  margin-top: 0.5rem;
-
-  text-align: right;
-
-  font-size: 0.85rem;
-  color: var(--text);
-}
-@media (max-width: 768px) {
-  .import-inputs,
-  .import-summary,
-  .import-report-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .import-resume li {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+  gap: 8px;
 }
 
 /* ===== Front Office — Layout ===== */
@@ -1738,7 +1679,6 @@
 .front-brand-icon {
   font-size: 22px;
   line-height: 1;
-  color: #fff;
 }
 
 .front-brand-name {

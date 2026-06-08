@@ -12,33 +12,19 @@ export function StatsView() {
 
   useEffect(() => {
     let active = true
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus('loading')
-
-    Promise.all([
-      getElementStats(),
-      getTicketStats(),
-    ])
+    Promise.all([getElementStats(), getTicketStats()])
       .then(([el, tk]) => {
         if (!active) return
-
         setElements(el)
         setTickets(tk)
         setStatus('ready')
       })
       .catch((e: unknown) => {
         if (!active) return
-
-        setError(
-          e instanceof Error
-            ? e.message
-            : 'Erreur de chargement.'
-        )
-
+        setError(e instanceof Error ? e.message : 'Erreur de chargement.')
         setStatus('error')
       })
-
     return () => {
       active = false
     }
@@ -47,44 +33,41 @@ export function StatsView() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>
-          <i className="bi bi-bar-chart-line me-2"></i>
-          Vue d'ensemble
-        </h2>
+        <h2>📊 Vue d'ensemble</h2>
       </div>
 
-      {status === 'loading' && (
-        <div className="text-center py-5">
-          <div
-            className="spinner-border text-primary"
-            role="status"
-          />
-          <p className="mt-3 mb-0">
-            Chargement des statistiques...
-          </p>
-        </div>
-      )}
+      {status === 'loading' && <p className="muted">Chargement des statistiques…</p>}
 
       {status === 'error' && (
-        <div className="alert alert-danger">
+        <p className="login-error" role="alert">
           {error}
-        </div>
+        </p>
       )}
 
       {status === 'ready' && (
-        <div className="stats-dashboard">
-          <StatCard
-            icon="bi bi-pc-display"
-            title="Éléments"
-            unit="éléments au total"
+        <>
+          <div className="kpi-row">
+            <KpiTile
+              icon="🗄️"
+              label="Matériel total"
+              value={elements?.total ?? 0}
+              sub={`${elements?.parType.length ?? 0} type(s) présent(s)`}
+            />
+            <KpiTile
+              icon="🎫"
+              label="Tickets total"
+              value={tickets?.total ?? 0}
+              sub={`${tickets?.parType.length ?? 0} type(s) présent(s)`}
+            />
+          </div>
+
+          <Breakdown
+            title="Répartition du parc"
             group={elements}
             emptyLabel="Aucun élément en base."
           />
-
-          <StatCard
-            icon="bi bi-ticket-detailed"
-            title="Tickets"
-            unit="tickets au total"
+          <Breakdown
+            title="Répartition des tickets"
             group={tickets}
             emptyLabel="Aucun ticket en base."
           />
@@ -109,82 +92,38 @@ function StatCard({
 }) {
   const total = group?.total ?? 0
   const types = group?.parType ?? []
-
-  const max =
-    types.reduce(
-      (m, t) => Math.max(m, t.total),
-      0,
-    ) || 1
+  const max = types.reduce((m, t) => Math.max(m, t.total), 0) || 1
 
   return (
-    <div className="stats-card">
-      <div className="stats-card-header">
-        <div className="stats-icon">
-          <i className={icon}></i>
-        </div>
-
-        <div>
-          <h5>{title}</h5>
-
-          <div className="stats-total">
-            {total.toLocaleString()}
-          </div>
-
-          <small>{unit}</small>
-        </div>
-      </div>
-
+    <section className="stat-breakdown">
+      <h3 className="stat-breakdown-title">{title}</h3>
       {types.length === 0 ? (
-        <div className="alert alert-light mt-3 mb-0">
-          {emptyLabel}
-        </div>
+        <p className="muted small">{emptyLabel}</p>
       ) : (
-        <div className="stats-list">
+        <ul className="stat-bars stat-bars--grid">
           {types.map((t) => {
-            const pct =
-              total > 0
-                ? Math.round(
-                    (t.total / total) * 100,
-                  )
-                : 0
-
-            const width =
-              Math.round(
-                (t.total / max) * 100,
-              )
-
+            const pct = total > 0 ? Math.round((t.total / total) * 100) : 0
             return (
-              <div
-                key={t.key}
-                className="stats-item"
-              >
-                <div className="stats-item-header">
-                  <div className="stats-item-name">
-                    <i className={`${t.icon} me-2 text-primary`} aria-hidden="true" />
-
-                    <span>{t.label}</span>
-                  </div>
-
-                  <div className="stats-item-value">
+              <li key={t.key} className="stat-bar-row">
+                <div className="stat-bar-label">
+                  <span aria-hidden="true">{t.icon}</span>
+                  <span className="stat-bar-name">{t.label}</span>
+                  <span className="stat-bar-value">
                     {t.total}
-
-                    <small>{pct}%</small>
-                  </div>
+                    <small> · {pct}%</small>
+                  </span>
                 </div>
-
                 <div className="stat-bar-track">
                   <div
                     className="stat-bar-fill"
-                    style={{
-                      width: `${width}%`,
-                    }}
+                    style={{ width: `${Math.round((t.total / max) * 100)}%` }}
                   />
                 </div>
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
-    </div>
+    </section>
   )
 }

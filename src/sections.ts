@@ -23,7 +23,7 @@ export interface Section {
 const STATS: Section = {
   id: 'stats',
   label: "Vue d'ensemble",
-  icon: 'bi bi-bar-chart-line',
+  icon: '📊',
   endpoint: '',
   columns: [],
   custom: 'stats',
@@ -32,7 +32,7 @@ const STATS: Section = {
 const TICKETS: Section = {
   id: 'tickets',
   label: 'Tickets',
-  icon: 'bi bi-ticket-detailed',
+  icon: '🎫',
   endpoint: '/Assistance/Ticket',
   columns: [],
   custom: 'tickets',
@@ -41,7 +41,7 @@ const TICKETS: Section = {
 const COMPUTERS: Section = {
   id: 'computers',
   label: 'Ordinateurs',
-  icon: 'bi bi-pc-display',
+  icon: '💻',
   endpoint: '/Assets/Computer',
   columns: [
     { key: 'id', label: 'ID' },
@@ -55,7 +55,7 @@ const COMPUTERS: Section = {
 const USERS: Section = {
   id: 'users',
   label: 'Utilisateurs',
-  icon: 'bi bi-people',
+  icon: '👤',
   endpoint: '/Administration/User',
   columns: [
     { key: 'id', label: 'ID' },
@@ -69,7 +69,7 @@ const USERS: Section = {
 const IMPORT: Section = {
   id: 'import',
   label: 'Import CSV',
-  icon: 'bi bi-file-earmark-arrow-up',
+  icon: '📥',
   endpoint: '',
   columns: [],
   custom: 'import',
@@ -78,7 +78,7 @@ const IMPORT: Section = {
 const RESET: Section = {
   id: 'reset',
   label: 'Réinitialisation',
-  icon: 'bi bi-trash',
+  icon: '🗑️',
   endpoint: '',
   columns: [],
   custom: 'reset',

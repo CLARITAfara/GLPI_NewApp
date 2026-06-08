@@ -19,67 +19,33 @@ export function LoginForm() {
     }
   }
 
-return (
-  <div className="login-wrap">
-    <div className="card login-card shadow-lg">
-      <div className="text-center mb-4">
-        <div className="login-logo">
-          <i className="bi bi-lock-fill" aria-hidden="true" />
-        </div>
+  return (
+    <div className="login-wrap">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <h1>Connexion GLPI</h1>
+        <p className="subtitle">Entrez votre code d'accès</p>
 
-        <h1 className="h3 mb-2">Connexion GLPI</h1>
-
-        <p className="text-muted">
-          Entrez votre code d'accès
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="code" className="form-label">
-            Code d'accès
-          </label>
-
-          <input
-            id="code"
-            type="password"
-            className="form-control"
-            autoComplete="current-password"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
+        <label htmlFor="code">Code d'accès</label>
+        <input
+          id="code"
+          type="password"
+          autoComplete="current-password"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          required
+          autoFocus
+        />
 
         {error && (
-          <div
-            className="alert alert-danger"
-            role="alert"
-          >
+          <p className="login-error" role="alert">
             {error}
-          </div>
+          </p>
         )}
 
-        <button
-          type="submit"
-          className="btn btn-primary w-100 btn-login"
-          disabled={submitting || !code}
-        >
-          {submitting ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                aria-hidden="true"
-              />
-              Connexion...
-            </>
-          ) : (
-            'Se connecter'
-          )}
+        <button type="submit" disabled={submitting || !code}>
+          {submitting ? 'Connexion…' : 'Se connecter'}
         </button>
       </form>
     </div>
-  </div>
-)
+  )
 }
