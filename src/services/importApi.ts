@@ -152,56 +152,32 @@ export interface AssetExistant {
 }
 
 /**
-<<<<<<< Updated upstream
- * Pré-charge les noms existants (nom→id) pour chaque itemtype présent dans les
- * assets à importer. Une seule requête paginée par type concerné.
+ * Matériels présents dans GLPI, indexés par itemtype puis par nom (minuscule).
+ * Sert à la fois à éviter les doublons, à valider les liens Tickets→matériel
+ * (un asset référencé peut exister en base sans figurer dans la Feuille 1) et à
+ * rattacher ces liens à l'import.
  */
-async function chargerNomsParType(
-  donnees: DonneesImport,
-): Promise<Map<ItemType, Map<string, number>>> {
-  const typesPresents = [...new Set(donnees.assets.map((a) => a.itemType))]
-  const resultat = new Map<ItemType, Map<string, number>>()
+export type AssetsBdd = Map<ItemType, Map<string, number>>
+
+/** Charge tous les matériels des types gérés (cf. ITEM_TYPES) présents dans GLPI. */
+export async function chargerAssetsExistants(): Promise<AssetsBdd> {
+  const bdd: AssetsBdd = new Map()
+  const types = Object.keys(ITEM_TYPES) as ItemType[]
   await Promise.all(
-    typesPresents.map(async (t) => {
-      resultat.set(t, await chargerNomsExistants(ITEM_TYPES[t].assetEndpoint))
+    types.map(async (t) => {
+      bdd.set(t, await chargerNomsExistants(ITEM_TYPES[t].assetEndpoint))
     }),
   )
-  return resultat
-}
-
-/**
- * Détecte, parmi les assets à importer, ceux qui existent DÉJÀ dans GLPI
- * (même nom + même type). Sert à prévenir l'utilisateur à la validation et à
- * éviter les doublons.
- */
-export async function detecterAssetsExistants(
-  donnees: DonneesImport,
-): Promise<AssetExistant[]> {
-  const nomsParType = await chargerNomsParType(donnees)
-=======
- * Matériels déjà présents dans GLPI, indexés par nom (en minuscules) et par
- * type. Sert à la fois à éviter les doublons, à valider les liens
- * Tickets→matériel (un asset référencé peut exister en base sans figurer dans
- * la Feuille 1) et à rattacher ces liens à l'import.
- */
-export interface AssetsBdd {
-  computers: Map<string, number>
-  monitors: Map<string, number>
-}
->>>>>>> Stashed changes
-
-/** Charge tous les matériels (ordinateurs + moniteurs) présents dans GLPI. */
-export async function chargerAssetsExistants(): Promise<AssetsBdd> {
-  const [computers, monitors] = await Promise.all([
-    chargerNomsExistants(EP.computer),
-    chargerNomsExistants(EP.monitor),
-  ])
-  return { computers, monitors }
+  return bdd
 }
 
 /** Ensemble des noms (en minuscules) de tous les matériels présents dans GLPI. */
 export function nomsAssetsBdd(bdd: AssetsBdd): Set<string> {
-  return new Set([...bdd.computers.keys(), ...bdd.monitors.keys()])
+  const noms = new Set<string>()
+  for (const map of bdd.values()) {
+    for (const nom of map.keys()) noms.add(nom)
+  }
+  return noms
 }
 
 /**
@@ -215,12 +191,7 @@ export function assetsExistantsDansBdd(
 ): AssetExistant[] {
   const existants: AssetExistant[] = []
   for (const a of donnees.assets) {
-<<<<<<< Updated upstream
-    const id = nomsParType.get(a.itemType)?.get(a.name.toLowerCase())
-=======
-    const map = a.itemType === 'Computer' ? bdd.computers : bdd.monitors
-    const id = map.get(a.name.toLowerCase())
->>>>>>> Stashed changes
+    const id = bdd.get(a.itemType)?.get(a.name.toLowerCase())
     if (id !== undefined) existants.push({ name: a.name, itemType: a.itemType, id })
   }
   return existants
@@ -316,18 +287,12 @@ export async function importer(
     // ── Étape 1 : matériel (résout listes + utilisateur, puis crée l'asset) ──
     // Anti-doublons : on pré-charge les noms existants par type ; un asset déjà
     // présent (même nom) est réutilisé tel quel au lieu d'être recréé.
-<<<<<<< Updated upstream
-    const existantParType = await chargerNomsParType(donnees)
-    const videMap = new Map<string, number>()
-=======
     // Matériels déjà présents dans GLPI : fournis par l'appelant (chargés une
     // seule fois pour la validation) ou chargés ici à défaut. Servent au
     // dédoublonnage (étape 1) ET au rattachement des liens vers des assets qui
     // existent en base sans figurer dans la Feuille 1 (étape 5).
     const bddAssets = bdd ?? (await chargerAssetsExistants())
-    const existantComputer = bddAssets.computers
-    const existantMonitor = bddAssets.monitors
->>>>>>> Stashed changes
+    const videMap = new Map<string, number>()
 
     const etape1 = 'Matériel (assets)'
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
@@ -336,7 +301,7 @@ export async function importer(
       const config = ITEM_TYPES[a.itemType]
 
       // Doublon : asset déjà présent dans GLPI → réutilisé, pas recréé.
-      const mapExist = existantParType.get(a.itemType) ?? videMap
+      const mapExist = bddAssets.get(a.itemType) ?? videMap
       const dejaId = mapExist.get(a.name.toLowerCase())
       if (dejaId !== undefined) {
         assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
@@ -475,11 +440,13 @@ export async function importer(
         // (cas d'un import de la Feuille 2 seule, sans la Feuille 1).
         let asset = assetParNom.get(nom)
         if (!asset) {
-          const cid = existantComputer.get(nom.toLowerCase())
-          if (cid !== undefined) asset = { id: cid, itemType: 'Computer' }
-          else {
-            const mid = existantMonitor.get(nom.toLowerCase())
-            if (mid !== undefined) asset = { id: mid, itemType: 'Monitor' }
+          const cle = nom.toLowerCase()
+          for (const [t, map] of bddAssets) {
+            const id = map.get(cle)
+            if (id !== undefined) {
+              asset = { id, itemType: t }
+              break
+            }
           }
         }
         if (!asset) continue // asset introuvable (validé en amont)
