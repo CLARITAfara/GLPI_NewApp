@@ -11,6 +11,7 @@ import { apiFetch } from './apiClient'
 import { fetchList } from './glpiApi'
 import { extraireImagesZip, type DonneesImport } from './importValidation'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
+import { pool } from './concurrency'
 import {
   fermerSession,
   lierItemTicket,
@@ -93,6 +94,9 @@ async function texteErreur(res: Response): Promise<string> {
 
 /** Code GLPI du statut « Nouveau » — seul statut autorisé à la création d'un ticket. */
 const STATUT_NEW = 1
+
+/** Nombre de requêtes HL menées en parallèle dans chaque phase de l'import. */
+const CONCURRENCE = 8
 
 /** Restaure un élément de la corbeille (is_deleted = false) via PATCH. */
 async function restaurer(endpoint: string, id: number): Promise<void> {
@@ -223,8 +227,11 @@ export async function importer(
 ): Promise<RapportImport> {
   // Pile de rollback : actions de suppression exécutées en ordre inverse.
   const annulations: Array<() => Promise<void>> = []
-  // Cache find-or-create : clé "endpoint::champ::valeur" → id.
-  const cache = new Map<string, number>()
+  // Cache find-or-create : clé "endpoint::champ::valeur" → PROMESSE de l'id.
+  // On mémorise la promesse (pas l'id résolu) pour que des tâches parallèles
+  // demandant la même valeur partagent un unique appel réseau et évitent de
+  // créer des doublons de listes déroulantes.
+  const cache = new Map<string, Promise<number>>()
 
   const totalLiens = donnees.tickets.reduce((s, t) => s + t.items.length, 0)
   const rapport: RapportImport = {
@@ -262,30 +269,36 @@ export async function importer(
     const enCache = cache.get(cle)
     if (enCache !== undefined) return enCache
 
-    // Les ressources à corbeille (utilisateurs) doivent être cherchées AUSSI
-    // dans la corbeille : un enregistrement supprimé occupe toujours son nom
-    // unique en base, donc le recréer échoue en 500 ("existe déjà"). On le
-    // retrouve et on le restaure plutôt que de le recréer.
-    const inclureCorbeille = opts.sansCorbeille || opts.restaurer
-    const { items } = await fetchList(endpoint, {
-      filter: `${champ}==${valeur}`,
-      limit: 50,
-      includeDeleted: inclureCorbeille,
-    })
-    const trouve = items.find((it) => String((it as Record<string, unknown>)[champ]) === valeur)
-    if (trouve && typeof trouve.id === 'number') {
-      if (opts.restaurer && (trouve as Record<string, unknown>).is_deleted === true) {
-        await restaurer(endpoint, trouve.id)
+    // La promesse est posée dans le cache AVANT le premier await : un second
+    // appel concurrent pour la même valeur récupère cette promesse au lieu de
+    // relancer une recherche/création (qui créerait un doublon).
+    const promesse = (async (): Promise<number> => {
+      // Les ressources à corbeille (utilisateurs) doivent être cherchées AUSSI
+      // dans la corbeille : un enregistrement supprimé occupe toujours son nom
+      // unique en base, donc le recréer échoue en 500 ("existe déjà"). On le
+      // retrouve et on le restaure plutôt que de le recréer.
+      const inclureCorbeille = opts.sansCorbeille || opts.restaurer
+      const { items } = await fetchList(endpoint, {
+        filter: `${champ}==${valeur}`,
+        limit: 50,
+        includeDeleted: inclureCorbeille,
+      })
+      const trouve = items.find((it) => String((it as Record<string, unknown>)[champ]) === valeur)
+      if (trouve && typeof trouve.id === 'number') {
+        if (opts.restaurer && (trouve as Record<string, unknown>).is_deleted === true) {
+          await restaurer(endpoint, trouve.id)
+        }
+        return trouve.id
       }
-      cache.set(cle, trouve.id)
-      return trouve.id
-    }
 
-    const id = await creer(endpoint, corps)
-    planifierSuppressionHL(`${endpoint}/${id}`)
-    rapport.cree[opts.compteur]++
-    cache.set(cle, id)
-    return id
+      const id = await creer(endpoint, corps)
+      planifierSuppressionHL(`${endpoint}/${id}`)
+      rapport.cree[opts.compteur]++
+      return id
+    })()
+
+    cache.set(cle, promesse)
+    return promesse
   }
 
   const slugLogin = (nom: string): string =>
@@ -311,9 +324,13 @@ export async function importer(
     const videMap = new Map<string, number>()
 
     const etape1 = 'Matériel (assets)'
+    let faits1 = 0
     onProgress({ etape: etape1, courant: 0, total: donnees.assets.length })
-    for (let i = 0; i < donnees.assets.length; i++) {
-      const a = donnees.assets[i]
+    // Traitement parallèle borné : les listes déroulantes partagées (statut,
+    // localisation, fabricant, modèle, utilisateur) sont dédupliquées via le
+    // cache de promesses de `trouverOuCreer`, donc aucun doublon malgré la
+    // concurrence. Chaque asset enregistre son rollback dès sa création.
+    await pool(donnees.assets, CONCURRENCE, async (a, i) => {
       const config = ITEM_TYPES[a.itemType]
 
       // Doublon : asset déjà présent dans GLPI → réutilisé, pas recréé.
@@ -322,14 +339,16 @@ export async function importer(
       if (dejaId !== undefined) {
         assetParNom.set(a.name, { id: dejaId, itemType: a.itemType })
         rapport.materielReutilise++
-        onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
-        continue
+        onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
+        return
       }
 
-      const statusId = await trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' })
-      const locationId = await trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' })
-      const manuId = await trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' })
-      const modelId = await trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' })
+      const [statusId, locationId, manuId, modelId] = await Promise.all([
+        trouverOuCreer(EP.state, 'name', a.status, { name: a.status }, { sansCorbeille: true, compteur: 'listes' }),
+        trouverOuCreer(EP.location, 'name', a.location, { name: a.location }, { sansCorbeille: true, compteur: 'listes' }),
+        trouverOuCreer(EP.manufacturer, 'name', a.manufacturer, { name: a.manufacturer }, { sansCorbeille: true, compteur: 'listes' }),
+        trouverOuCreer(config.modelEndpoint, 'name', a.model, { name: a.model }, { sansCorbeille: true, compteur: 'listes' }),
+      ])
 
       const corps: Record<string, unknown> = {
         name: a.name,
@@ -355,8 +374,8 @@ export async function importer(
       planifierSuppressionHL(`${config.assetEndpoint}/${id}`)
       assetParNom.set(a.name, { id, itemType: a.itemType })
       rapport.cree.materiel++
-      onProgress({ etape: etape1, courant: i + 1, total: donnees.assets.length })
-    }
+      onProgress({ etape: etape1, courant: ++faits1, total: donnees.assets.length })
+    })
 
     // ── Étape 2 : images → documents liés (API legacy) ──
     if (zip && donnees.images.length > 0 && uploadDisponible()) {
@@ -407,16 +426,16 @@ export async function importer(
     rapport.imagesIgnorees = donnees.images.length - rapport.cree.documents
 
     // ── Étape 3 : tickets ──
+    // GLPI impose le workflow depuis « Nouveau » : créer un ticket directement
+    // dans un statut avancé (résolu, clos…) est refusé, et un ticket clos REFUSE
+    // ensuite l'ajout de coûts ou de matériel lié. On crée donc en statut New (1)
+    // et on applique le statut final tout à la fin (étape 6), une fois coûts et
+    // liens rattachés.
     const etape3 = 'Tickets'
     const ticketIdParRef = new Map<number, number>()
+    let faits3 = 0
     onProgress({ etape: etape3, courant: 0, total: donnees.tickets.length })
-    for (let i = 0; i < donnees.tickets.length; i++) {
-      const t = donnees.tickets[i]
-      // GLPI impose le workflow depuis « Nouveau » : créer un ticket
-      // directement dans un statut avancé (résolu, clos…) est refusé, et un
-      // ticket clos REFUSE ensuite l'ajout de coûts ou de matériel lié. On crée
-      // donc en statut New (1) et on applique le statut final tout à la fin
-      // (étape 6), une fois coûts et liens rattachés.
+    await pool(donnees.tickets, CONCURRENCE, async (t) => {
       const id = await creer(EP.ticket, {
         name: t.titre,
         content: t.description,
@@ -428,16 +447,16 @@ export async function importer(
       planifierSuppressionHL(`${EP.ticket}/${id}`)
       ticketIdParRef.set(t.ref, id)
       rapport.cree.tickets++
-      onProgress({ etape: etape3, courant: i + 1, total: donnees.tickets.length })
-    }
+      onProgress({ etape: etape3, courant: ++faits3, total: donnees.tickets.length })
+    })
 
     // ── Étape 4 : coûts ──
     const etape4 = 'Coûts des tickets'
+    let faits4 = 0
     onProgress({ etape: etape4, courant: 0, total: donnees.couts.length })
-    for (let i = 0; i < donnees.couts.length; i++) {
-      const c = donnees.couts[i]
+    await pool(donnees.couts, CONCURRENCE, async (c) => {
       const ticketId = ticketIdParRef.get(c.numTicket)
-      if (ticketId === undefined) continue // validé en amont
+      if (ticketId === undefined) return // validé en amont
       const id = await creer(`${EP.ticket}/${ticketId}/Cost`, {
         name: 'Coût (import CSV)',
         duration: c.duration,
@@ -446,8 +465,8 @@ export async function importer(
       })
       planifierSuppressionHL(`${EP.ticket}/${ticketId}/Cost/${id}`)
       rapport.cree.couts++
-      onProgress({ etape: etape4, courant: i + 1, total: donnees.couts.length })
-    }
+      onProgress({ etape: etape4, courant: ++faits4, total: donnees.couts.length })
+    })
 
     // ── Étape 5 : liens matériel ↔ ticket (relation Item_Ticket, API legacy) ──
     // Comme les images : best-effort et non bloquant. La colonne Items de la
@@ -500,22 +519,24 @@ export async function importer(
         }
       }
 
-      for (let i = 0; sessionOk && i < liens.length; i++) {
-        const l = liens[i]
-        try {
-          const id = await lierItemTicket({
-            itemtype: l.itemType,
-            items_id: l.itemId,
-            tickets_id: l.ticketId,
-          })
-          annulations.push(() => supprimerItemTicket(id))
-          rapport.cree.liens++
-        } catch (err) {
-          rapport.liensEchecs.push(
-            `${l.libelle} — ${err instanceof Error ? err.message : String(err)}`,
-          )
-        }
-        onProgress({ etape: etape5, courant: i + 1, total: liens.length })
+      let faits5 = 0
+      if (sessionOk) {
+        await pool(liens, CONCURRENCE, async (l) => {
+          try {
+            const id = await lierItemTicket({
+              itemtype: l.itemType,
+              items_id: l.itemId,
+              tickets_id: l.ticketId,
+            })
+            annulations.push(() => supprimerItemTicket(id))
+            rapport.cree.liens++
+          } catch (err) {
+            rapport.liensEchecs.push(
+              `${l.libelle} — ${err instanceof Error ? err.message : String(err)}`,
+            )
+          }
+          onProgress({ etape: etape5, courant: ++faits5, total: liens.length })
+        })
       }
     }
     rapport.liensIgnores = totalLiens - rapport.cree.liens
@@ -526,15 +547,15 @@ export async function importer(
     const aBasculer = donnees.tickets.filter((t) => t.status !== STATUT_NEW)
     if (aBasculer.length > 0) {
       const etape6 = 'Statut des tickets'
+      let faits6 = 0
       onProgress({ etape: etape6, courant: 0, total: aBasculer.length })
-      for (let i = 0; i < aBasculer.length; i++) {
-        const t = aBasculer[i]
+      await pool(aBasculer, CONCURRENCE, async (t) => {
         const ticketId = ticketIdParRef.get(t.ref)
         if (ticketId !== undefined) {
           await mettreAJour(`${EP.ticket}/${ticketId}`, { status: { id: t.status } })
         }
-        onProgress({ etape: etape6, courant: i + 1, total: aBasculer.length })
-      }
+        onProgress({ etape: etape6, courant: ++faits6, total: aBasculer.length })
+      })
     }
 
     rapport.ok = true

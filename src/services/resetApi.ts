@@ -1,5 +1,9 @@
 import { fetchAllIds, fetchCount, fetchList, supprimerItem } from './glpiApi'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
+import { pool } from './concurrency'
+
+/** Nombre de suppressions menées en parallèle lors d'une réinitialisation. */
+const CONCURRENCE_SUPPRESSION = 8
 
 /**
  * Comptes par défaut de GLPI qui ne doivent JAMAIS être supprimés par une
@@ -308,25 +312,29 @@ export async function reinitialiserModule(
     }
   }
 
-  const total = collected.reduce((s, c) => s + c.ids.length, 0)
+  // Aplatit toutes les suppressions du module en une seule file, puis les
+  // exécute en parallèle borné. Les suppressions sont indépendantes (lignes
+  // distinctes) et best-effort : un échec est consigné sans interrompre les
+  // autres. JS étant mono-thread, `traites++` et `echecs.push` entre deux
+  // `await` n'ont pas de course concurrente.
+  const taches = collected.flatMap(({ ep, ids }) => ids.map((id) => ({ ep, id })))
+  const total = taches.length
   let traites = 0
   onProgression?.({ total, traites })
 
-  for (const { ep, ids } of collected) {
-    for (const id of ids) {
-      try {
-        await supprimerItem(ep.endpoint, id)
-      } catch (err) {
-        echecs.push({
-          endpoint: ep.label,
-          id,
-          erreur: err instanceof Error ? err.message : String(err),
-        })
-      }
-      traites++
-      onProgression?.({ total, traites })
+  await pool(taches, CONCURRENCE_SUPPRESSION, async ({ ep, id }) => {
+    try {
+      await supprimerItem(ep.endpoint, id)
+    } catch (err) {
+      echecs.push({
+        endpoint: ep.label,
+        id,
+        erreur: err instanceof Error ? err.message : String(err),
+      })
     }
-  }
+    traites++
+    onProgression?.({ total, traites })
+  })
 
   return {
     moduleId: module.id,
