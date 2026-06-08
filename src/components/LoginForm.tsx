@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext'
 
 export function LoginForm() {
   const { login, error } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  // Identifiants par défaut (compte de démonstration GLPI) pré-remplis.
+  const [username, setUsername] = useState('glpi')
+  const [password, setPassword] = useState('glpi')
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
