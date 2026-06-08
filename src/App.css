@@ -91,24 +91,18 @@
 
 /* ==========================
    DASHBOARD LAYOUT
+========================== */
 
 .dash-wrap {
   min-height: 100vh;
   background: #f8fafc;
-  display: flex;
-  align-items: stretch;
-  min-height: 100svh;
-}
-
-.app-content {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
 /* ==========================
    HEADER
+========================== */
 
 .dash-header {
   height: 72px;
@@ -139,6 +133,7 @@
 
 /* ==========================
    BRAND
+========================== */
 
 .brand {
   display: flex;
@@ -170,12 +165,12 @@
 
 /* ==========================
    USER CARD
+========================== */
 
 .dash-user-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 4px 8px;
+  gap: 12px;
 }
 
 .user-info {
@@ -255,6 +250,7 @@
 
 /* ==========================
    SIDEBAR
+========================== */
 
 .dash-nav {
   background: #fff;
@@ -355,6 +351,7 @@
 
 /* ==========================
    BUTTONS
+========================== */
 
 .btn-ghost {
   padding: 8px 16px;
@@ -380,6 +377,7 @@
 
 /* ==========================
    CARDS
+========================== */
 
 .card {
   border-radius: 14px !important;
@@ -391,6 +389,7 @@
 
 /* ==========================
    RESPONSIVE
+========================== */
 
 @media (max-width: 1024px) {
   .dash-body {
@@ -572,8 +571,7 @@
 
 /* Tableau de données */
 .table-scroll {
-  overflow: auto;
-  max-height: 70vh;
+  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
 }
@@ -593,15 +591,11 @@
 }
 
 .data-table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   color: var(--text);
-  background: var(--bg);
-  box-shadow: inset 0 -1px 0 var(--border);
+  background: var(--social-bg);
 }
 
 .data-table tbody tr:last-child td {
@@ -615,6 +609,7 @@
 /* ===== Vue d'ensemble (statistiques) ===== */
 /* ==========================
    DASHBOARD STATS
+========================== */
 
 .stats-dashboard {
   display: grid;
@@ -642,6 +637,7 @@
 
 /* ==========================
    HEADER
+========================== */
 
 .stats-card-header {
   display: flex;
@@ -696,12 +692,11 @@
   display: block;
   margin-top: 6px;
   color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
 }
 
 /* ==========================
    LISTE DES STATS
+========================== */
 
 .stats-list {
   display: flex;
@@ -784,6 +779,7 @@
 
 /* ==========================
    ALERTES
+========================== */
 
 .stats-card .alert {
   border-radius: 12px;
@@ -792,6 +788,7 @@
 
 /* ==========================
    PANEL HEAD
+========================== */
 
 .panel-head {
   display: flex;
@@ -810,6 +807,7 @@
 
 /* ==========================
    LOADING
+========================== */
 
 .spinner-border {
   width: 3rem;
@@ -818,6 +816,7 @@
 
 /* ==========================
    RESPONSIVE
+========================== */
 
 @media (max-width: 992px) {
   .stats-dashboard {

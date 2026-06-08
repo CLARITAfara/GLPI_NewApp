@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
@@ -7,7 +7,6 @@ import { ResetPanel } from './ResetPanel'
 import { ImportPanel } from './ImportPanel'
 import { StatsView } from './StatsView'
 import { TicketsView } from './TicketsView'
-import { Sidebar } from './Sidebar'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -24,26 +23,16 @@ const ROLE_LABELS: Record<string, string> = {
 export function Dashboard() {
   const { session, logout } = useAuth()
   const navigate = useNavigate()
-  const { section: sectionParam } = useParams()
 
   const role = session?.active_profile?.name ?? '—'
   const iface = session?.active_profile?.interface ?? ''
   const sections = useMemo(() => sectionsForRole(role, iface), [role, iface])
-
-  // L'onglet actif est dérivé de l'URL (/:section). À défaut (« / ») ou si la
-  // section est inconnue/non autorisée, on retombe sur la première section.
-  const active = sections.find((s) => s.id === sectionParam) ?? sections[0]
-
-  // URL invalide (section inexistante pour ce rôle) → on normalise vers la racine.
-  useEffect(() => {
-    if (sectionParam && !sections.some((s) => s.id === sectionParam)) {
-      navigate('/', { replace: true })
-    }
-  }, [sectionParam, sections, navigate])
+  const [activeId, setActiveId] = useState(sections[0]?.id)
 
   if (!session) return null
 
   const roleLabel = ROLE_LABELS[role] ?? role
+  const active = sections.find((s) => s.id === activeId) ?? sections[0]
   const displayName = session.friendly_name || session.name
 
   return (
