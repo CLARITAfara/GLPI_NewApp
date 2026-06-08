@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { config } from '../config'
 
 export function LoginForm() {
   const { login, error } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [code, setCode] = useState(config.glpiPassword)
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await login(username.trim(), password)
+      await login(config.glpiUsername, code)
     } catch {
       // l'erreur est exposée via le contexte (error)
     } finally {
@@ -24,27 +23,17 @@ export function LoginForm() {
     <div className="login-wrap">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>Connexion GLPI</h1>
-        <p className="subtitle">Connectez-vous avec votre compte GLPI</p>
+        <p className="subtitle">Entrez votre code d'accès</p>
 
-        <label htmlFor="username">Identifiant</label>
+        <label htmlFor="code">Code d'accès</label>
         <input
-          id="username"
-          type="text"
-          autoComplete="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          autoFocus
-        />
-
-        <label htmlFor="password">Mot de passe</label>
-        <input
-          id="password"
+          id="code"
           type="password"
           autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
           required
+          autoFocus
         />
 
         {error && (
@@ -53,7 +42,7 @@ export function LoginForm() {
           </p>
         )}
 
-        <button type="submit" disabled={submitting || !username || !password}>
+        <button type="submit" disabled={submitting || !code}>
           {submitting ? 'Connexion…' : 'Se connecter'}
         </button>
       </form>

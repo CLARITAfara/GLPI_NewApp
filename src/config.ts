@@ -17,4 +17,8 @@ export const config = {
   glpiUserToken: import.meta.env.VITE_GLPI_USER_TOKEN || '',
   /** App-Token GLPI (optionnel, selon la configuration du client API). */
   glpiAppToken: import.meta.env.VITE_GLPI_APP_TOKEN || '',
+  /** Identifiant GLPI fixe utilisé pour la connexion via code unique */
+  glpiUsername: import.meta.env.VITE_GLPI_USERNAME || 'glpi',
+  /** Code d'accès par défaut affiché sur le formulaire de connexion */
+  glpiPassword: import.meta.env.VITE_GLPI_PASSWORD || 'glpi',
 }

@@ -8,6 +8,8 @@ export interface ListResult {
   total: number
 }
 
+export type ApiFetchFn = (path: string, init?: RequestInit) => Promise<Response>
+
 /**
  * Récupère une liste paginée depuis l'API GLPI.
  * Le total est lu dans l'en-tête Content-Range ("0-5/6" -> 6).
@@ -18,6 +20,7 @@ export interface ListResult {
 export async function fetchList(
   path: string,
   params: { start?: number; limit?: number; filter?: string; includeDeleted?: boolean } = {},
+  fetchFn: ApiFetchFn = apiFetch,
 ): Promise<ListResult> {
   const start = params.start ?? 0
   const limit = params.limit ?? 20
@@ -28,7 +31,7 @@ export async function fetchList(
   if (params.filter) filtres.push(params.filter)
   if (filtres.length > 0) qs.set('filter', filtres.join(';')) // ; = AND en RSQL
 
-  const res = await apiFetch(`${path}?${qs.toString()}`)
+  const res = await fetchFn(`${path}?${qs.toString()}`)
   if (!res.ok) {
     throw new Error(`Erreur ${res.status} lors du chargement.`)
   }
