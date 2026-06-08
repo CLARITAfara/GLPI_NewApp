@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { sectionsForRole } from '../sections'
 import { SectionView } from './SectionView'
@@ -21,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function Dashboard() {
   const { session, logout } = useAuth()
+  const navigate = useNavigate()
 
   const role = session?.active_profile?.name ?? '—'
   const iface = session?.active_profile?.interface ?? ''
@@ -43,6 +45,9 @@ export function Dashboard() {
             <span className={`role-badge role-${iface}`}>{roleLabel}</span>
           </div>
         </div>
+        <button type="button" className="btn-ghost" onClick={() => navigate('/front')}>
+          Espace utilisateur
+        </button>
         <button type="button" className="btn-ghost" onClick={logout}>
           Se déconnecter
         </button>

@@ -1,6 +1,7 @@
 import { fetchList } from './glpiApi'
 import type { GlpiRow } from './glpiApi'
 import { refName } from './glpiApi'
+import { frontApiFetch } from './frontSession'
 
 export const ALL_ITEM_TYPES = [
   'Computer',
@@ -91,7 +92,7 @@ function normalizeRow(raw: GlpiRow, itemType: string): ElementRow {
 
 async function fetchForType(type: ItemType): Promise<ElementRow[]> {
   try {
-    const { items } = await fetchList(ITEM_ENDPOINTS[type], { limit: FETCH_LIMIT })
+    const { items } = await fetchList(ITEM_ENDPOINTS[type], { limit: FETCH_LIMIT }, frontApiFetch)
     return items.map((raw) => normalizeRow(raw, type))
   } catch {
     return []

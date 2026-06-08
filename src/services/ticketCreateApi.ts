@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient'
+import { frontApiFetch } from './frontSession'
 import { ouvrirSession, associerElementTicket, uploadDisponible } from './legacyApi'
 
 export type TicketType = 1 | 2
@@ -43,7 +43,7 @@ async function parseError(res: Response): Promise<string> {
 }
 
 export async function createTicket(data: TicketFormData): Promise<number> {
-  const res = await apiFetch('/Assistance/Ticket', {
+  const res = await frontApiFetch('/Assistance/Ticket', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
