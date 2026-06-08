@@ -163,11 +163,8 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
  * ITEM_TYPES). Garde le reset aligné sur les itemtypes importables : ajouter un
  * type au registre l'expose automatiquement ici.
  */
-const MODULES_ASSETS: ModuleReset[] = (Object.keys(ITEM_TYPES) as ItemType[])
-  // Les types créés via legacy (Cartouches/Consommables) n'ont pas de route HL
-  // de liste/suppression : on les exclut du reset (sinon erreur de listing).
-  .filter((t) => !ITEM_TYPES[t].viaLegacy)
-  .map((t) => {
+const MODULES_ASSETS: ModuleReset[] = (Object.keys(ITEM_TYPES) as ItemType[]).map(
+  (t) => {
     const c = ITEM_TYPES[t]
     return {
       id: t.toLowerCase(),
