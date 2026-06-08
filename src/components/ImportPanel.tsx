@@ -131,7 +131,10 @@ export function ImportPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>📥 Import CSV</h2>
+        <h2>
+          <i className="bi bi-file-earmark-arrow-up me-2" aria-hidden="true" />
+          Import CSV
+        </h2>
       </div>
 
       {phase === 'selection' && (
@@ -186,86 +189,181 @@ function PhaseSelection({
   onValider: () => void
 }) {
   return (
-    <div>
-      <p className="muted reset-intro">
-        Sélectionnez une ou plusieurs feuilles CSV (et éventuellement le ZIP d'images), puis lancez
-        la validation. Chaque feuille peut être importée seule, mais une feuille qui en référence une
-        autre (Tickets → Inventaire, Coûts → Tickets) exige que la feuille référencée soit aussi
-        fournie. Aucune écriture dans GLPI n'a lieu tant que la validation n'est pas réussie.
+  <div>
+    <div className="alert alert-info mb-4">
+      <h5 className="mb-2">Import de données GLPI</h5>
+      <p className="mb-0">
+        Sélectionnez les fichiers CSV à importer.
+        Les données seront validées avant toute écriture dans GLPI.
       </p>
+    </div>
 
-      <div className="import-inputs">
-        {CHAMPS.map((c) => {
-          const f = fichiers[c.cle]
-          return (
-            <label key={c.cle} className={`import-input${f ? ' rempli' : ''}`}>
-              <div className="import-input-head">
-                <span className="import-input-label">{c.label}</span>
-                <span className="muted import-input-aide">{c.aide}</span>
+    <div className="row g-4 mb-4">
+      {CHAMPS.map((c) => {
+        const f = fichiers[c.cle]
+
+        return (
+          <div className="col-lg-6" key={c.cle}>
+            <div
+              className={`import-card ${
+                f ? 'selected' : ''
+              }`}
+            >
+              <div className="mb-3">
+                <h5>{c.label}</h5>
+                <small className="text-muted">
+                  {c.aide}
+                </small>
               </div>
+
               <input
                 type="file"
+                className="form-control"
                 accept={c.accept}
-                onChange={(e) => onChoisir(c.cle, e.target.files?.[0] ?? null)}
+                onChange={(e) =>
+                  onChoisir(
+                    c.cle,
+                    e.target.files?.[0] ?? null
+                  )
+                }
               />
-              <span className="import-input-nom">{f ? `📄 ${f.name}` : 'Aucun fichier'}</span>
-            </label>
-          )
-        })}
-      </div>
 
-      {erreurGlobale && (
-        <p className="login-error" role="alert">
-          {erreurGlobale}
-        </p>
-      )}
-
-      <button className="btn-reset" onClick={onValider} disabled={!auMoinsUn || occupe}>
-        {occupe ? 'Validation…' : 'Valider et importer'}
-      </button>
-      {!auMoinsUn && <p className="muted small">Sélectionnez au moins une feuille CSV.</p>}
+              <div className="mt-3">
+                {f ? (
+                  <span className="badge bg-success">
+                    {f.name}
+                  </span>
+                ) : (
+                  <span className="text-muted">
+                    Aucun fichier
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })}
     </div>
-  )
+
+    {erreurGlobale && (
+      <div className="alert alert-danger">
+        {erreurGlobale}
+      </div>
+    )}
+
+    <div className="d-flex gap-3 align-items-center">
+      <button
+        className="btn btn-primary"
+        onClick={onValider}
+        disabled={!auMoinsUn || occupe}
+      >
+        {occupe ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" />
+            Validation...
+          </>
+        ) : (
+          'Valider et importer'
+        )}
+      </button>
+
+      {!auMoinsUn && (
+        <small className="text-muted">
+          Sélectionnez au moins un CSV
+        </small>
+      )}
+    </div>
+  </div>
+)
 }
 
 // ─── Phase : erreurs de validation ───────────────────────────────────────────
 
 function PhaseErreurs({ erreurs, onRetour }: { erreurs: ErreurValidation[]; onRetour: () => void }) {
-  return (
-    <div>
-      <p className="reset-msg reset-msg--err">
-        Validation échouée — {erreurs.length} erreur{erreurs.length > 1 ? 's' : ''}. Aucun appel à
-        l'API GLPI n'a été effectué.
-      </p>
-      <div className="table-scroll">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Fichier</th>
-              <th>Ligne</th>
-              <th>Colonne</th>
-              <th>Valeur</th>
-              <th>Erreur</th>
-            </tr>
-          </thead>
-          <tbody>
-            {erreurs.map((e, i) => (
-              <tr key={i}>
-                <td>{e.fichier}</td>
-                <td>{e.ligne ?? '—'}</td>
-                <td>{e.colonne}</td>
-                <td>{e.valeur || '—'}</td>
-                <td>{e.message}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+return (
+  <div>
+    <div className="alert alert-danger d-flex align-items-center mb-4">
+      <i className="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+
+      <div>
+        <h5 className="mb-1">Validation échouée</h5>
+        <span>
+          {erreurs.length} erreur{erreurs.length > 1 ? 's' : ''} détectée
+          {erreurs.length > 1 ? 's' : ''}.
+          Aucun appel à l'API GLPI n'a été effectué.
+        </span>
       </div>
-      <button className="btn-ghost" onClick={onRetour} style={{ marginTop: 16 }}>
+    </div>
+
+    <div className="card shadow-sm border-0">
+      <div className="card-header bg-light d-flex justify-content-between align-items-center">
+        <span className="fw-semibold">
+          Détails des erreurs
+        </span>
+
+        <span className="badge bg-danger">
+          {erreurs.length}
+        </span>
+      </div>
+
+      <div className="card-body p-0">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Fichier</th>
+                <th>Ligne</th>
+                <th>Colonne</th>
+                <th>Valeur</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {erreurs.map((e, i) => (
+                <tr key={i}>
+                  <td>
+                    <span className="badge bg-secondary">
+                      {e.fichier}
+                    </span>
+                  </td>
+
+                  <td>{e.ligne ?? '—'}</td>
+
+                  <td>
+                    <code>{e.colonne}</code>
+                  </td>
+
+                  <td>
+                    {e.valeur ? (
+                      <span className="text-danger">
+                        {e.valeur}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+
+                  <td>{e.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div className="d-flex justify-content-end mt-4">
+      <button
+        className="btn btn-outline-primary"
+        onClick={onRetour}
+      >
+        <i className="bi bi-arrow-left me-2"></i>
         Corriger et recommencer
       </button>
     </div>
-  )
+  </div>
+)
 }
 
 // ─── Phase : aperçu avant import ─────────────────────────────────────────────
@@ -294,83 +392,178 @@ function PhaseApercu({
   const nbNouveaux = donnees.assets.length - nbExistants
 
   return (
-    <div>
-      <p className="reset-msg reset-msg--ok">Validation réussie. Prêt à importer dans GLPI.</p>
-
-      {nbExistants > 0 && (
-        <div className="reset-warning">
-          ⚠️ <strong>{nbExistants}</strong> matériel(s) déjà présent(s) dans GLPI — ils seront{' '}
-          <strong>réutilisés</strong> (pas de doublon créé). {nbNouveaux} nouveau(x) sera(ont) créé(s).
-          <ul className="import-resume" style={{ marginTop: 8 }}>
-            {assetsExistants.map((a) => (
-              <li key={`${a.itemType}-${a.id}`} className="small">
-                {ITEM_TYPES[a.itemType].icone} {a.name} (déjà présent, #{a.id})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {verifDoublonsErreur && <p className="muted small">{verifDoublonsErreur}</p>}
-
-      <ul className="import-resume">
-        <li>
-          💻 <strong>{donnees.assets.length}</strong> matériel(s) (ordinateurs / moniteurs)
-          {nbExistants > 0 && (
-            <span className="muted"> — {nbNouveaux} à créer, {nbExistants} réutilisé(s)</span>
-          )}
-        </li>
-        <li>🎫 <strong>{donnees.tickets.length}</strong> ticket(s)</li>
-        <li>💰 <strong>{donnees.couts.length}</strong> coût(s) de ticket</li>
-        {donnees.images.length > 0 && (
-          <li>
-            🖼️ <strong>{tokenOk ? imagesLiables : 0}</strong> image(s) à rattacher en documents
-            {tokenOk && imagesLiables !== donnees.images.length && (
-              <span className="muted"> ({donnees.images.length - imagesLiables} sans asset)</span>
-            )}
-          </li>
-        )}
-      </ul>
-
-      {liens > 0 && tokenOk && (
-        <p className="muted small">
-          🔗 {liens} lien(s) matériel↔ticket seront rattachés (relation Item_Ticket, via l'API legacy).
-        </p>
-      )}
-      {liens > 0 && !tokenOk && (
-        <div className="reset-warning">
-          ⚠️ {liens} lien(s) matériel↔ticket non importés : définissez{' '}
-          <strong>VITE_GLPI_USER_TOKEN</strong> dans <code>.env</code> pour les rattacher.
-        </div>
-      )}
-
-      {donnees.images.length > 0 && !tokenOk && (
-        <div className="reset-warning">
-          ⚠️ Upload d'images désactivé : définissez <strong>VITE_GLPI_USER_TOKEN</strong> dans
-          <code> .env</code> pour rattacher les images en documents.
-        </div>
-      )}
-
-      {donnees.imagesSansAsset.length > 0 && (
-        <p className="muted small">
-          Images sans asset correspondant : {donnees.imagesSansAsset.join(', ')}
-        </p>
-      )}
-      {donnees.assetsSansImage.length > 0 && (
-        <p className="muted small">
-          Assets sans image : {donnees.assetsSansImage.join(', ')}
-        </p>
-      )}
-
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-        <button className="btn-ghost" onClick={onRetour}>
-          Retour
-        </button>
-        <button className="btn-reset" onClick={onConfirmer}>
-          Confirmer l'import
-        </button>
+  <div>
+    <div className="alert alert-success d-flex align-items-center mb-4">
+      <i className="bi bi-check-circle-fill me-2"></i>
+      <div>
+        <strong>Validation réussie</strong>
+        <br />
+        Les données sont prêtes à être importées dans GLPI.
       </div>
     </div>
-  )
+
+    <div className="row g-3 mb-4">
+      <div className="col-md-3">
+        <div className="card shadow-sm border-0 stat-card">
+          <div className="card-body text-center">
+            <h2>{donnees.assets.length}</h2>
+            <span>Matériels</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-0 stat-card">
+          <div className="card-body text-center">
+            <h2>{donnees.tickets.length}</h2>
+            <span>Tickets</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-0 stat-card">
+          <div className="card-body text-center">
+            <h2>{donnees.couts.length}</h2>
+            <span>Coûts</span>
+          </div>
+        </div>
+      </div>
+
+      {donnees.images.length > 0 && (
+        <div className="col-md-3">
+          <div className="card shadow-sm border-0 stat-card">
+            <div className="card-body text-center">
+              <h2>{tokenOk ? imagesLiables : 0}</h2>
+              <span>Images</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {nbExistants > 0 && (
+      <div className="alert alert-warning">
+        <h6 className="mb-2">
+          Matériels déjà présents dans GLPI
+        </h6>
+
+        <p className="mb-2">
+          <strong>{nbExistants}</strong> matériel(s)
+          seront réutilisés.
+        </p>
+
+        <div className="existing-assets-list">
+          {assetsExistants.map((a) => (
+            <div
+              key={`${a.itemType}-${a.id}`}
+              className="existing-asset"
+            >
+              <span>
+                <i className={`${ITEM_TYPES[a.itemType].icone} me-1`} aria-hidden="true" />
+              </span>
+
+              <span>{a.name}</span>
+
+              <span className="badge bg-secondary">
+                #{a.id}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {verifDoublonsErreur && (
+      <div className="alert alert-warning">
+        {verifDoublonsErreur}
+      </div>
+    )}
+
+    <div className="card border-0 shadow-sm mb-4">
+      <div className="card-header">
+        Résumé de l'import
+      </div>
+
+      <div className="card-body">
+        <ul className="list-group list-group-flush">
+          <li className="list-group-item">
+            {nbNouveaux} matériel(s) à créer
+          </li>
+
+          <li className="list-group-item">
+            {donnees.tickets.length} ticket(s)
+          </li>
+
+          <li className="list-group-item">
+            {donnees.couts.length} coût(s)
+          </li>
+
+          {donnees.images.length > 0 && (
+            <li className="list-group-item">
+              {imagesLiables} image(s)
+              rattachable(s)
+            </li>
+          )}
+        </ul>
+      </div>
+    </div>
+
+    {liens > 0 && tokenOk && (
+      <div className="alert alert-info">
+        {liens} lien(s) matériel ↔ ticket
+        seront créés.
+      </div>
+    )}
+
+    {liens > 0 && !tokenOk && (
+      <div className="alert alert-warning">
+        Les liens matériel ↔ ticket ne
+        pourront pas être importés.
+      </div>
+    )}
+
+    {donnees.images.length > 0 && !tokenOk && (
+      <div className="alert alert-warning">
+        Upload des images désactivé :
+        configurez
+        <code>VITE_GLPI_USER_TOKEN</code>.
+      </div>
+    )}
+
+    {donnees.imagesSansAsset.length > 0 && (
+      <div className="alert alert-secondary">
+        <strong>Images sans asset :</strong>
+        <br />
+        {donnees.imagesSansAsset.join(', ')}
+      </div>
+    )}
+
+    {donnees.assetsSansImage.length > 0 && (
+      <div className="alert alert-secondary">
+        <strong>Assets sans image :</strong>
+        <br />
+        {donnees.assetsSansImage.join(', ')}
+      </div>
+    )}
+
+    <div className="d-flex justify-content-end gap-3 mt-4">
+      <button
+        className="btn btn-outline-secondary"
+        onClick={onRetour}
+      >
+        Retour
+      </button>
+
+      <button
+        className="btn btn-primary"
+        onClick={onConfirmer}
+      >
+        Confirmer l'import
+      </button>
+    </div>
+  </div>
+)
 }
 
 // ─── Phase : exécution ───────────────────────────────────────────────────────
@@ -380,22 +573,37 @@ function PhaseExecution({ progression }: { progression: ProgressionImport | null
     progression && progression.total > 0
       ? Math.round((progression.courant / progression.total) * 100)
       : 0
-  return (
-    <div>
-      <p className="muted reset-intro">Import en cours, veuillez patienter…</p>
-      <div className="reset-progress-item">
-        <div className="reset-progress-header">
-          <span className="reset-progress-name">{progression?.etape ?? 'Préparation…'}</span>
-          <span className="reset-progress-count">
-            {progression ? `${progression.courant} / ${progression.total}` : ''}
-          </span>
-        </div>
-        <div className="reset-progress-bar-wrap">
-          <div className="reset-progress-bar-fill" style={{ width: `${pct}%` }} />
+return (
+  <div className="card shadow-sm">
+    <div className="card-body">
+      <h4 className="mb-4">
+        Import en cours
+      </h4>
+
+      <div className="d-flex justify-content-between mb-2">
+        <span>
+          {progression?.etape ??
+            'Préparation...'}
+        </span>
+
+        <strong>
+          {progression
+            ? `${progression.courant}/${progression.total}`
+            : ''}
+        </strong>
+      </div>
+
+      <div className="progress">
+        <div
+          className="progress-bar progress-bar-striped progress-bar-animated"
+          style={{ width: `${pct}%` }}
+        >
+          {pct}%
         </div>
       </div>
     </div>
-  )
+  </div>
+)
 }
 
 // ─── Phase : rapport final ───────────────────────────────────────────────────
@@ -407,73 +615,211 @@ function PhaseRapport({
   rapport: RapportImport
   onRecommencer: () => void
 }) {
-  return (
-    <div>
-      {rapport.ok ? (
-        <p className="reset-msg reset-msg--ok">Import terminé avec succès.</p>
-      ) : (
-        <p className="reset-msg reset-msg--err">
-          Import interrompu{rapport.rollback ? ' — rollback effectué (éléments créés supprimés)' : ''}.
-          {rapport.erreur ? ` Détail : ${rapport.erreur}` : ''}
+return (
+  <div>
+    {rapport.ok ? (
+      <div className="alert alert-success mb-4">
+        <h5 className="mb-1">
+          Import terminé avec succès
+        </h5>
+        <p className="mb-0">
+          Toutes les données ont été importées dans GLPI.
         </p>
-      )}
+      </div>
+    ) : (
+      <div className="alert alert-danger mb-4">
+        <h5 className="mb-1">
+          Import interrompu
+        </h5>
 
-      <ul className="import-resume">
-        <li><span className="badge-ok">{rapport.cree.materiel}</span> matériel(s) créé(s)</li>
-        {rapport.materielReutilise > 0 && (
-          <li><span className="badge-ok">{rapport.materielReutilise}</span> matériel(s) déjà présent(s) réutilisé(s)</li>
+        <p className="mb-0">
+          {rapport.rollback
+            ? 'Rollback effectué : les éléments créés ont été supprimés.'
+            : 'Certaines données n’ont pas pu être importées.'}
+        </p>
+
+        {rapport.erreur && (
+          <div className="mt-2">
+            <strong>Détail :</strong>{' '}
+            {rapport.erreur}
+          </div>
         )}
-        <li><span className="badge-ok">{rapport.cree.tickets}</span> ticket(s)</li>
-        <li><span className="badge-ok">{rapport.cree.couts}</span> coût(s)</li>
-        <li><span className="badge-ok">{rapport.cree.documents}</span> image(s) rattachée(s) en documents</li>
-        <li><span className="badge-ok">{rapport.cree.liens}</span> lien(s) matériel↔ticket</li>
-        <li><span className="badge-ok">{rapport.cree.listes}</span> entrée(s) de liste créée(s)</li>
-        <li><span className="badge-ok">{rapport.cree.utilisateurs}</span> utilisateur(s) créé(s)</li>
-        {(rapport.liensIgnores > 0 || rapport.imagesIgnorees > 0) && (
-          <li className="muted">
-            Non importés : {rapport.liensIgnores} lien(s) matériel↔ticket, {rapport.imagesIgnorees}{' '}
-            image(s)
-          </li>
-        )}
-      </ul>
+      </div>
+    )}
 
-      {rapport.liensEchecs.length > 0 && (
-        <div className="reset-warning">
-          ⚠️ {rapport.liensEchecs.length} lien(s) matériel↔ticket non importé(s) (sans bloquer l'import) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
-            {rapport.liensEchecs.map((m, i) => (
-              <li key={i} className="small">{m}</li>
-            ))}
-          </ul>
+    <div className="row g-3 mb-4">
+      <div className="col-md-3">
+        <div className="card shadow-sm border-success">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.materiel}</h2>
+            <span>Matériels créés</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-primary">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.tickets}</h2>
+            <span>Tickets</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-warning">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.couts}</h2>
+            <span>Coûts</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-info">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.documents}</h2>
+            <span>Documents</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-secondary">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.liens}</h2>
+            <span>Liens Ticket ↔ Asset</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-dark">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.listes}</h2>
+            <span>Entrées de liste</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-3">
+        <div className="card shadow-sm border-success">
+          <div className="card-body text-center">
+            <h2>{rapport.cree.utilisateurs}</h2>
+            <span>Utilisateurs</span>
+          </div>
+        </div>
+      </div>
+
+      {rapport.materielReutilise > 0 && (
+        <div className="col-md-3">
+          <div className="card shadow-sm border-warning">
+            <div className="card-body text-center">
+              <h2>{rapport.materielReutilise}</h2>
+              <span>Matériels réutilisés</span>
+            </div>
+          </div>
         </div>
       )}
+    </div>
 
-      {rapport.liensIgnoresInfo.length > 0 && (
-        <div className="reset-msg">
-          ℹ️ {rapport.liensIgnoresInfo.length} lien(s) ignoré(s) — type non associable aux tickets
-          dans GLPI (normal, ce n'est pas une erreur) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
-            {rapport.liensIgnoresInfo.map((m, i) => (
-              <li key={i} className="small">{m}</li>
-            ))}
+    {(rapport.liensIgnores > 0 ||
+      rapport.imagesIgnorees > 0) && (
+      <div className="alert alert-secondary">
+        <strong>Éléments ignorés</strong>
+
+        <div className="mt-2">
+          {rapport.liensIgnores} lien(s)
+          matériel ↔ ticket
+          <br />
+          {rapport.imagesIgnorees} image(s)
+        </div>
+      </div>
+    )}
+
+    {rapport.liensEchecs.length > 0 && (
+      <div className="card border-warning shadow-sm mb-4">
+        <div className="card-header bg-warning-subtle">
+          Liens matériel ↔ ticket non importés
+        </div>
+
+        <div className="card-body">
+          <ul className="list-group list-group-flush">
+            {rapport.liensEchecs.map(
+              (m, i) => (
+                <li
+                  key={i}
+                  className="list-group-item"
+                >
+                  {m}
+                </li>
+              )
+            )}
           </ul>
         </div>
-      )}
+      </div>
+    )}
 
-      {rapport.imagesEchecs.length > 0 && (
-        <div className="reset-warning">
-          ⚠️ {rapport.imagesEchecs.length} image(s) non importée(s) (sans bloquer l'import) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
-            {rapport.imagesEchecs.map((m, i) => (
-              <li key={i} className="small">{m}</li>
-            ))}
+    {rapport.liensIgnoresInfo.length >
+      0 && (
+      <div className="card border-info shadow-sm mb-4">
+        <div className="card-header bg-info-subtle">
+          Liens ignorés
+        </div>
+
+        <div className="card-body">
+          <p className="small text-muted">
+            Types non associables aux
+            tickets dans GLPI.
+          </p>
+
+          <ul className="list-group list-group-flush">
+            {rapport.liensIgnoresInfo.map(
+              (m, i) => (
+                <li
+                  key={i}
+                  className="list-group-item"
+                >
+                  {m}
+                </li>
+              )
+            )}
           </ul>
         </div>
-      )}
+      </div>
+    )}
 
-      <button className="btn-ghost" onClick={onRecommencer}>
+    {rapport.imagesEchecs.length > 0 && (
+      <div className="card border-danger shadow-sm mb-4">
+        <div className="card-header bg-danger-subtle">
+          Images non importées
+        </div>
+
+        <div className="card-body">
+          <ul className="list-group list-group-flush">
+            {rapport.imagesEchecs.map(
+              (m, i) => (
+                <li
+                  key={i}
+                  className="list-group-item"
+                >
+                  {m}
+                </li>
+              )
+            )}
+          </ul>
+        </div>
+      </div>
+    )}
+
+    <div className="d-flex justify-content-end mt-4">
+      <button
+        className="btn btn-primary"
+        onClick={onRecommencer}
+      >
         Nouvel import
       </button>
     </div>
-  )
+  </div>
+)
 }

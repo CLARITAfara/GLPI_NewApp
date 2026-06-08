@@ -105,7 +105,10 @@ export function ResetPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🗑️ Réinitialisation</h2>
+        <h2>
+          <i className="bi bi-trash me-2" aria-hidden="true" />
+          Réinitialisation
+        </h2>
       </div>
 
       {phase === 'selection' && (
@@ -165,69 +168,96 @@ function PhaseSelection({
   onToggleTout: () => void
   onLancer: () => void
 }) {
-  return (
-    <div>
-      <p className="muted reset-intro">
-        Ressources concernées par les imports Excel/CSV (tickets, matériel de
-        tous types, utilisateurs, localisations…). Le nombre indiqué correspond
-        aux enregistrements actuellement en base GLPI.
-      </p>
-      <div className="reset-warning">
-        ⚠️ Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
-      </div>
+ return (
+  <>
+    <div className="alert alert-warning">
+      <strong>Attention :</strong> cette opération supprimera définitivement
+      les données sélectionnées dans GLPI.
+    </div>
 
-      <label className="reset-select-all">
+    <div className="d-flex justify-content-between align-items-center mb-4">
+      <h4 className="mb-0">
+        Modules à réinitialiser
+      </h4>
+
+      <div className="form-check">
         <input
+          className="form-check-input"
           type="checkbox"
           checked={tousSelectionnees}
           onChange={onToggleTout}
+          id="select-all"
         />
-        Tout sélectionner / désélectionner
-      </label>
 
-      <div className="reset-ressources">
-        {MODULES_RESET.map((m) => {
-          const n = compteurs?.[m.endpoints[0].endpoint]
-          const texte = compteurs == null ? '…' : n == null ? '?' : String(n)
-          const labelNombre =
-            compteurs == null
-              ? 'Comptage…'
-              : n == null
-              ? 'Nombre indisponible'
-              : `${n} en base`
-          return (
-            <label
-              key={m.id}
-              className={`reset-ressource-card${selectionnees.has(m.id) ? ' selected' : ''}`}
-            >
-              <input
-                type="checkbox"
-                checked={selectionnees.has(m.id)}
-                onChange={() => onToggle(m.id)}
-              />
-              <span className="reset-ressource-icone">{m.icone}</span>
-              <span className="reset-module-info">
-                <span className="reset-ressource-label">{m.label}</span>
-                <span className="muted" style={{ fontSize: 13 }}>{m.description}</span>
-              </span>
-              <span className="reset-ep-count" title={labelNombre}>{texte}</span>
-            </label>
-          )
-        })}
+        <label
+          className="form-check-label"
+          htmlFor="select-all"
+        >
+          Tout sélectionner
+        </label>
       </div>
+    </div>
 
+    <div className="row g-3">
+      {MODULES_RESET.map((m) => {
+        const n = compteurs?.[m.endpoints[0].endpoint]
+
+        return (
+          <div
+            className="col-md-6 col-xl-4"
+            key={m.id}
+          >
+            <div
+              className={`reset-card ${
+                selectionnees.has(m.id)
+                  ? 'selected'
+                  : ''
+              }`}
+            >
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  checked={selectionnees.has(
+                    m.id
+                  )}
+                  onChange={() =>
+                    onToggle(m.id)
+                  }
+                />
+              </div>
+
+              <div className="reset-card-icon">
+                <i className={`${m.icone} fs-4`} aria-hidden="true" />
+              </div>
+
+              <h5>{m.label}</h5>
+
+              <p>{m.description}</p>
+
+              <span className="badge bg-primary">
+                {n ?? '...'} éléments
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+
+    <div className="mt-4">
       <button
-        className="btn-reset"
+        className="btn btn-danger"
+        disabled={
+          selectionnees.size === 0
+        }
         onClick={onLancer}
-        disabled={selectionnees.size === 0}
       >
-        Lancer la réinitialisation
-        {selectionnees.size > 0 && (
-          <span className="btn-reset-count"> ({selectionnees.size} module{selectionnees.size > 1 ? 's' : ''})</span>
-        )}
+        Réinitialiser (
+        {selectionnees.size})
       </button>
     </div>
-  )
+  </>
+)
 }
 
 function PhaseConfirmation({
@@ -243,53 +273,102 @@ function PhaseConfirmation({
   onAnnuler: () => void
   onConfirmer: () => void
 }) {
-  const totalEndpoints = modules.reduce((s, m) => s + m.endpoints.length, 0)
+  const totalEndpoints = modules.reduce(
+    (s, m) => s + m.endpoints.length,
+    0
+  )
 
   return (
-    <div className="reset-dialog">
-      <h3>⚠️ Confirmer la réinitialisation</h3>
-      <p>
-        Vous allez supprimer définitivement toutes les entrées de{' '}
-        <strong>{totalEndpoints} type{totalEndpoints > 1 ? 's' : ''} de ressource</strong>{' '}
-        répartis dans les modules suivants :
-      </p>
-      <ul className="reset-dialog-list">
-        {modules.map((m) => (
-          <li key={m.id}>
-            {m.icone} <strong>{m.label}</strong>
-            <span className="muted"> — {m.endpoints.map((e) => e.label).join(', ')}</span>
-          </li>
-        ))}
-      </ul>
-      <p>
-        Cette action est <strong>irréversible</strong> et ne peut pas être annulée.
-      </p>
-      <div className="reset-confirm-field">
-        <label htmlFor="reset-input">
-          Tapez <strong>RESET</strong> pour confirmer
-        </label>
-        <input
-          id="reset-input"
-          type="text"
-          value={motConfirmation}
-          onChange={(e) => onChangeMot(e.target.value)}
-          placeholder="RESET"
-          autoComplete="off"
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
-        />
-      </div>
-      <div className="reset-dialog-actions">
-        <button className="btn-ghost" onClick={onAnnuler}>
-          Annuler
-        </button>
-        <button
-          className="btn-reset"
-          onClick={onConfirmer}
-          disabled={motConfirmation !== 'RESET'}
-        >
-          Confirmer la suppression
-        </button>
+    <div className="card border-danger">
+      <div className="card-body">
+        <h4 className="text-danger mb-3">
+          Confirmation requise
+        </h4>
+
+        <div className="alert alert-danger">
+          <strong>Attention :</strong> cette action supprimera
+          définitivement les données GLPI sélectionnées.
+        </div>
+
+        <div className="mb-4">
+          <p className="mb-1">
+            Modules sélectionnés :
+          </p>
+
+          <h5>
+            {modules.length} module
+            {modules.length > 1 ? 's' : ''}
+          </h5>
+
+          <p className="text-muted mb-0">
+            {totalEndpoints} endpoint
+            {totalEndpoints > 1 ? 's' : ''} concerné
+            {totalEndpoints > 1 ? 's' : ''}
+          </p>
+        </div>
+
+        <ul className="list-group mb-4">
+          {modules.map((m) => (
+            <li
+              key={m.id}
+              className="list-group-item"
+            >
+              <div className="d-flex justify-content-between">
+                <span>
+                  <i className={`${m.icone} me-1`} aria-hidden="true" /> {m.label}
+                </span>
+
+                <span className="badge bg-secondary">
+                  {m.endpoints.length}
+                </span>
+              </div>
+
+              <small className="text-muted">
+                {m.endpoints
+                  .map((e) => e.label)
+                  .join(', ')}
+              </small>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mb-3">
+          <label
+            htmlFor="reset-input"
+            className="form-label"
+          >
+            Tapez <strong>RESET</strong> pour confirmer
+          </label>
+
+          <input
+            id="reset-input"
+            className="form-control"
+            value={motConfirmation}
+            onChange={(e) =>
+              onChangeMot(e.target.value)
+            }
+            placeholder="RESET"
+            autoComplete="off"
+            autoFocus
+          />
+        </div>
+
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-secondary"
+            onClick={onAnnuler}
+          >
+            Annuler
+          </button>
+
+          <button
+            className="btn btn-danger"
+            disabled={motConfirmation !== 'RESET'}
+            onClick={onConfirmer}
+          >
+            Supprimer définitivement
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -304,49 +383,140 @@ function PhaseExecution({
   progressions: Record<string, ProgressionModule>
   chargementIds: Set<string>
 }) {
-  return (
-    <div>
-      <p className="muted reset-intro">Réinitialisation en cours, veuillez patienter…</p>
-      <div className="reset-progress-list">
+ return (
+  <div>
+    <div className="alert alert-info d-flex align-items-center mb-4">
+      <div
+        className="spinner-border spinner-border-sm me-3"
+        role="status"
+      />
+      <div>
+        Réinitialisation en cours. Veuillez patienter pendant la suppression
+        des données GLPI.
+      </div>
+    </div>
+
+    <div className="card border-0 shadow-sm">
+      <div className="card-body">
+        <h4 className="mb-4">
+          Progression de la réinitialisation
+        </h4>
+
         {modules.map((m) => {
-          const prog = progressions[m.id] ?? { total: 0, traites: 0 }
-          const enChargement = chargementIds.has(m.id)
-          const pct = prog.total > 0 ? Math.round((prog.traites / prog.total) * 100) : 0
+          const prog = progressions[m.id] ?? {
+            total: 0,
+            traites: 0,
+          }
+
+          const enChargement =
+            chargementIds.has(m.id)
+
+          const pct =
+            prog.total > 0
+              ? Math.round(
+                  (prog.traites /
+                    prog.total) *
+                    100
+                )
+              : 0
+
+          const termine =
+            !enChargement &&
+            prog.total > 0 &&
+            prog.traites === prog.total
 
           return (
-            <div key={m.id} className="reset-progress-item">
-              <div className="reset-progress-header">
-                <span className="reset-progress-name">
-                  {m.icone} {m.label}
-                </span>
-                <span className="reset-progress-count">
-                  {enChargement
-                    ? 'Collecte des IDs…'
-                    : prog.total === 0
-                    ? 'Vide'
-                    : prog.traites === prog.total
-                    ? `✓ ${prog.supprimes ?? prog.traites} supprimé${prog.traites !== 1 ? 's' : ''}`
-                    : `${prog.traites} / ${prog.total}`}
-                </span>
+            <div
+              key={m.id}
+              className="mb-4 pb-3 border-bottom"
+            >
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <strong>
+                    {m.icone} {m.label}
+                  </strong>
+                </div>
+
+                <div>
+                  {enChargement ? (
+                    <span className="badge bg-secondary">
+                      Collecte des IDs...
+                    </span>
+                  ) : prog.total === 0 ? (
+                    <span className="badge bg-light text-dark">
+                      Vide
+                    </span>
+                  ) : termine ? (
+                    <span className="badge bg-success">
+                      ✓{' '}
+                      {prog.supprimes ??
+                        prog.traites}{' '}
+                      supprimé
+                      {(
+                        prog.supprimes ??
+                        prog.traites
+                      ) > 1
+                        ? 's'
+                        : ''}
+                    </span>
+                  ) : (
+                    <span className="badge bg-primary">
+                      {prog.traites} /{' '}
+                      {prog.total}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="reset-progress-bar-wrap">
-                <div
-                  className="reset-progress-bar-fill"
-                  style={{
-                    width: enChargement ? '0%' : prog.total === 0 ? '100%' : `${pct}%`,
-                    opacity: prog.total === 0 && !enChargement ? 0.3 : 1,
-                  }}
-                />
+
+              <div className="progress mb-2">
+                {enChargement ? (
+                  <div
+                    className="
+                      progress-bar
+                      progress-bar-striped
+                      progress-bar-animated
+                    "
+                    role="progressbar"
+                    style={{
+                      width: '100%',
+                    }}
+                  >
+                    Chargement...
+                  </div>
+                ) : (
+                  <div
+                    className={`progress-bar ${
+                      termine
+                        ? 'bg-success'
+                        : 'bg-primary'
+                    }`}
+                    role="progressbar"
+                    style={{
+                      width:
+                        prog.total === 0
+                          ? '100%'
+                          : `${pct}%`,
+                    }}
+                  >
+                    {prog.total === 0
+                      ? '0'
+                      : `${pct}%`}
+                  </div>
+                )}
               </div>
-              <span className="reset-progress-eps muted">
-                {m.endpoints.map((ep) => ep.label).join(' · ')}
-              </span>
+
+              <div className="small text-muted">
+                {m.endpoints
+                  .map((ep) => ep.label)
+                  .join(' • ')}
+              </div>
             </div>
           )
         })}
       </div>
     </div>
-  )
+  </div>
+)
 }
 
 function PhaseRapport({
@@ -362,71 +532,171 @@ function PhaseRapport({
   const totalEchecs = resultats.reduce((s, r) => s + r.echecs.filter((e) => e.id > 0).length, 0)
 
   return (
-    <div>
-      {erreurGlobale ? (
-        <p className="reset-msg reset-msg--err">Erreur : {erreurGlobale}</p>
-      ) : (
-        <p className="reset-msg reset-msg--ok">
-          Réinitialisation terminée —{' '}
-          <strong>{totalSupprimes} entrée{totalSupprimes !== 1 ? 's' : ''} supprimée{totalSupprimes !== 1 ? 's' : ''}</strong>
+  <div>
+    {erreurGlobale ? (
+      <div className="alert alert-danger">
+        <strong>Erreur :</strong> {erreurGlobale}
+      </div>
+    ) : (
+      <div className="alert alert-success">
+        <strong>Réinitialisation terminée</strong>
+
+        <div className="mt-2">
+          {totalSupprimes} entrée
+          {totalSupprimes > 1 ? 's' : ''} supprimée
+          {totalSupprimes > 1 ? 's' : ''}
           {totalEchecs > 0 && (
-            <span className="reset-msg-echecs">
-              {' '}· {totalEchecs} échec{totalEchecs !== 1 ? 's' : ''}
-            </span>
+            <>
+              {' '}
+              • {totalEchecs} échec
+              {totalEchecs > 1 ? 's' : ''}
+            </>
           )}
-        </p>
-      )}
+        </div>
+      </div>
+    )}
 
-      {resultats.length > 0 && (
-        <div className="reset-rapport-list">
-          {resultats.map((res) => {
-            const config = MODULES_RESET.find((m) => m.id === res.moduleId)
-            const echecsReels = res.echecs.filter((e) => e.id > 0)
-            const echecsListing = res.echecs.filter((e) => e.id === 0)
+    {resultats.length > 0 && (
+      <div className="row g-3 mb-4">
+        {resultats.map((res) => {
+          const config = MODULES_RESET.find(
+            (m) => m.id === res.moduleId
+          )
 
-            return (
-              <div key={res.moduleId} className="reset-rapport-item">
-                <div className="reset-rapport-header">
-                  <span className="reset-rapport-name">
-                    {config?.icone} {res.label}
-                  </span>
-                  <span className="badge-ok">
-                    {res.supprimes} supprimé{res.supprimes !== 1 ? 's' : ''}
-                  </span>
-                  {echecsReels.length > 0 && (
-                    <span className="badge-err">
-                      {echecsReels.length} échec{echecsReels.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {echecsListing.length > 0 && (
-                    <span className="badge-err">listing KO</span>
+          const echecsReels =
+            res.echecs.filter(
+              (e) => e.id > 0
+            )
+
+          const echecsListing =
+            res.echecs.filter(
+              (e) => e.id === 0
+            )
+
+          return (
+            <div
+              key={res.moduleId}
+              className="col-12"
+            >
+              <div className="card shadow-sm border-0">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                    <div>
+                      <h5 className="mb-1">
+                        <i className={`${config?.icone} me-1`} aria-hidden="true" />
+                        {res.label}
+                      </h5>
+                    </div>
+
+                    <div className="d-flex gap-2 flex-wrap">
+                      <span className="badge bg-success">
+                        {res.supprimes} supprimé
+                        {res.supprimes > 1
+                          ? 's'
+                          : ''}
+                      </span>
+
+                      {echecsReels.length >
+                        0 && (
+                        <span className="badge bg-danger">
+                          {
+                            echecsReels.length
+                          }{' '}
+                          échec
+                          {echecsReels.length >
+                          1
+                            ? 's'
+                            : ''}
+                        </span>
+                      )}
+
+                      {echecsListing.length >
+                        0 && (
+                        <span className="badge bg-warning text-dark">
+                          Listing KO
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {res.echecs.length >
+                    0 && (
+                    <div className="mt-3">
+                      <h6 className="text-danger mb-3">
+                        Détails des erreurs
+                      </h6>
+
+                      <div className="table-responsive">
+                        <table className="table table-sm table-striped">
+                          <thead>
+                            <tr>
+                              <th>
+                                Endpoint
+                              </th>
+                              <th>
+                                ID
+                              </th>
+                              <th>
+                                Erreur
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {res.echecs.map(
+                              (
+                                e,
+                                i
+                              ) => (
+                                <tr
+                                  key={
+                                    i
+                                  }
+                                >
+                                  <td>
+                                    <code>
+                                      {
+                                        e.endpoint
+                                      }
+                                    </code>
+                                  </td>
+
+                                  <td>
+                                    {e.id >
+                                    0
+                                      ? e.id
+                                      : '—'}
+                                  </td>
+
+                                  <td>
+                                    {
+                                      e.erreur
+                                    }
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {res.echecs.length > 0 && (
-                  <div className="reset-rapport-echecs">
-                    <p style={{ fontSize: 12, color: 'var(--text)', margin: 0 }}>
-                      Détails des échecs :
-                    </p>
-                    <ul className="reset-echec-list">
-                      {res.echecs.map((e, i) => (
-                        <li key={i}>
-                          <em>{e.endpoint}</em>
-                          {e.id > 0 ? ` ID ${e.id}` : ''} — {e.erreur}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
-            )
-          })}
-        </div>
-      )}
+            </div>
+          )
+        })}
+      </div>
+    )}
 
-      <button className="btn-ghost" onClick={onRecommencer}>
+    <div className="d-flex justify-content-end">
+      <button
+        className="btn btn-primary"
+        onClick={onRecommencer}
+      >
         Nouvelle réinitialisation
       </button>
     </div>
-  )
+  </div>
+)
 }
