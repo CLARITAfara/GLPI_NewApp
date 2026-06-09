@@ -1,4 +1,9 @@
 import { fetchAllIds, fetchCount, fetchList, supprimerItem } from './glpiApi'
+import {
+  compterItemLegacy,
+  listerIdsLegacy,
+  purgerItemLegacy,
+} from './legacyApi'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
 import { pool } from './concurrency'
 
@@ -37,6 +42,17 @@ export interface EndpointConfig {
    * l'endpoint utilisateurs afin de préserver les comptes système GLPI.
    */
   protegerLogins?: string[]
+  /**
+   * true pour les types sans route High-Level (CartridgeItem, ConsumableItem) :
+   * comptage / listing / suppression passent par l'API REST legacy.
+   * Nécessite VITE_GLPI_USER_TOKEN.
+   */
+  viaLegacy?: boolean
+  /**
+   * Nom de classe GLPI (itemtype) employé par les appels legacy. Renseigné
+   * uniquement quand `viaLegacy` est vrai.
+   */
+  itemtype?: string
 }
 
 export interface ModuleReset {
@@ -164,17 +180,22 @@ export const MODULES_DISPONIBLES: ModuleReset[] = [
  * type au registre l'expose automatiquement ici.
  */
 const MODULES_ASSETS: ModuleReset[] = (Object.keys(ITEM_TYPES) as ItemType[])
-  // Les types créés via legacy (Cartouches/Consommables) n'ont pas de route HL
-  // de liste/suppression : on les exclut du reset (sinon erreur de listing).
-  .filter((t) => !ITEM_TYPES[t].viaLegacy)
   .map((t) => {
     const c = ITEM_TYPES[t]
+    // Cartouches/Consommables n'ont pas de route HL : listing/suppression via
+    // l'API legacy (cf. viaLegacy + itemtype). Les autres passent par le HL.
     return {
       id: t.toLowerCase(),
       label: c.libelle,
       icone: c.icone,
       description: `${c.libelle} de l'inventaire (Item_Type = ${t})`,
-      endpoints: [{ endpoint: c.assetEndpoint, label: c.libelle, sansCorbeille: c.sansCorbeille }],
+      endpoints: [{
+        endpoint: c.assetEndpoint,
+        label: c.libelle,
+        sansCorbeille: c.sansCorbeille,
+        viaLegacy: c.viaLegacy,
+        itemtype: c.viaLegacy ? t : undefined,
+      }],
     }
   },
 )
@@ -248,10 +269,11 @@ export async function compterEndpoints(
   for (const m of modules) {
     for (const ep of m.endpoints) {
       try {
-        // Exclut la corbeille par défaut ; dropdowns = pas de is_deleted.
-        compteurs[ep.endpoint] = await fetchCount(ep.endpoint, {
-          includeDeleted: ep.sansCorbeille,
-        })
+        compteurs[ep.endpoint] =
+          ep.viaLegacy && ep.itemtype
+            ? await compterItemLegacy(ep.itemtype)
+            : // Exclut la corbeille par défaut ; dropdowns = pas de is_deleted.
+              await fetchCount(ep.endpoint, { includeDeleted: ep.sansCorbeille })
       } catch {
         compteurs[ep.endpoint] = null
       }
@@ -266,6 +288,10 @@ export async function compterEndpoints(
  * `fetchAllIds`. Avec, pagine en lisant le champ `username` pour filtrer.
  */
 async function idsSupprimables(ep: EndpointConfig): Promise<number[]> {
+  if (ep.viaLegacy && ep.itemtype) {
+    return listerIdsLegacy(ep.itemtype)
+  }
+
   if (!ep.protegerLogins || ep.protegerLogins.length === 0) {
     return fetchAllIds(ep.endpoint, { includeDeleted: ep.sansCorbeille })
   }
@@ -327,7 +353,11 @@ export async function reinitialiserModule(
 
   await pool(taches, CONCURRENCE_SUPPRESSION, async ({ ep, id }) => {
     try {
-      await supprimerItem(ep.endpoint, id)
+      if (ep.viaLegacy && ep.itemtype) {
+        await purgerItemLegacy(ep.itemtype, id)
+      } else {
+        await supprimerItem(ep.endpoint, id)
+      }
     } catch (err) {
       echecs.push({
         endpoint: ep.label,
