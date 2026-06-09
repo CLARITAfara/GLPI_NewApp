@@ -30,3 +30,8 @@ dist-ssr
 
 *.sqlite
 vite.config.ts
+newapp/newapp.db
+newapp/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+newapp/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+newapp/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+newapp/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
