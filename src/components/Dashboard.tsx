@@ -7,6 +7,7 @@ import { ResetPanel } from './ResetPanel'
 import { ImportPanel } from './ImportPanel'
 import { StatsView } from './StatsView'
 import { TicketsView } from './TicketsView'
+import { BackofficeKanbanSettings } from './BackofficeKanbanSettings'
 import { Sidebar } from './Sidebar'
 
 // Libellés FR des profils GLPI
@@ -84,6 +85,8 @@ export function Dashboard() {
             <ResetPanel />
           ) : active?.custom === 'import' ? (
             <ImportPanel />
+          ) : active?.custom === 'kanban-settings' ? (
+            <BackofficeKanbanSettings />
           ) : active ? (
             <SectionView key={active.id} section={active} />
           ) : (

@@ -17,7 +17,7 @@ export interface Section {
   endpoint: string
   columns: Column[]
   /** Section spéciale sans tableau de données */
-  custom?: 'reset' | 'import' | 'stats' | 'tickets'
+  custom?: 'reset' | 'import' | 'stats' | 'tickets' | 'kanban-settings'
 }
 
 const STATS: Section = {
@@ -84,6 +84,15 @@ const RESET: Section = {
   custom: 'reset',
 }
 
+const KANBAN_SETTINGS: Section = {
+  id: 'kanban-settings',
+  label: 'Kanban',
+  icon: '🎨',
+  endpoint: '',
+  columns: [],
+  custom: 'kanban-settings',
+}
+
 /**
  * Sections visibles selon le rôle.
  * - interface "helpdesk" (libre-service) : seulement ses tickets.
@@ -98,7 +107,7 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [STATS, TICKETS, COMPUTERS, USERS, IMPORT, RESET]
+      return [STATS, TICKETS, COMPUTERS, USERS, IMPORT, RESET, KANBAN_SETTINGS]
     default:
       return [STATS, TICKETS, COMPUTERS]
   }
