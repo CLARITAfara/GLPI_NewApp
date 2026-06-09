@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   KANBAN_COLUMNS,
   colonnePourStatut,
   listerTicketsFront,
   getTicketFront,
   getSolutionTicket,
-  creerTicketRapide,
   changerStatutTicket,
   resoudreTicket,
 } from '../../services/ticketsFrontApi'
@@ -146,13 +146,6 @@ export function KanbanBoard() {
     await appliquer(ticketId, colDef.statutCible, ancien, () => resoudreTicket(ticketId, texte))
   }
 
-  // ── Création rapide ─────────────────────────────────────────────────────────
-  async function creer(colId: KanbanColumnId, titre: string) {
-    const colDef = KANBAN_COLUMNS.find((c) => c.id === colId)!
-    const nouveau = await creerTicketRapide(titre, colDef.statutCible)
-    setTickets((prev) => [nouveau, ...prev])
-  }
-
   return (
     <section className="panel">
       <div className="panel-head">
@@ -197,7 +190,6 @@ export function KanbanBoard() {
               onDrop={(id) => deposer(col.id, id)}
               onDragStartCard={(id) => { draggingId.current = id }}
               onOpenCard={(id) => setDetailId(id)}
-              onCreate={(titre) => creer(col.id, titre)}
             />
           ))}
         </div>
@@ -231,11 +223,10 @@ interface ColumnProps {
   onDrop: (id: number | null) => void
   onDragStartCard: (id: number) => void
   onOpenCard: (id: number) => void
-  onCreate: (titre: string) => Promise<void>
 }
 
 function KanbanColumn(props: ColumnProps) {
-  const { id, titre, label, backgroundColor, tickets, isOver, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard, onCreate } = props
+  const { id, titre, label, backgroundColor, tickets, isOver, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard } = props
 
   const style = backgroundColor
     ? ({ '--col-bg': backgroundColor } as React.CSSProperties)
@@ -271,8 +262,11 @@ function KanbanColumn(props: ColumnProps) {
             onOpen={() => onOpenCard(t.id)}
           />
         ))}
-        {/* La création n'est proposée que dans la colonne « Nouveau ». */}
-        {id === 'new' && <QuickAdd onCreate={onCreate} />}
+        {id === 'new' && (
+          <Link to="/front/tickets/create" className="kanban-add-btn">
+            <span className="kanban-add-icon">＋</span> Ajouter 1 ticket
+          </Link>
+        )}
       </div>
     </div>
   )
@@ -315,74 +309,6 @@ function KanbanCard(
         )}
       </div>
     </article>
-  )
-}
-
-// ── Création rapide inline (« + Ajouter 1 ticket ») ───────────────────────────
-function QuickAdd({ onCreate }: { onCreate: (titre: string) => Promise<void> }) {
-  const [open, setOpen] = useState(false)
-  const [titre, setTitre] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState('')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => { if (open) inputRef.current?.focus() }, [open])
-
-  function annuler() {
-    setOpen(false)
-    setTitre('')
-    setErr('')
-  }
-
-  async function valider() {
-    const t = titre.trim()
-    if (!t) { annuler(); return }
-    setSaving(true)
-    setErr('')
-    try {
-      await onCreate(t)
-      setTitre('')
-      setOpen(false)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Création impossible.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (!open) {
-    return (
-      <button type="button" className="kanban-add-btn" onClick={() => setOpen(true)}>
-        <span className="kanban-add-icon">＋</span> Ajouter 1 ticket
-      </button>
-    )
-  }
-
-  return (
-    <div className="kanban-add-form">
-      <textarea
-        ref={inputRef}
-        className="kanban-add-input"
-        value={titre}
-        onChange={(e) => setTitre(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); valider() }
-          if (e.key === 'Escape') annuler()
-        }}
-        placeholder="Titre du ticket…"
-        rows={2}
-        disabled={saving}
-      />
-      {err && <span className="field-error">{err}</span>}
-      <div className="kanban-add-actions">
-        <button type="button" className="btn-primary" onClick={valider} disabled={saving}>
-          {saving ? 'Ajout…' : 'Ajouter'}
-        </button>
-        <button type="button" className="kanban-add-cancel" onClick={annuler} disabled={saving} aria-label="Annuler">
-          ✕
-        </button>
-      </div>
-    </div>
   )
 }
 
