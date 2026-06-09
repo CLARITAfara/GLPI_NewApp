@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS kanban_status_labels (
     created_by  INTEGER,
 
     FOREIGN KEY (status_id)   REFERENCES kanban_statuses (id) ON DELETE CASCADE,
-    FOREIGN KEY (language_id) REFERENCES languages        (id) ON DELETE CASCADE
+    FOREIGN KEY (language_id) REFERENCES languages        (id) ON DELETE CASCADE,
+    UNIQUE (status_id, language_id)
 );
 
 -- ------------------------------------------------------------
@@ -54,5 +55,6 @@ CREATE TABLE IF NOT EXISTS kanban_status_colors (
     created_at       DATETIME          DEFAULT CURRENT_TIMESTAMP,
     created_by       INTEGER,
 
-    FOREIGN KEY (status_id) REFERENCES kanban_statuses (id) ON DELETE CASCADE
+    FOREIGN KEY (status_id) REFERENCES kanban_statuses (id) ON DELETE CASCADE,
+    UNIQUE (status_id)
 );

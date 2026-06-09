@@ -17,7 +17,7 @@ export interface Section {
   endpoint: string
   columns: Column[]
   /** Section spéciale sans tableau de données */
-  custom?: 'reset' | 'import' | 'stats' | 'tickets'
+  custom?: 'reset' | 'import' | 'stats' | 'tickets' | 'kanban'
 }
 
 const STATS: Section = {
@@ -36,6 +36,15 @@ const TICKETS: Section = {
   endpoint: '/Assistance/Ticket',
   columns: [],
   custom: 'tickets',
+}
+
+const KANBAN: Section = {
+  id: 'kanban',
+  label: 'Kanban',
+  icon: '🗂️',
+  endpoint: '',
+  columns: [],
+  custom: 'kanban',
 }
 
 const COMPUTERS: Section = {
@@ -98,7 +107,7 @@ export function sectionsForRole(profileName: string, iface: string): Section[] {
     case 'Super-Admin':
     case 'Admin':
     case 'Supervisor':
-      return [STATS, TICKETS, COMPUTERS, USERS, IMPORT, RESET]
+      return [STATS, TICKETS, KANBAN, COMPUTERS, USERS, IMPORT, RESET]
     default:
       return [STATS, TICKETS, COMPUTERS]
   }

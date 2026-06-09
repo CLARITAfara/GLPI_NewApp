@@ -1868,6 +1868,140 @@
   color: #b45309;
 }
 
+/* ===== Configuration Kanban (back-office) ===== */
+.kanban-config-intro {
+  margin: -8px 0 22px;
+}
+
+.kanban-config-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.kanban-config-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+.kanban-config-preview {
+  min-height: 86px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  color: #1f2937;
+}
+
+.kanban-config-preview strong {
+  font-size: 18px;
+}
+
+.kanban-config-preview span {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.kanban-config-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+}
+
+.kanban-config-code {
+  align-self: flex-start;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+}
+
+.kanban-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.kanban-config-field input[type='text'],
+.kanban-config-field select {
+  min-width: 0;
+  padding: 9px 11px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.kanban-config-field input[type='text']:focus,
+.kanban-config-field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.kanban-color-control {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.kanban-color-control input[type='color'] {
+  width: 44px;
+  height: 40px;
+  padding: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.kanban-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.kanban-config-message {
+  max-width: 560px;
+  margin: 20px 0 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid;
+  border-radius: 8px;
+}
+
+.kanban-config-message--ok {
+  color: #155724;
+  background: rgba(21, 87, 36, 0.08);
+  border-color: rgba(21, 87, 36, 0.25);
+}
+
+.kanban-config-message--error {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.25);
+}
+
+@media (max-width: 980px) {
+  .kanban-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .filters-grid {
     grid-template-columns: 1fr;

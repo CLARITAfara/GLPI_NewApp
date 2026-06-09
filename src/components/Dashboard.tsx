@@ -8,6 +8,7 @@ import { ImportPanel } from './ImportPanel'
 import { StatsView } from './StatsView'
 import { TicketsView } from './TicketsView'
 import { Sidebar } from './Sidebar'
+import { KanbanConfigPanel } from './KanbanConfigPanel'
 
 // Libellés FR des profils GLPI
 const ROLE_LABELS: Record<string, string> = {
@@ -80,6 +81,8 @@ export function Dashboard() {
             <StatsView />
           ) : active?.custom === 'tickets' ? (
             <TicketsView />
+          ) : active?.custom === 'kanban' ? (
+            <KanbanConfigPanel />
           ) : active?.custom === 'reset' ? (
             <ResetPanel />
           ) : active?.custom === 'import' ? (
