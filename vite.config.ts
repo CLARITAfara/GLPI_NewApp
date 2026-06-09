@@ -10,6 +10,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        // /kanban-api/... -> http://localhost:8080/api/...
+        '/kanban-api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/kanban-api/, '/api'),
+        },
         // /api/... (côté client) -> {GLPI}/api.php/... (serveur)
         '/api': {
           target,

@@ -10,6 +10,8 @@ import {
   resoudreTicket,
 } from '../../services/ticketsFrontApi'
 import type { KanbanColumnId, InfoRequise, SolutionTicket } from '../../services/ticketsFrontApi'
+import { chargerConfigKanban, chargerLangues } from '../../services/kanbanConfigApi'
+import type { KanbanColumnConfig, Language } from '../../services/kanbanConfigApi'
 import {
   libellePriorite,
   libelleStatut,
@@ -34,6 +36,9 @@ export function KanbanBoard() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading')
   const [error, setError] = useState('')
+  const [colConfigs, setColConfigs] = useState<Partial<Record<KanbanColumnId, KanbanColumnConfig>>>({})
+  const [languages, setLanguages] = useState<Language[]>([])
+  const [selectedLangId, setSelectedLangId] = useState<number | null>(null)
 
   // Colonne survolée pendant un drag (pour le retour visuel).
   const [dragOver, setDragOver] = useState<KanbanColumnId | null>(null)
@@ -70,6 +75,8 @@ export function KanbanBoard() {
   }, [])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { chargerLangues().then(setLanguages) }, [])
+  useEffect(() => { chargerConfigKanban(selectedLangId).then(setColConfigs) }, [selectedLangId])
 
   // Répartit les tickets par colonne en respectant l'ordre des colonnes.
   const parColonne = useMemo(() => {
@@ -152,6 +159,19 @@ export function KanbanBoard() {
         <h2>🗂️ Tickets — Kanban</h2>
         <div className="kanban-head-actions">
           {loadStatus === 'ready' && <span className="count-badge">{tickets.length}</span>}
+          {languages.length > 0 && (
+            <select
+              className="kanban-lang-select"
+              value={selectedLangId ?? ''}
+              onChange={(e) => setSelectedLangId(e.target.value === '' ? null : Number(e.target.value))}
+              aria-label="Langue des colonnes"
+            >
+              <option value="">Défaut</option>
+              {languages.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          )}
           <button type="button" className="btn-ghost" onClick={load} disabled={loadStatus === 'loading'}>
             ↻ Rafraîchir
           </button>
@@ -168,6 +188,8 @@ export function KanbanBoard() {
               key={col.id}
               id={col.id}
               titre={col.titre}
+              label={colConfigs[col.id]?.label ?? null}
+              backgroundColor={colConfigs[col.id]?.backgroundColor ?? null}
               tickets={parColonne[col.id]}
               isOver={dragOver === col.id}
               onDragEnterCol={() => setDragOver(col.id)}
@@ -200,6 +222,8 @@ export function KanbanBoard() {
 interface ColumnProps {
   id: KanbanColumnId
   titre: string
+  label: string | null
+  backgroundColor: string | null
   tickets: Ticket[]
   isOver: boolean
   onDragEnterCol: () => void
@@ -211,11 +235,16 @@ interface ColumnProps {
 }
 
 function KanbanColumn(props: ColumnProps) {
-  const { id, titre, tickets, isOver, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard, onCreate } = props
+  const { id, titre, label, backgroundColor, tickets, isOver, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard, onCreate } = props
+
+  const style = backgroundColor
+    ? ({ '--col-bg': backgroundColor } as React.CSSProperties)
+    : undefined
 
   return (
     <div
       className={`kanban-col kanban-col--${id}${isOver ? ' kanban-col--over' : ''}`}
+      style={style}
       onDragOver={(e) => { e.preventDefault(); onDragEnterCol() }}
       onDragLeave={onDragLeaveCol}
       onDrop={(e) => {
@@ -226,7 +255,10 @@ function KanbanColumn(props: ColumnProps) {
       }}
     >
       <div className="kanban-col-head">
-        <span className="kanban-col-title">{titre}</span>
+        <span className="kanban-col-title">
+          {label ?? titre}
+          {label && <span className="kanban-col-subtitle">{titre}</span>}
+        </span>
         <span className="kanban-col-count">{tickets.length}</span>
       </div>
 

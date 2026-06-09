@@ -1875,6 +1875,23 @@
 }
 
 /* ===== Kanban ===== */
+.kanban-lang-select {
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kanban-lang-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
 .kanban-head-actions {
   display: flex;
   align-items: center;
@@ -1935,6 +1952,16 @@
   font-size: 17px;
   font-weight: 700;
   color: var(--col-fg, var(--text-h));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kanban-col-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.65;
+  letter-spacing: 0.02em;
 }
 
 .kanban-col-count {
