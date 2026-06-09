@@ -6,6 +6,7 @@ import { FrontLayout } from './components/front/FrontLayout'
 import { FrontAutoLogin } from './components/front/FrontAutoLogin'
 import { ElementsPanel } from './components/front/ElementsPanel'
 import { CreateTicketPanel } from './components/front/CreateTicketPanel'
+import { KanbanBoard } from './components/front/KanbanBoard'
 import './App.css'
 
 const ADMIN_PROFILES = ['Super-Admin', 'Admin', 'Supervisor']
@@ -51,6 +52,7 @@ export default function App() {
       <Route path="/front" element={<FrontAutoLogin />}>
         <Route element={<FrontLayout />}>
           <Route index element={<ElementsPanel />} />
+          <Route path="kanban" element={<KanbanBoard />} />
           <Route path="tickets/create" element={<CreateTicketPanel />} />
         </Route>
       </Route>

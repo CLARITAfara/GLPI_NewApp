@@ -3,6 +3,7 @@ import { Sidebar, type SidebarNavItem } from '../Sidebar'
 
 const NAV: SidebarNavItem[] = [
   { id: '/front', label: 'Éléments', icon: '📦' },
+  { id: '/front/kanban', label: 'Tickets (Kanban)', icon: '🗂️' },
   { id: '/front/tickets/create', label: 'Créer un ticket', icon: '🎫' },
 ]
 

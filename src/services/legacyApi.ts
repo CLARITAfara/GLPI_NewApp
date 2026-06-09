@@ -290,6 +290,27 @@ export async function supprimerItemLegacy(itemtype: string, id: number): Promise
   }
 }
 
+/**
+ * GET générique des sous-objets legacy d'un item (ex. les ITILSolution d'un
+ * ticket : `GET /Ticket/{id}/ITILSolution`). L'API OAuth High-Level n'expose
+ * pas ces sous-ressources. Renvoie un tableau vide si indisponible.
+ */
+export async function getSousItemsLegacy(
+  itemtype: string,
+  id: number,
+  sousType: string,
+): Promise<Record<string, unknown>[]> {
+  if (!uploadDisponible()) return []
+  await ouvrirSession()
+
+  const res = await fetch(`${BASE}/${itemtype}/${id}/${sousType}`, {
+    headers: entetes({ 'Session-Token': sessionToken! }),
+  })
+  if (!res.ok) return []
+  const data: unknown = await res.json()
+  return Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+}
+
 /** Supprime un lien matériel ↔ ticket (rollback). Best-effort. */
 export async function supprimerItemTicket(id: number): Promise<void> {
   if (!sessionToken) return
