@@ -10,7 +10,8 @@ export type RegleType =
   | 'texte-optionnel' // peut être vide
   | 'entier' // entier >= 0
   | 'nombre-fr' // nombre décimal (virgule FR acceptée), >= 0
-  | 'date-ddmmyyyy' // JJ/MM/AAAA
+  | 'nombre-fr-optionnel' // idem mais cellule vide tolérée (→ 0)
+  | 'date' // date « tolérante » : JJ/MM/AAAA, J/M/AAAA ou AAAA-MM-JJ
   | 'heure-hhmm' // HH:MM
   | 'enum' // valeur dans `correspondances` (insensible à la casse)
   | 'json-array' // tableau JSON de chaînes
@@ -257,10 +258,15 @@ export const STATUTS_TICKET: Record<string, number> = {
   nouveau: 1,
   assigned: 2,
   'in progress': 2,
+  // GLPI exporte le statut « en cours (attribué) » sous la forme
+  // « Processing (assigned) » : on l'accepte tel quel (et la forme courte).
+  processing: 2,
+  'processing (assigned)': 2,
   'en cours': 2,
   'en cours (attribué)': 2,
   attribue: 2,
   planned: 3,
+  'processing (planned)': 3,
   'en cours (planifié)': 3,
   planifie: 3,
   pending: 4,
@@ -275,7 +281,7 @@ export const STATUTS_TICKET: Record<string, number> = {
   fermé: 6,
 }
 
-/** Priorité de ticket → code GLPI (1..5). */
+/** Priorité de ticket → code GLPI (1..6 ; 6 = Majeure). */
 export const PRIORITES_TICKET: Record<string, number> = {
   '1': 1,
   'very low': 1,
@@ -296,6 +302,11 @@ export const PRIORITES_TICKET: Record<string, number> = {
   critique: 5,
   'très haute': 5,
   'tres haute': 5,
+  // GLPI possède un 6e niveau « Majeure » (au-dessus de « Très haute »).
+  '6': 6,
+  major: 6,
+  majeure: 6,
+  majeur: 6,
 }
 
 /** Normalise une clé de correspondance (minuscule, espaces compactés). */
@@ -331,7 +342,7 @@ export const SCHEMA_TICKETS: FichierSchema = {
     // Référence libre (ex. « TK-001 » ou « 42 ») : sert uniquement de clé de
     // liaison interne entre les Feuilles 2 et 3, jamais envoyée à GLPI.
     { nom: 'Ref_Ticket', regle: 'texte' },
-    { nom: 'Date', regle: 'date-ddmmyyyy' },
+    { nom: 'Date', regle: 'date' },
     { nom: 'Heure', regle: 'heure-hhmm' },
     { nom: 'Type', regle: 'enum', correspondances: TYPES_TICKET },
     { nom: 'Titre', regle: 'texte' },
@@ -350,9 +361,10 @@ export const SCHEMA_COUTS: FichierSchema = {
     { nom: 'Num_Ticket', regle: 'texte' },
     // Durée en secondes : on accepte les décimaux (virgule FR) — arrondis à
     // l'entier le plus proche à l'import (GLPI stocke une durée entière).
-    { nom: 'Duration_second', regle: 'nombre-fr' },
-    { nom: 'Time_Cost', regle: 'nombre-fr' },
-    { nom: 'Fixed_Cost', regle: 'nombre-fr' },
+    // Cellule vide tolérée (→ 0) : tous les coûts ne sont pas toujours saisis.
+    { nom: 'Duration_second', regle: 'nombre-fr-optionnel' },
+    { nom: 'Time_Cost', regle: 'nombre-fr-optionnel' },
+    { nom: 'Fixed_Cost', regle: 'nombre-fr-optionnel' },
   ],
 }
 

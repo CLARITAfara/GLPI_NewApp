@@ -533,6 +533,11 @@ export async function importer(
     // Comme les images : best-effort et non bloquant. La colonne Items de la
     // feuille tickets relie chaque ticket aux assets déjà créés à l'étape 1.
     const liens: Array<{ itemType: string; itemId: number; ticketId: number; libelle: string }> = []
+    // Un même matériel peut figurer plusieurs fois dans la colonne Items d'un
+    // ticket (ex. ["EQP-023","EQP-044","EQP-023"]). GLPI impose l'unicité du
+    // triplet (itemtype, items_id, tickets_id) : on déduplique donc les liens
+    // pour ne pas déclencher une « Duplicate entry … unicity » au 2e POST.
+    const liensVus = new Set<string>()
     for (const t of donnees.tickets) {
       const ticketId = ticketIdParRef.get(t.ref)
       if (ticketId === undefined) continue
@@ -560,8 +565,13 @@ export async function importer(
           continue
         }
         // itemtype = classe GLPI (namespacée pour Socket), pas la clé interne.
+        const itemType = ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType
+        // Doublon (même matériel déjà lié à ce ticket) → on l'ignore silencieusement.
+        const cleLien = `${itemType}#${asset.id}#${ticketId}`
+        if (liensVus.has(cleLien)) continue
+        liensVus.add(cleLien)
         liens.push({
-          itemType: ITEM_TYPES[asset.itemType].ticketItemtype ?? asset.itemType,
+          itemType,
           itemId: asset.id,
           ticketId,
           libelle: `${nom} ↔ ticket #${t.ref}`,

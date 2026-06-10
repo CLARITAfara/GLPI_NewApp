@@ -95,6 +95,36 @@ interface ResCellule {
   valeur?: string | number | string[]
 }
 
+/**
+ * Parseur de date « tolérant » : on n'impose plus un seul format. Accepte les
+ * séparateurs `/`, `-` ou `.` et les deux ordres courants des exports :
+ *   • AAAA-MM-JJ (ISO, ex. 2025-10-05)  → détecté quand le 1er groupe a 4 chiffres
+ *   • JJ/MM/AAAA et J/M/AAAA (FR, jour/mois sur 1 ou 2 chiffres, ex. 23/2/2026)
+ * Renvoie toujours la date normalisée en `AAAA-MM-JJ` (format attendu par GLPI).
+ */
+function validerDate(v: string): ResCellule {
+  if (v === '') return { ok: false, message: 'date requise' }
+
+  let y: number, mo: number, d: number
+  // 1er groupe sur 4 chiffres → ordre ISO AAAA-MM-JJ.
+  let m = /^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/.exec(v)
+  if (m) {
+    y = Number(m[1]); mo = Number(m[2]); d = Number(m[3])
+  } else {
+    // Sinon ordre français JJ/MM/AAAA (jour et mois sur 1 ou 2 chiffres).
+    m = /^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/.exec(v)
+    if (!m) return { ok: false, message: 'format attendu JJ/MM/AAAA ou AAAA-MM-JJ' }
+    d = Number(m[1]); mo = Number(m[2]); y = Number(m[3])
+  }
+
+  const dt = new Date(y, mo - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+    return { ok: false, message: 'date inexistante' }
+  }
+  const p = (n: number) => String(n).padStart(2, '0')
+  return { ok: true, valeur: `${y}-${p(mo)}-${p(d)}` }
+}
+
 function validerCellule(col: ColonneSchema, brut: string): ResCellule {
   const v = brut.trim()
 
@@ -116,19 +146,16 @@ function validerCellule(col: ColonneSchema, brut: string): ResCellule {
       return { ok: true, valeur: n }
     }
 
-    case 'date-ddmmyyyy': {
-      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v)
-      if (!m) return { ok: false, message: 'format attendu JJ/MM/AAAA' }
-      const [, jj, mm, aaaa] = m
-      const d = Number(jj)
-      const mo = Number(mm)
-      const y = Number(aaaa)
-      const dt = new Date(y, mo - 1, d)
-      if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
-        return { ok: false, message: 'date inexistante' }
-      }
-      return { ok: true, valeur: `${aaaa}-${mm}-${jj}` }
+    case 'nombre-fr-optionnel': {
+      // Cellule vide acceptée et ramenée à 0 (coût non renseigné).
+      if (v === '') return { ok: true, valeur: 0 }
+      const n = Number(v.replace(/\s/g, '').replace(',', '.'))
+      if (!Number.isFinite(n) || n < 0) return { ok: false, message: 'nombre positif attendu' }
+      return { ok: true, valeur: n }
     }
+
+    case 'date':
+      return validerDate(v)
 
     case 'heure-hhmm': {
       const m = /^(\d{2}):(\d{2})$/.exec(v)
