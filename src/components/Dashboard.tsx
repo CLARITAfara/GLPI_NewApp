@@ -8,6 +8,7 @@ import { ImportPanel } from './ImportPanel'
 import { StatsView } from './StatsView'
 import { TicketsView } from './TicketsView'
 import { Sidebar } from './Sidebar'
+import { Breadcrumb } from './Breadcrumb'
 import { KanbanConfigPanel } from './KanbanConfigPanel'
 
 // Libellés FR des profils GLPI
@@ -35,10 +36,10 @@ export function Dashboard() {
   // section est inconnue/non autorisée, on retombe sur la première section.
   const active = sections.find((s) => s.id === sectionParam) ?? sections[0]
 
-  // URL invalide (section inexistante pour ce rôle) → on normalise vers la racine.
+  // URL invalide (section inexistante pour ce rôle) → on normalise vers /admin.
   useEffect(() => {
     if (sectionParam && !sections.some((s) => s.id === sectionParam)) {
-      navigate('/', { replace: true })
+      navigate('/admin', { replace: true })
     }
   }, [sectionParam, sections, navigate])
 
@@ -50,12 +51,18 @@ export function Dashboard() {
   return (
     <div className="app-shell">
       <Sidebar
-        brandIcon="🛠️"
+        brandIcon="bi bi-shield-lock"
         brandName="GLPI Admin"
         brandSubtitle="Back-office"
-        items={sections.map((s) => ({ id: s.id, label: s.label, icon: s.icon }))}
+        items={sections.map((s) => ({
+          id: s.id,
+          label: s.label,
+          icon: s.icon,
+          group: s.group,
+          danger: s.danger,
+        }))}
         activeId={active?.id}
-        onSelect={(id) => navigate(`/${id}`)}
+        onSelect={(id) => navigate(`/admin/${id}`)}
         footer={
           <>
             <div className="sidebar-user">
@@ -65,17 +72,31 @@ export function Dashboard() {
                 <span className={`role-badge role-${iface}`}>{roleLabel}</span>
               </div>
             </div>
-            <button type="button" className="btn-ghost btn-block" onClick={() => navigate('/front')}>
-              Espace utilisateur
+            <button type="button" className="btn-ghost btn-block" onClick={() => navigate('/')}>
+              <i className="bi bi-box-arrow-up-right" aria-hidden="true" /> Espace utilisateur
             </button>
             <button type="button" className="btn-ghost btn-block" onClick={logout}>
-              Se déconnecter
+              <i className="bi bi-box-arrow-right" aria-hidden="true" /> Se déconnecter
             </button>
           </>
         }
       />
 
       <div className="app-content">
+        {/* En-tête de zone : fil d'Ariane « Espace › Groupe › Section ». Le
+            premier segment ramène à la vue d'ensemble (1re section). */}
+        {active && (
+          <header className="content-header">
+            <Breadcrumb
+              items={[
+                { label: 'GLPI Admin', onClick: () => navigate(`/admin/${sections[0].id}`) },
+                { label: active.group },
+                { label: active.label },
+              ]}
+            />
+          </header>
+        )}
+
         <main className="dash-main">
           {active?.custom === 'stats' ? (
             <StatsView />

@@ -21,35 +21,36 @@ export default function App() {
   const isAdmin = ADMIN_PROFILES.includes(session?.active_profile?.name ?? '')
 
   // Élément du back-office, protégé : redirige selon l'état d'authentification.
-  // Réutilisé par la route racine ET la route par onglet (/:section) pour que
-  // chaque onglet ait sa propre URL.
+  // Réutilisé par la racine /admin ET la route par onglet (/admin/:section) pour
+  // que chaque onglet ait sa propre URL.
   const backOffice =
     status !== 'authenticated' ? (
       <Navigate to="/login" replace />
     ) : !isAdmin ? (
-      <Navigate to="/front" replace />
+      <Navigate to="/" replace />
     ) : (
       <DashboardPage />
     )
 
   return (
     <Routes>
-      {/* Login back-office (admin uniquement) */}
+      {/* Login back-office (admin uniquement) — déjà connecté → /admin */}
       <Route
         path="/login"
         element={
           status === 'authenticated' && isAdmin
-            ? <Navigate to="/" replace />
+            ? <Navigate to="/admin" replace />
             : <LoginPage />
         }
       />
 
-      {/* Back-office (admin) — une URL par onglet : /, /tickets, /computers… */}
-      <Route path="/" element={backOffice} />
-      <Route path="/:section" element={backOffice} />
+      {/* Back-office (admin) — une URL par onglet : /admin, /admin/tickets… */}
+      <Route path="/admin" element={backOffice} />
+      <Route path="/admin/:section" element={backOffice} />
 
-      {/* Front-office — session propre, pas de user connecté visible */}
-      <Route path="/front" element={<FrontAutoLogin />}>
+      {/* Front-office À LA RACINE — point d'entrée par défaut de l'app.
+          Session propre (auto-login), aucun compte visible. */}
+      <Route path="/" element={<FrontAutoLogin />}>
         <Route element={<FrontLayout />}>
           <Route index element={<ElementsPanel />} />
           <Route path="kanban" element={<KanbanBoard />} />
@@ -57,8 +58,8 @@ export default function App() {
         </Route>
       </Route>
 
-      {/* Catch-all */}
-      <Route path="/*" element={<Navigate to="/front" replace />} />
+      {/* Catch-all → front-office */}
+      <Route path="/*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

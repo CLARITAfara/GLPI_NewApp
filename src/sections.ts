@@ -9,6 +9,9 @@ export interface Column {
   accessor?: (row: GlpiRow) => string
 }
 
+/** Regroupement logique des sections dans la barre latérale. */
+export type SectionGroup = 'Pilotage' | 'Assistance' | 'Inventaire' | 'Administration'
+
 export interface Section {
   id: string
   label: string
@@ -18,40 +21,48 @@ export interface Section {
   columns: Column[]
   /** Section spéciale sans tableau de données */
   custom?: 'reset' | 'import' | 'stats' | 'tickets' | 'kanban'
+  /** Groupe de navigation (en-tête de section dans la sidebar). */
+  group: SectionGroup
+  /** Action destructive : mise en avant visuelle distincte (rouge). */
+  danger?: boolean
 }
 
 const STATS: Section = {
   id: 'stats',
   label: "Vue d'ensemble",
-  icon: '📊',
+  icon: 'bi bi-speedometer2',
   endpoint: '',
   columns: [],
   custom: 'stats',
+  group: 'Pilotage',
 }
 
 const TICKETS: Section = {
   id: 'tickets',
   label: 'Tickets',
-  icon: '🎫',
+  icon: 'bi bi-ticket-detailed',
   endpoint: '/Assistance/Ticket',
   columns: [],
   custom: 'tickets',
+  group: 'Assistance',
 }
 
 const KANBAN: Section = {
   id: 'kanban',
   label: 'Kanban',
-  icon: '🗂️',
+  icon: 'bi bi-kanban',
   endpoint: '',
   columns: [],
   custom: 'kanban',
+  group: 'Assistance',
 }
 
 const COMPUTERS: Section = {
   id: 'computers',
   label: 'Ordinateurs',
-  icon: '💻',
+  icon: 'bi bi-pc-display',
   endpoint: '/Assets/Computer',
+  group: 'Inventaire',
   columns: [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Nom' },
@@ -64,8 +75,9 @@ const COMPUTERS: Section = {
 const USERS: Section = {
   id: 'users',
   label: 'Utilisateurs',
-  icon: '👤',
+  icon: 'bi bi-people',
   endpoint: '/Administration/User',
+  group: 'Inventaire',
   columns: [
     { key: 'id', label: 'ID' },
     { key: 'username', label: 'Identifiant' },
@@ -78,19 +90,22 @@ const USERS: Section = {
 const IMPORT: Section = {
   id: 'import',
   label: 'Import CSV',
-  icon: '📥',
+  icon: 'bi bi-upload',
   endpoint: '',
   columns: [],
   custom: 'import',
+  group: 'Administration',
 }
 
 const RESET: Section = {
   id: 'reset',
   label: 'Réinitialisation',
-  icon: '🗑️',
+  icon: 'bi bi-trash',
   endpoint: '',
   columns: [],
   custom: 'reset',
+  group: 'Administration',
+  danger: true,
 }
 
 /**

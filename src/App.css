@@ -70,23 +70,45 @@
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
-.login-card button {
+.login-card button[type='submit'] {
   margin-top: 22px;
   padding: 12px;
   font: inherit;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   color: #fff;
-  background: var(--accent);
+  background: var(--accent-gradient);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.login-card button[type='submit']:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
 }
 
 .login-card button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.login-back {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2);
+  font: inherit;
+  font-size: var(--fs-base);
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.login-back:hover {
+  color: var(--accent);
 }
 
 .login-error {
@@ -216,6 +238,8 @@
 
 .btn-block {
   width: 100%;
+  /* Sans border-box, width:100% + padding du bouton déborde de la sidebar. */
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
   text-align: center;
@@ -891,11 +915,12 @@
   max-width: 480px;
 }
 
+/* Grille responsive : les modules remplissent la largeur de l'écran en
+   plusieurs colonnes au lieu de s'empiler sur une seule colonne étroite. */
 .reset-ressources {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 480px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
 
@@ -1100,10 +1125,9 @@
 
 /* Barres de progression */
 .reset-progress-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.25rem;
-  max-width: 480px;
 }
 
 .reset-progress-item {
@@ -1156,10 +1180,10 @@
 
 /* Rapport final */
 .reset-rapport-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: start;
   gap: 0.75rem;
-  max-width: 480px;
   margin-bottom: 1.25rem;
 }
 
@@ -1250,18 +1274,49 @@
 }
 
 /* ===== Import Panel ===== */
+/* Grille 2 colonnes pleine largeur : les 4 cartes se répartissent 2 en haut /
+   2 en bas et occupent toute la largeur (repli sur 1 colonne en mobile). */
 .import-inputs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  max-width: 640px;
+  gap: 1rem;
   margin-bottom: 1.25rem;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .import-inputs {
     grid-template-columns: 1fr;
   }
+}
+
+/* Case « ignorer les images » : séparée du reste de la carte. */
+.import-input-skip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  color: var(--text-h);
+  cursor: pointer;
+  user-select: none;
+}
+
+.import-input-skip input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Carte image neutralisée quand l'import est désactivé. */
+.import-input.ignore {
+  opacity: 0.6;
+}
+.import-input.ignore .import-input-nom {
+  text-decoration: line-through;
 }
 
 .import-input {
@@ -1272,12 +1327,19 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg);
-  cursor: pointer;
   transition: border-color 0.15s;
 }
 
 .import-input:hover {
   border-color: var(--accent);
+}
+
+/* Zone cliquable interne (déclenche le sélecteur de fichier). */
+.import-input-file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
 }
 
 .import-input.rempli {
@@ -1326,6 +1388,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Variante pour les listes de détail potentiellement longues (matériels déjà
+   présents, échecs de liens/images) : grille pleine largeur au lieu d'une
+   colonne unique qui descend jusqu'en bas. */
+.import-resume--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 4px 16px;
+  max-width: none;
+}
+
+.import-resume--grid li {
+  align-items: flex-start;
 }
 
 /* ===== Front Office — Layout ===== */
@@ -1771,16 +1847,25 @@
 }
 
 .btn-primary {
-  padding: 9px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 10px 20px;
   font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
   color: #fff;
-  background: var(--accent);
+  background: var(--accent-gradient);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
 }
 
 .btn-primary:disabled {
@@ -2488,5 +2573,290 @@
 @media (max-width: 520px) {
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   FONDATION v2 — navigation hiérarchisée + fil d'Ariane + tokens
+   (placé en fin de fichier : précédence sur les règles historiques au besoin)
+   ========================================================================== */
+
+/* La page repose sur le fond « subtle » ; les surfaces (sidebar, cartes,
+   en-tête) ressortent en blanc → meilleure hiérarchie de profondeur. */
+.app-shell {
+  background: var(--bg-subtle);
+}
+
+/* — Groupes de navigation (primaire = groupe, secondaire = item) — */
+.sidebar-nav {
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Espacement entre groupes : crée le rythme vertical de la liste. */
+.nav-group + .nav-group {
+  margin-top: var(--sp-4);
+}
+
+.nav-group-label {
+  margin: 0 0 var(--sp-1);
+  padding: 0 var(--sp-3);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* — Item de nav : barre active à gauche pour un repère fort et calme — */
+.nav-item {
+  position: relative;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  border-radius: var(--radius);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.nav-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text-h);
+}
+
+.nav-item.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: var(--fw-semibold);
+}
+
+/* Indicateur d'état actif (filet vertical) : signal de position non ambigu. */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+/* Item destructif (Réinitialisation) : signalé en rouge, à l'écart visuel. */
+.nav-item--danger {
+  color: var(--danger);
+}
+.nav-item--danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.nav-item--danger.active {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+.nav-item--danger.active::before {
+  background: var(--danger);
+}
+
+/* — En-tête de zone de contenu + fil d'Ariane — */
+.content-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: var(--sp-3) var(--sp-8);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 720px) {
+  .content-header {
+    padding: var(--sp-3) var(--sp-4);
+  }
+}
+
+.breadcrumb ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+/* Dernier segment (page courante) = élément fort. */
+.breadcrumb li:last-child span[aria-current='page'] {
+  color: var(--text-h);
+  font-weight: var(--fw-semibold);
+}
+
+.breadcrumb-sep {
+  color: var(--text-muted);
+}
+
+.breadcrumb-link {
+  padding: 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.breadcrumb-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* La sidebar passe sur fond blanc « surface » au-dessus du fond de page. */
+.sidebar {
+  background: var(--bg);
+}
+
+/* Densité de contenu cohérente avec la grille 8px. */
+.dash-main {
+  padding: var(--sp-8);
+}
+@media (max-width: 720px) {
+  .dash-main {
+    padding: var(--sp-5) var(--sp-4);
+  }
+}
+
+/* ============================================================================
+   FRONT-OFFICE (libre-service) — shell, barre d'accueil, CTA
+   ========================================================================== */
+
+/* Boutons primaires/fantômes rendus via <Link> (ancre) : on neutralise le
+   style de lien et on aligne icône + texte proprement. */
+a.btn-primary,
+a.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  text-decoration: none;
+}
+
+/* Icônes bootstrap dans les boutons/labels : alignées au texte, gap géré
+   par le conteneur flex (pas de marge propre). */
+.btn-primary i,
+.btn-ghost i,
+.nav-item i,
+.breadcrumb i {
+  font-size: 1em;
+  line-height: 1;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* — Barre d'accueil contextuelle en haut du contenu — */
+.front-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-8);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.front-topbar-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.front-topbar-text strong {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.2px;
+  color: var(--text-h);
+}
+
+.front-topbar-text span {
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+.front-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+/* — CTA & note de pied de sidebar — */
+.front-cta {
+  margin-bottom: var(--sp-1);
+}
+
+.front-foot-note {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Contenu front : largeur de lecture confortable, centré. */
+.front-main {
+  padding: var(--sp-8);
+}
+
+@media (max-width: 720px) {
+  .front-topbar {
+    padding: var(--sp-3) var(--sp-4);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-3);
+  }
+  .front-topbar-actions {
+    width: 100%;
+  }
+  .front-topbar-cta {
+    flex: 1;
+  }
+  .front-main {
+    padding: var(--sp-5) var(--sp-4);
+  }
+}
+
+/* Sous 860px, la barre hamburger mobile occupe déjà le haut : on évite un
+   double en-tête « collant » en rendant les barres de contenu statiques. */
+@media (max-width: 860px) {
+  .content-header,
+  .front-topbar {
+    position: static;
+    backdrop-filter: none;
+    background: var(--bg);
   }
 }

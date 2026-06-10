@@ -48,6 +48,9 @@ export function ImportPanel() {
   const [assetsExistants, setAssetsExistants] = useState<AssetExistant[]>([])
   const [verifDoublonsErreur, setVerifDoublonsErreur] = useState<string | null>(null)
   const [assetsBdd, setAssetsBdd] = useState<AssetsBdd | null>(null)
+  // Si coché, le ZIP d'images est ignoré (validation + import) même s'il est
+  // chargé : aucune image ne sera rattachée en document.
+  const [ignorerImages, setIgnorerImages] = useState(false)
 
   // Un seul CSV suffit : chaque feuille peut être importée seule. La validation
   // bloquera si une feuille fournie référence une feuille absente.
@@ -82,7 +85,9 @@ export function ImportPanel() {
         fichiers.tickets?.text() ?? Promise.resolve(null),
         fichiers.couts?.text() ?? Promise.resolve(null),
       ])
-      const imagesZip = fichiers.imagesZip ? await fichiers.imagesZip.arrayBuffer() : null
+      // ZIP ignoré si la case « ne pas importer les images » est cochée.
+      const imagesZip =
+        fichiers.imagesZip && !ignorerImages ? await fichiers.imagesZip.arrayBuffer() : null
       setZipBuffer(imagesZip)
 
       const res = validerImport(
@@ -125,13 +130,14 @@ export function ImportPanel() {
     setAssetsExistants([])
     setVerifDoublonsErreur(null)
     setAssetsBdd(null)
+    setIgnorerImages(false)
     setPhase('selection')
   }
 
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>📥 Import CSV</h2>
+        <h2><i className="bi bi-upload" aria-hidden="true" /> Import CSV</h2>
       </div>
 
       {phase === 'selection' && (
@@ -140,7 +146,9 @@ export function ImportPanel() {
           occupe={occupe}
           auMoinsUn={auMoinsUn}
           erreurGlobale={erreurGlobale}
+          ignorerImages={ignorerImages}
           onChoisir={choisir}
+          onToggleIgnorerImages={setIgnorerImages}
           onValider={valider}
         />
       )}
@@ -175,14 +183,18 @@ function PhaseSelection({
   occupe,
   auMoinsUn,
   erreurGlobale,
+  ignorerImages,
   onChoisir,
+  onToggleIgnorerImages,
   onValider,
 }: {
   fichiers: Fichiers
   occupe: boolean
   auMoinsUn: boolean
   erreurGlobale: string | null
+  ignorerImages: boolean
   onChoisir: (cle: keyof Fichiers, file: File | null) => void
+  onToggleIgnorerImages: (v: boolean) => void
   onValider: () => void
 }) {
   return (
@@ -197,19 +209,43 @@ function PhaseSelection({
       <div className="import-inputs">
         {CHAMPS.map((c) => {
           const f = fichiers[c.cle]
+          const estImage = c.cle === 'imagesZip'
+          const ignore = estImage && ignorerImages
           return (
-            <label key={c.cle} className={`import-input${f ? ' rempli' : ''}`}>
-              <div className="import-input-head">
-                <span className="import-input-label">{c.label}</span>
-                <span className="muted import-input-aide">{c.aide}</span>
-              </div>
-              <input
-                type="file"
-                accept={c.accept}
-                onChange={(e) => onChoisir(c.cle, e.target.files?.[0] ?? null)}
-              />
-              <span className="import-input-nom">{f ? `📄 ${f.name}` : 'Aucun fichier'}</span>
-            </label>
+            <div
+              key={c.cle}
+              className={`import-input${f && !ignore ? ' rempli' : ''}${ignore ? ' ignore' : ''}`}
+            >
+              {/* Zone cliquable = sélection de fichier (label interne pour ne pas
+                  englober la case à cocher dans le déclencheur du file picker). */}
+              <label className="import-input-file">
+                <div className="import-input-head">
+                  <span className="import-input-label">{c.label}</span>
+                  <span className="muted import-input-aide">{c.aide}</span>
+                </div>
+                <input
+                  type="file"
+                  accept={c.accept}
+                  onChange={(e) => onChoisir(c.cle, e.target.files?.[0] ?? null)}
+                />
+                <span className="import-input-nom">
+                  {f ? (<><i className="bi bi-file-earmark-text" aria-hidden="true" /> {f.name}</>) : 'Aucun fichier'}
+                </span>
+              </label>
+
+              {/* Case « ne pas importer les images » : toujours présente sur
+                  l'entrée image. Cochée → le ZIP est conservé mais ignoré. */}
+              {estImage && (
+                <label className="import-input-skip">
+                  <input
+                    type="checkbox"
+                    checked={ignorerImages}
+                    onChange={(e) => onToggleIgnorerImages(e.target.checked)}
+                  />
+                  Ne pas importer les images (fichier conservé mais ignoré)
+                </label>
+              )}
+            </div>
           )
         })}
       </div>
@@ -299,12 +335,12 @@ function PhaseApercu({
 
       {nbExistants > 0 && (
         <div className="reset-warning">
-          ⚠️ <strong>{nbExistants}</strong> matériel(s) déjà présent(s) dans GLPI — ils seront{' '}
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> <strong>{nbExistants}</strong> matériel(s) déjà présent(s) dans GLPI — ils seront{' '}
           <strong>réutilisés</strong> (pas de doublon créé). {nbNouveaux} nouveau(x) sera(ont) créé(s).
-          <ul className="import-resume" style={{ marginTop: 8 }}>
+          <ul className="import-resume import-resume--grid" style={{ marginTop: 8 }}>
             {assetsExistants.map((a) => (
               <li key={`${a.itemType}-${a.id}`} className="small">
-                {ITEM_TYPES[a.itemType].icone} {a.name} (déjà présent, #{a.id})
+                <i className={ITEM_TYPES[a.itemType].icone} aria-hidden="true" /> {a.name} (déjà présent, #{a.id})
               </li>
             ))}
           </ul>
@@ -314,16 +350,16 @@ function PhaseApercu({
 
       <ul className="import-resume">
         <li>
-          💻 <strong>{donnees.assets.length}</strong> matériel(s) (ordinateurs / moniteurs)
+          <i className="bi bi-pc-display" aria-hidden="true" /> <strong>{donnees.assets.length}</strong> matériel(s) (ordinateurs / moniteurs)
           {nbExistants > 0 && (
             <span className="muted"> — {nbNouveaux} à créer, {nbExistants} réutilisé(s)</span>
           )}
         </li>
-        <li>🎫 <strong>{donnees.tickets.length}</strong> ticket(s)</li>
-        <li>💰 <strong>{donnees.couts.length}</strong> coût(s) de ticket</li>
+        <li><i className="bi bi-ticket-detailed" aria-hidden="true" /> <strong>{donnees.tickets.length}</strong> ticket(s)</li>
+        <li><i className="bi bi-cash-coin" aria-hidden="true" /> <strong>{donnees.couts.length}</strong> coût(s) de ticket</li>
         {donnees.images.length > 0 && (
           <li>
-            🖼️ <strong>{tokenOk ? imagesLiables : 0}</strong> image(s) à rattacher en documents
+            <i className="bi bi-image" aria-hidden="true" /> <strong>{tokenOk ? imagesLiables : 0}</strong> image(s) à rattacher en documents
             {tokenOk && imagesLiables !== donnees.images.length && (
               <span className="muted"> ({donnees.images.length - imagesLiables} sans asset)</span>
             )}
@@ -333,19 +369,19 @@ function PhaseApercu({
 
       {liens > 0 && tokenOk && (
         <p className="muted small">
-          🔗 {liens} lien(s) matériel↔ticket seront rattachés (relation Item_Ticket, via l'API legacy).
+          <i className="bi bi-link-45deg" aria-hidden="true" /> {liens} lien(s) matériel↔ticket seront rattachés (relation Item_Ticket, via l'API legacy).
         </p>
       )}
       {liens > 0 && !tokenOk && (
         <div className="reset-warning">
-          ⚠️ {liens} lien(s) matériel↔ticket non importés : définissez{' '}
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> {liens} lien(s) matériel↔ticket non importés : définissez{' '}
           <strong>VITE_GLPI_USER_TOKEN</strong> dans <code>.env</code> pour les rattacher.
         </div>
       )}
 
       {donnees.images.length > 0 && !tokenOk && (
         <div className="reset-warning">
-          ⚠️ Upload d'images désactivé : définissez <strong>VITE_GLPI_USER_TOKEN</strong> dans
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> Upload d'images désactivé : définissez <strong>VITE_GLPI_USER_TOKEN</strong> dans
           <code> .env</code> pour rattacher les images en documents.
         </div>
       )}
@@ -439,8 +475,8 @@ function PhaseRapport({
 
       {rapport.liensEchecs.length > 0 && (
         <div className="reset-warning">
-          ⚠️ {rapport.liensEchecs.length} lien(s) matériel↔ticket non importé(s) (sans bloquer l'import) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> {rapport.liensEchecs.length} lien(s) matériel↔ticket non importé(s) (sans bloquer l'import) :
+          <ul className="import-resume import-resume--grid" style={{ marginTop: 8 }}>
             {rapport.liensEchecs.map((m, i) => (
               <li key={i} className="small">{m}</li>
             ))}
@@ -450,9 +486,9 @@ function PhaseRapport({
 
       {rapport.liensIgnoresInfo.length > 0 && (
         <div className="reset-msg">
-          ℹ️ {rapport.liensIgnoresInfo.length} lien(s) ignoré(s) — type non associable aux tickets
+          <i className="bi bi-info-circle" aria-hidden="true" /> {rapport.liensIgnoresInfo.length} lien(s) ignoré(s) — type non associable aux tickets
           dans GLPI (normal, ce n'est pas une erreur) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
+          <ul className="import-resume import-resume--grid" style={{ marginTop: 8 }}>
             {rapport.liensIgnoresInfo.map((m, i) => (
               <li key={i} className="small">{m}</li>
             ))}
@@ -462,8 +498,8 @@ function PhaseRapport({
 
       {rapport.imagesEchecs.length > 0 && (
         <div className="reset-warning">
-          ⚠️ {rapport.imagesEchecs.length} image(s) non importée(s) (sans bloquer l'import) :
-          <ul className="import-resume" style={{ marginTop: 8 }}>
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> {rapport.imagesEchecs.length} image(s) non importée(s) (sans bloquer l'import) :
+          <ul className="import-resume import-resume--grid" style={{ marginTop: 8 }}>
             {rapport.imagesEchecs.map((m, i) => (
               <li key={i} className="small">{m}</li>
             ))}

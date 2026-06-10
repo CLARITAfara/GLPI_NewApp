@@ -105,7 +105,7 @@ export function ResetPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🗑️ Réinitialisation</h2>
+        <h2><i className="bi bi-trash" aria-hidden="true" /> Réinitialisation</h2>
       </div>
 
       {phase === 'selection' && (
@@ -173,7 +173,7 @@ function PhaseSelection({
         aux enregistrements actuellement en base GLPI.
       </p>
       <div className="reset-warning">
-        ⚠️ Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
+        <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> Action irréversible — ces suppressions passeront par GLPI et ne pourront pas être annulées.
       </div>
 
       <label className="reset-select-all">
@@ -205,7 +205,7 @@ function PhaseSelection({
                 checked={selectionnees.has(m.id)}
                 onChange={() => onToggle(m.id)}
               />
-              <span className="reset-ressource-icone">{m.icone}</span>
+              <span className="reset-ressource-icone"><i className={m.icone} aria-hidden="true" /></span>
               <span className="reset-module-info">
                 <span className="reset-ressource-label">{m.label}</span>
                 <span className="muted" style={{ fontSize: 13 }}>{m.description}</span>
@@ -247,7 +247,7 @@ function PhaseConfirmation({
 
   return (
     <div className="reset-dialog">
-      <h3>⚠️ Confirmer la réinitialisation</h3>
+      <h3><i className="bi bi-exclamation-triangle-fill" aria-hidden="true" /> Confirmer la réinitialisation</h3>
       <p>
         Vous allez supprimer définitivement toutes les entrées de{' '}
         <strong>{totalEndpoints} type{totalEndpoints > 1 ? 's' : ''} de ressource</strong>{' '}
@@ -256,7 +256,7 @@ function PhaseConfirmation({
       <ul className="reset-dialog-list">
         {modules.map((m) => (
           <li key={m.id}>
-            {m.icone} <strong>{m.label}</strong>
+            <i className={m.icone} aria-hidden="true" /> <strong>{m.label}</strong>
             <span className="muted"> — {m.endpoints.map((e) => e.label).join(', ')}</span>
           </li>
         ))}
@@ -317,7 +317,7 @@ function PhaseExecution({
             <div key={m.id} className="reset-progress-item">
               <div className="reset-progress-header">
                 <span className="reset-progress-name">
-                  {m.icone} {m.label}
+                  <i className={m.icone} aria-hidden="true" /> {m.label}
                 </span>
                 <span className="reset-progress-count">
                   {enChargement
@@ -388,7 +388,7 @@ function PhaseRapport({
               <div key={res.moduleId} className="reset-rapport-item">
                 <div className="reset-rapport-header">
                   <span className="reset-rapport-name">
-                    {config?.icone} {res.label}
+                    {config?.icone && <i className={config.icone} aria-hidden="true" />} {res.label}
                   </span>
                   <span className="badge-ok">
                     {res.supprimes} supprimé{res.supprimes !== 1 ? 's' : ''}

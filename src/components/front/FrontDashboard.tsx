@@ -12,7 +12,7 @@ export function FrontDashboard() {
     <div className="front-wrap">
       <header className="front-header">
         <div className="front-brand">
-          <span className="front-brand-icon" aria-hidden="true">📦</span>
+          <span className="front-brand-icon" aria-hidden="true"><i className="bi bi-box-seam" /></span>
           <span className="front-brand-name">Espace utilisateur</span>
         </div>
 

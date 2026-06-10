@@ -57,7 +57,7 @@ export function TicketsView() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🎫 Tickets</h2>
+        <h2><i className="bi bi-ticket-detailed" aria-hidden="true" /> Tickets</h2>
         {status === 'ready' && <span className="count-badge">{total}</span>}
       </div>
 

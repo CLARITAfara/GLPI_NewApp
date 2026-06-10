@@ -112,33 +112,33 @@ const CHAMPS_STD: ChampPartage[] = ['location', 'manufacturer', 'user', 'otherse
  * (vérifié sur l'OpenAPI) ; les champs CSV non pertinents sont ignorés.
  */
 export const ITEM_TYPES: Record<ItemType, ItemTypeConfig> = {
-  Computer: { itemType: 'Computer', assetEndpoint: '/Assets/Computer', modelEndpoint: '/Dropdowns/ComputerModel', statusField: 'status', champs: CHAMPS_STD, icone: '💻', libelle: 'Ordinateurs' },
-  Monitor: { itemType: 'Monitor', assetEndpoint: '/Assets/Monitor', modelEndpoint: '/Dropdowns/MonitorModel', statusField: 'status', champs: CHAMPS_STD, icone: '🖥️', libelle: 'Moniteurs' },
-  NetworkEquipment: { itemType: 'NetworkEquipment', assetEndpoint: '/Assets/NetworkEquipment', modelEndpoint: '/Dropdowns/NetworkEquipmentModel', statusField: 'status', champs: CHAMPS_STD, icone: '🌐', libelle: 'Équipements réseau' },
-  Peripheral: { itemType: 'Peripheral', assetEndpoint: '/Assets/Peripheral', modelEndpoint: '/Dropdowns/PeripheralModel', statusField: 'status', champs: CHAMPS_STD, icone: '🖱️', libelle: 'Périphériques' },
-  Phone: { itemType: 'Phone', assetEndpoint: '/Assets/Phone', modelEndpoint: '/Dropdowns/PhoneModel', statusField: 'status', champs: CHAMPS_STD, icone: '📱', libelle: 'Téléphones' },
-  Printer: { itemType: 'Printer', assetEndpoint: '/Assets/Printer', modelEndpoint: '/Dropdowns/PrinterModel', statusField: 'status', champs: CHAMPS_STD, icone: '🖨️', libelle: 'Imprimantes' },
+  Computer: { itemType: 'Computer', assetEndpoint: '/Assets/Computer', modelEndpoint: '/Dropdowns/ComputerModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-pc-display', libelle: 'Ordinateurs' },
+  Monitor: { itemType: 'Monitor', assetEndpoint: '/Assets/Monitor', modelEndpoint: '/Dropdowns/MonitorModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-display', libelle: 'Moniteurs' },
+  NetworkEquipment: { itemType: 'NetworkEquipment', assetEndpoint: '/Assets/NetworkEquipment', modelEndpoint: '/Dropdowns/NetworkEquipmentModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-hdd-network', libelle: 'Équipements réseau' },
+  Peripheral: { itemType: 'Peripheral', assetEndpoint: '/Assets/Peripheral', modelEndpoint: '/Dropdowns/PeripheralModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-mouse', libelle: 'Périphériques' },
+  Phone: { itemType: 'Phone', assetEndpoint: '/Assets/Phone', modelEndpoint: '/Dropdowns/PhoneModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-phone', libelle: 'Téléphones' },
+  Printer: { itemType: 'Printer', assetEndpoint: '/Assets/Printer', modelEndpoint: '/Dropdowns/PrinterModel', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-printer', libelle: 'Imprimantes' },
   // Datacenter : statut = `state`. Seul Enclosure a un Dropdown de modèle.
-  Rack: { itemType: 'Rack', assetEndpoint: '/Assets/Rack', statusField: 'state', champs: CHAMPS_STD, icone: '🗄️', libelle: 'Baies' },
-  Enclosure: { itemType: 'Enclosure', assetEndpoint: '/Assets/Enclosure', modelEndpoint: '/Dropdowns/EnclosureModel', statusField: 'state', champs: CHAMPS_STD, icone: '📦', libelle: 'Châssis' },
-  PDU: { itemType: 'PDU', assetEndpoint: '/Assets/PDU', statusField: 'state', champs: CHAMPS_STD, icone: '🔌', libelle: 'Bandeaux PDU' },
-  PassiveDCEquipment: { itemType: 'PassiveDCEquipment', assetEndpoint: '/Assets/PassiveDCEquipment', statusField: 'state', champs: CHAMPS_STD, icone: '🔧', libelle: 'Équipements passifs' },
+  Rack: { itemType: 'Rack', assetEndpoint: '/Assets/Rack', statusField: 'state', champs: CHAMPS_STD, icone: 'bi bi-hdd-rack', libelle: 'Baies' },
+  Enclosure: { itemType: 'Enclosure', assetEndpoint: '/Assets/Enclosure', modelEndpoint: '/Dropdowns/EnclosureModel', statusField: 'state', champs: CHAMPS_STD, icone: 'bi bi-box', libelle: 'Châssis' },
+  PDU: { itemType: 'PDU', assetEndpoint: '/Assets/PDU', statusField: 'state', champs: CHAMPS_STD, icone: 'bi bi-plug', libelle: 'Bandeaux PDU' },
+  PassiveDCEquipment: { itemType: 'PassiveDCEquipment', assetEndpoint: '/Assets/PassiveDCEquipment', statusField: 'state', champs: CHAMPS_STD, icone: 'bi bi-tools', libelle: 'Équipements passifs' },
   // Types « non-inventaire » : champs restreints à ce que le schéma accepte.
-  Software: { itemType: 'Software', assetEndpoint: '/Assets/Software', champs: ['location', 'manufacturer', 'user'], icone: '💿', libelle: 'Logiciels' },
-  SoftwareLicense: { itemType: 'SoftwareLicense', assetEndpoint: '/Assets/SoftwareLicense', statusField: 'status', champs: CHAMPS_STD, icone: '🔑', libelle: 'Licences logicielles' },
-  Certificate: { itemType: 'Certificate', assetEndpoint: '/Assets/Certificate', statusField: 'status', champs: CHAMPS_STD, icone: '📜', libelle: 'Certificats' },
-  Cable: { itemType: 'Cable', assetEndpoint: '/Assets/Cable', statusField: 'state', champs: ['user', 'otherserial'], icone: '🔗', libelle: 'Câbles' },
+  Software: { itemType: 'Software', assetEndpoint: '/Assets/Software', champs: ['location', 'manufacturer', 'user'], icone: 'bi bi-disc', libelle: 'Logiciels' },
+  SoftwareLicense: { itemType: 'SoftwareLicense', assetEndpoint: '/Assets/SoftwareLicense', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-key', libelle: 'Licences logicielles' },
+  Certificate: { itemType: 'Certificate', assetEndpoint: '/Assets/Certificate', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-patch-check', libelle: 'Certificats' },
+  Cable: { itemType: 'Cable', assetEndpoint: '/Assets/Cable', statusField: 'state', champs: ['user', 'otherserial'], icone: 'bi bi-link-45deg', libelle: 'Câbles' },
   // Socket : classe GLPI namespacée → itemtype `Glpi\Socket` pour Item_Ticket.
-  Socket: { itemType: 'Socket', assetEndpoint: '/Assets/Socket', champs: ['location'], sansCorbeille: true, ticketItemtype: 'Glpi\\Socket', icone: '🔲', libelle: 'Prises' },
-  Appliance: { itemType: 'Appliance', assetEndpoint: '/Assets/Appliance', statusField: 'status', champs: CHAMPS_STD, icone: '📡', libelle: 'Applicatifs' },
+  Socket: { itemType: 'Socket', assetEndpoint: '/Assets/Socket', champs: ['location'], sansCorbeille: true, ticketItemtype: 'Glpi\\Socket', icone: 'bi bi-outlet', libelle: 'Prises' },
+  Appliance: { itemType: 'Appliance', assetEndpoint: '/Assets/Appliance', statusField: 'status', champs: CHAMPS_STD, icone: 'bi bi-broadcast', libelle: 'Applicatifs' },
   // Matériel « non géré » (découvert mais non inventorié) : ni localisation ni modèle.
-  Unmanaged: { itemType: 'Unmanaged', assetEndpoint: '/Assets/Unmanaged', statusField: 'status', champs: ['manufacturer', 'user', 'otherserial'], icone: '❓', libelle: 'Matériels non gérés' },
+  Unmanaged: { itemType: 'Unmanaged', assetEndpoint: '/Assets/Unmanaged', statusField: 'status', champs: ['manufacturer', 'user', 'otherserial'], icone: 'bi bi-question-circle', libelle: 'Matériels non gérés' },
   // Cartouches / Consommables (modèles) : GLPI n'expose PAS de route HL → créés
   // via l'API legacy. Associables aux tickets via Item_Ticket (l'API legacy
   // accepte le lien : Item_Ticket ne valide pas contre $CFG_GLPI['ticket_types']
   // à la création, seul un ticket clos est refusé).
-  CartridgeItem: { itemType: 'CartridgeItem', assetEndpoint: '/Assets/CartridgeItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: '🟦', libelle: 'Cartouches' },
-  ConsumableItem: { itemType: 'ConsumableItem', assetEndpoint: '/Assets/ConsumableItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: '🧴', libelle: 'Consommables' },
+  CartridgeItem: { itemType: 'CartridgeItem', assetEndpoint: '/Assets/CartridgeItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: 'bi bi-inboxes', libelle: 'Cartouches' },
+  ConsumableItem: { itemType: 'ConsumableItem', assetEndpoint: '/Assets/ConsumableItem', champs: ['location', 'manufacturer'], viaLegacy: true, icone: 'bi bi-droplet', libelle: 'Consommables' },
 }
 
 // ─── Tables de correspondance ────────────────────────────────────────────────

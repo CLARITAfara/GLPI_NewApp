@@ -33,7 +33,7 @@ export function StatsView() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>📊 Vue d'ensemble</h2>
+        <h2><i className="bi bi-speedometer2" aria-hidden="true" /> Vue d'ensemble</h2>
       </div>
 
       {status === 'loading' && <p className="muted">Chargement des statistiques…</p>}
@@ -48,13 +48,13 @@ export function StatsView() {
         <>
           <div className="kpi-row">
             <KpiTile
-              icon="🗄️"
+              icon="bi bi-hdd-stack"
               label="Matériel total"
               value={elements?.total ?? 0}
               sub={`${elements?.parType.length ?? 0} type(s) présent(s)`}
             />
             <KpiTile
-              icon="🎫"
+              icon="bi bi-ticket-detailed"
               label="Tickets total"
               value={tickets?.total ?? 0}
               sub={`${tickets?.parType.length ?? 0} type(s) présent(s)`}
@@ -91,7 +91,7 @@ function KpiTile({
   return (
     <article className="kpi-tile">
       <span className="kpi-icon" aria-hidden="true">
-        {icon}
+        <i className={icon} />
       </span>
       <div className="kpi-body">
         <span className="kpi-label">{label}</span>
@@ -127,7 +127,7 @@ function Breakdown({
             return (
               <li key={t.key} className="stat-bar-row">
                 <div className="stat-bar-label">
-                  <span aria-hidden="true">{t.icon}</span>
+                  <span aria-hidden="true"><i className={t.icon} /></span>
                   <span className="stat-bar-name">{t.label}</span>
                   <span className="stat-bar-value">
                     {t.total}

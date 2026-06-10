@@ -132,7 +132,7 @@ export function CreateTicketPanel() {
     return (
       <section className="panel">
         <div className="ticket-success">
-          <div className="ticket-success-icon">✅</div>
+          <div className="ticket-success-icon"><i className="bi bi-check-circle-fill" aria-hidden="true" /></div>
           <h3>Ticket créé avec succès !</h3>
           <p>Ticket n° <strong>{ticketId}</strong> créé.</p>
           {selectedKeys.size > 0 && itemErrors === 0 && (
@@ -157,7 +157,7 @@ export function CreateTicketPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🎫 Créer un ticket</h2>
+        <h2><i className="bi bi-plus-square" aria-hidden="true" /> Créer un ticket</h2>
       </div>
 
       <form className="ticket-form" onSubmit={handleSubmit} noValidate>

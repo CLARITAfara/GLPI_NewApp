@@ -149,7 +149,7 @@ export function KanbanBoard() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>🗂️ Tickets — Kanban</h2>
+        <h2><i className="bi bi-kanban" aria-hidden="true" /> Tickets — Kanban</h2>
         <div className="kanban-head-actions">
           {loadStatus === 'ready' && <span className="count-badge">{tickets.length}</span>}
           {languages.length > 0 && (
@@ -263,8 +263,8 @@ function KanbanColumn(props: ColumnProps) {
           />
         ))}
         {id === 'new' && (
-          <Link to="/front/tickets/create" className="kanban-add-btn">
-            <span className="kanban-add-icon">＋</span> Ajouter 1 ticket
+          <Link to="/tickets/create" className="kanban-add-btn">
+            <span className="kanban-add-icon"><i className="bi bi-plus-lg" aria-hidden="true" /></span> Ajouter 1 ticket
           </Link>
         )}
       </div>
@@ -457,7 +457,7 @@ function TicketDetailDialog({ id, onClose }: { id: number; onClose: () => void }
           <h3 className="modal-title">
             {status === 'ready' && ticket ? (ticket.name || `Ticket ${ticket.id}`) : `Ticket #${id}`}
           </h3>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Fermer"><i className="bi bi-x-lg" aria-hidden="true" /></button>
         </div>
 
         <div className="modal-body">
@@ -488,7 +488,7 @@ function TicketDetailDialog({ id, onClose }: { id: number; onClose: () => void }
             {solution && (
               <div className="detail-section">
                 <h4 className="detail-section-title">
-                  ✅ Solution
+                  <i className="bi bi-check-circle-fill" aria-hidden="true" /> Solution
                   {solution.date && (
                     <span className="detail-section-date">{formatDate(solution.date)}</span>
                   )}

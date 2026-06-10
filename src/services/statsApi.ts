@@ -75,8 +75,8 @@ export async function getElementStats(): Promise<StatGroup> {
 // ── Tickets ────────────────────────────────────────────────────────────────
 // GLPI code le type de ticket : 1 = Incident, 2 = Demande.
 const TYPES_TICKET: { label: string; icon: string; code: number }[] = [
-  { label: 'Incidents', icon: '🔧', code: 1 },
-  { label: 'Demandes',  icon: '📨', code: 2 },
+  { label: 'Incidents', icon: 'bi bi-exclamation-octagon', code: 1 },
+  { label: 'Demandes',  icon: 'bi bi-envelope', code: 2 },
 ]
 
 /** Nombre total de tickets, ventilé par type (Incident, Demande). */

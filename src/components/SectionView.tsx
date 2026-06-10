@@ -36,7 +36,7 @@ export function SectionView({ section }: { section: Section }) {
     <section className="panel">
       <div className="panel-head">
         <h2>
-          {section.icon} {section.label}
+          <i className={section.icon} aria-hidden="true" /> {section.label}
         </h2>
         {status === 'ready' && <span className="count-badge">{total}</span>}
       </div>

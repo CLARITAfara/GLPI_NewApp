@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { config } from '../config'
 
 export function LoginForm() {
   const { login, error } = useAuth()
+  const navigate = useNavigate()
   const [code, setCode] = useState(config.glpiPassword)
   const [submitting, setSubmitting] = useState(false)
 
@@ -22,8 +24,8 @@ export function LoginForm() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Connexion GLPI</h1>
-        <p className="subtitle">Entrez votre code d'accès</p>
+        <h1><i className="bi bi-shield-lock" aria-hidden="true" /> Connexion admin</h1>
+        <p className="subtitle">Espace d'administration GLPI — entrez votre code d'accès.</p>
 
         <label htmlFor="code">Code d'accès</label>
         <input
@@ -44,6 +46,14 @@ export function LoginForm() {
 
         <button type="submit" disabled={submitting || !code}>
           {submitting ? 'Connexion…' : 'Se connecter'}
+        </button>
+
+        <button
+          type="button"
+          className="login-back"
+          onClick={() => navigate('/')}
+        >
+          ← Retour à l'espace utilisateur
         </button>
       </form>
     </div>
