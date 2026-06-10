@@ -2318,6 +2318,19 @@
 /* ===== Fiche détaillée d'un ticket ===== */
 .modal-card--lg {
   max-width: 600px;
+  max-height: 90vh;
+}
+
+/* Corps défilant : l'en-tête et les actions restent fixes, le contenu scrolle
+   quand la fiche (description, historique…) dépasse la hauteur de la modale. */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
 }
 
 .modal-head {

@@ -460,6 +460,7 @@ function TicketDetailDialog({ id, onClose }: { id: number; onClose: () => void }
           <button type="button" className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
         </div>
 
+        <div className="modal-body">
         {status === 'loading' && <p className="muted">Chargement…</p>}
         {status === 'error' && <p className="login-error" role="alert">{error}</p>}
 
@@ -531,6 +532,7 @@ function TicketDetailDialog({ id, onClose }: { id: number; onClose: () => void }
             </div>
           </>
         )}
+        </div>
 
         <div className="modal-actions">
           <button type="button" className="btn-primary" onClick={onClose}>Fermer</button>
