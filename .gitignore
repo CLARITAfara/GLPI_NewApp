@@ -31,3 +31,6 @@ dist-ssr
 *.sqlite
 vite.config.ts
 newapp/newapp.db
+
+
+*.class
