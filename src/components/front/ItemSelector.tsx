@@ -10,6 +10,7 @@ import type { ElementRow, ElementFilters } from '../../services/elementsApi'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function itemKey(item: ElementRow): string {
   return `${item.itemType}:${item.id}`
 }
