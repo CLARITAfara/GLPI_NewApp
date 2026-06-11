@@ -34,3 +34,7 @@ newapp/newapp.db
 
 
 *.class
+
+# Sortie de build Maven (régénérée à chaque compilation — ne pas versionner)
+target/
+newapp/target/
