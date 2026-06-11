@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useMemo, useState } from 'react'
 import {
   createTicketWithItems,

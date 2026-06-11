@@ -26,7 +26,7 @@ export interface InfoRequise {
 
 /**
  * Colonnes du Kanban. On n'utilise que 3 statuts en écriture
- * (`statutCible` : 1 Nouveau, 2 En cours, 5 Résolu) ; `statuts` reste large en
+ * (`statutCible` : 1 Nouveau, 2 En cours, 6 Clos) ; `statuts` reste large en
  * lecture pour ranger correctement les tickets déjà dans d'autres statuts.
  * `infoRequise` (optionnel) impose une saisie avant d'appliquer le changement.
  */
@@ -52,12 +52,12 @@ export const KANBAN_COLUMNS: KanbanColumnDef[] = [
     id: 'done',
     titre: 'Terminé',
     statuts: [5, 6],
-    statutCible: 5,
+    statutCible: 6,
     infoRequise: {
-      titre: 'Résoudre le ticket',
+      titre: 'Clore le ticket',
       label: 'Solution',
       placeholder: 'Décrivez la solution apportée…',
-      hint: 'Le ticket passera au statut « Résolu ». La solution sera enregistrée dans la fiche.',
+      hint: 'Le ticket passera au statut « Clos ». La solution sera enregistrée dans la fiche.',
     },
   },
 ]
@@ -164,10 +164,9 @@ export async function changerStatutTicket(id: number, status: number): Promise<n
 }
 
 /**
- * Résout un ticket : GLPI exige une solution pour passer un ticket en « Résolu ».
- * On crée donc un ITILSolution (via l'API legacy, seule à exposer la création de
- * ce sous-objet), ce qui bascule automatiquement le ticket en statut 5.
- * Repli : si aucun jeton legacy n'est configuré, on tente un PATCH High-Level.
+ * Clôt un ticket : crée un ITILSolution (qui bascule GLPI en Résolu/5), puis
+ * force immédiatement le statut à Clos (6) via un PATCH.
+ * Repli : si aucun jeton legacy n'est configuré, on tente un PATCH High-Level direct.
  */
 export async function resoudreTicket(id: number, solution: string): Promise<number> {
   if (uploadDisponible()) {
@@ -177,24 +176,31 @@ export async function resoudreTicket(id: number, solution: string): Promise<numb
       items_id: id,
       content: solution,
     })
-    // L'ajout de solution bascule le ticket en Résolu (ou Clos si auto-clôture) :
-    // on relit le statut effectif pour que le board soit exact.
+    // Force le statut à Clos (6) — la solution seule ne pose qu'un Résolu (5).
+    try {
+      await frontApiFetch(`${ENDPOINT}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 6 }),
+      })
+    } catch { /* best-effort */ }
+    // Relit le statut effectivement appliqué par GLPI.
     try {
       const t = await getTicketFront(id)
-      return lireId(t.status) ?? 5
+      return lireId(t.status) ?? 6
     } catch {
-      return 5
+      return 6
     }
   }
 
   const res = await frontApiFetch(`${ENDPOINT}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 5, solution }),
+    body: JSON.stringify({ status: 6, solution }),
   })
   if (!res.ok) {
     const detail = await parseError(res)
     throw new Error(`Erreur ${res.status}${detail ? ` — ${detail}` : ''}`)
   }
-  return 5
+  return 6
 }
