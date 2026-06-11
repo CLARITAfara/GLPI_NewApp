@@ -213,10 +213,22 @@ function validerFichier(
   const { entetes, lignes } = analyserCsv(contenu)
   const lignesValides: FichierAnalyse['lignes'] = []
 
-  // 1. En-têtes attendus
-  const attendues = schema.colonnes.map((c) => c.nom)
-  const manquantes = attendues.filter((c) => !entetes.includes(c))
-  const inattendues = entetes.filter((e) => e !== '' && !attendues.includes(e))
+  // 1. En-têtes attendus — correspondance insensible à la casse et aux espaces
+  //    de bord. Les exports varient sur la casse (ex. `STATuS`, `ItEM_TYPe`,
+  //    `DURATION_second`) : on mappe chaque en-tête normalisé → son index réel
+  //    pour les accepter sans imposer une casse exacte.
+  const normEntete = (s: string) => s.trim().toLowerCase()
+  const enteteParNom: Record<string, number> = {}
+  entetes.forEach((e, i) => {
+    const cle = normEntete(e)
+    if (cle !== '' && !(cle in enteteParNom)) enteteParNom[cle] = i
+  })
+
+  const manquantes = schema.colonnes
+    .filter((c) => !(normEntete(c.nom) in enteteParNom))
+    .map((c) => c.nom)
+  const nomsAttendus = new Set(schema.colonnes.map((c) => normEntete(c.nom)))
+  const inattendues = entetes.filter((e) => e !== '' && !nomsAttendus.has(normEntete(e)))
 
   for (const col of manquantes) {
     erreurs.push({
@@ -241,7 +253,7 @@ function validerFichier(
 
   const indexCol: Record<string, number> = {}
   schema.colonnes.forEach((c) => {
-    indexCol[c.nom] = entetes.indexOf(c.nom)
+    indexCol[c.nom] = enteteParNom[normEntete(c.nom)] ?? -1
   })
 
   // 2. Valeurs cellule par cellule
