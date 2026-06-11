@@ -27,6 +27,8 @@ import { formatDate } from '../../format'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
 
+const PAGE_SIZE = 10
+
 /** Classe CSS de la pastille de priorité (1..6). */
 const CLASSE_PRIORITE: Record<number, string> = {
   1: 'prio-1', 2: 'prio-2', 3: 'prio-3', 4: 'prio-4', 5: 'prio-5', 6: 'prio-6',
@@ -39,6 +41,9 @@ export function KanbanBoard() {
   const [colConfigs, setColConfigs] = useState<Partial<Record<KanbanColumnId, KanbanColumnConfig>>>({})
   const [languages, setLanguages] = useState<Language[]>([])
   const [selectedLangId, setSelectedLangId] = useState<number | null>(null)
+
+  // Colonne survolée pendant un drag (pour le retour visuel).
+  const [pages, setPages] = useState<Record<KanbanColumnId, number>>({ new: 1, progress: 1, done: 1 })
 
   // Colonne survolée pendant un drag (pour le retour visuel).
   const [dragOver, setDragOver] = useState<KanbanColumnId | null>(null)
@@ -54,6 +59,7 @@ export function KanbanBoard() {
   const load = useCallback(async () => {
     setLoadStatus('loading')
     setError('')
+    setPages({ new: 1, progress: 1, done: 1 })
     try {
       setTickets(await listerTicketsFront())
       setLoadStatus('ready')
@@ -74,14 +80,22 @@ export function KanbanBoard() {
     }
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load() }, [load])
   useEffect(() => { chargerLangues().then(setLanguages) }, [])
   useEffect(() => { chargerConfigKanban(selectedLangId).then(setColConfigs) }, [selectedLangId])
 
-  // Répartit les tickets par colonne en respectant l'ordre des colonnes.
+  // Répartit les tickets par colonne — les plus récents en premier.
   const parColonne = useMemo(() => {
     const map: Record<KanbanColumnId, Ticket[]> = { new: [], progress: [], done: [] }
     for (const t of tickets) map[colonnePourStatut(t.status)].push(t)
+    for (const col of Object.values(map)) {
+      col.sort((a, b) => {
+        const da = new Date(a.date_mod ?? '').getTime()
+        const db = new Date(b.date_mod ?? '').getTime()
+        return db - da
+      })
+    }
     return map
   }, [tickets])
 
@@ -185,6 +199,8 @@ export function KanbanBoard() {
               backgroundColor={colConfigs[col.id]?.backgroundColor ?? null}
               tickets={parColonne[col.id]}
               isOver={dragOver === col.id}
+              page={pages[col.id]}
+              onPageChange={(p) => setPages((prev) => ({ ...prev, [col.id]: p }))}
               onDragEnterCol={() => setDragOver(col.id)}
               onDragLeaveCol={() => setDragOver((c) => (c === col.id ? null : c))}
               onDrop={(id) => deposer(col.id, id)}
@@ -218,6 +234,8 @@ interface ColumnProps {
   backgroundColor: string | null
   tickets: Ticket[]
   isOver: boolean
+  page: number
+  onPageChange: (page: number) => void
   onDragEnterCol: () => void
   onDragLeaveCol: () => void
   onDrop: (id: number | null) => void
@@ -226,7 +244,11 @@ interface ColumnProps {
 }
 
 function KanbanColumn(props: ColumnProps) {
-  const { id, titre, label, backgroundColor, tickets, isOver, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard } = props
+  const { id, titre, label, backgroundColor, tickets, isOver, page, onPageChange, onDragEnterCol, onDragLeaveCol, onDrop, onDragStartCard, onOpenCard } = props
+
+  const totalPages = Math.max(1, Math.ceil(tickets.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const visible = tickets.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const style = backgroundColor
     ? ({ '--col-bg': backgroundColor } as React.CSSProperties)
@@ -241,8 +263,8 @@ function KanbanColumn(props: ColumnProps) {
       onDrop={(e) => {
         e.preventDefault()
         const brut = e.dataTransfer.getData('text/plain')
-        const id = brut ? Number(brut) : null
-        onDrop(Number.isFinite(id) ? id : null)
+        const dropped = brut ? Number(brut) : null
+        onDrop(Number.isFinite(dropped) ? dropped : null)
       }}
     >
       <div className="kanban-col-head">
@@ -254,7 +276,7 @@ function KanbanColumn(props: ColumnProps) {
       </div>
 
       <div className="kanban-col-body">
-        {tickets.map((t) => (
+        {visible.map((t) => (
           <KanbanCard
             key={t.id}
             ticket={t}
@@ -268,6 +290,26 @@ function KanbanColumn(props: ColumnProps) {
           </Link>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="kanban-col-footer">
+          <button
+            type="button"
+            className="kanban-page-btn"
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            aria-label="Page précédente"
+          >‹</button>
+          <span className="kanban-page-info">{currentPage} / {totalPages}</span>
+          <button
+            type="button"
+            className="kanban-page-btn"
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            aria-label="Page suivante"
+          >›</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -423,6 +465,7 @@ function TicketDetailDialog({ id, onClose }: { id: number; onClose: () => void }
 
   useEffect(() => {
     let actif = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus('loading')
 
     getTicketFront(id)
