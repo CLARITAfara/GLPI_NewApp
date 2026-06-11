@@ -23,14 +23,13 @@
   --border: #e2e8f0;           /* bordures par défaut */
   --border-strong: #cbd5e1;    /* bordures marquées (hover, focus neutre) */
 
-  /* — Accent (indigo) — */
-  --accent: #6366f1;
-  --accent-strong: #4f46e5;    /* survol / pressed */
-  --accent-bg: rgba(99, 102, 241, 0.1);
-  --accent-border: rgba(99, 102, 241, 0.45);
-  /* Dégradé des boutons primaires (indigo → violet) + halo de focus. */
-  --accent-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
-  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  /* — Accent (bleu professionnel) — */
+  --accent: #2563EB;
+  --accent-strong: #1D4ED8;
+  --accent-bg: rgba(37, 99, 235, 0.08);
+  --accent-border: rgba(37, 99, 235, 0.3);
+  --accent-gradient: linear-gradient(135deg, #2563EB, #1D4ED8);
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.12);
 
   /* — Couleurs sémantiques — */
   --success: #16a34a;
@@ -87,6 +86,21 @@
   --heading: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
+  /* — Sidebar sombre (navy) — */
+  --sidebar-surface: #0F172A;
+  --sidebar-border-col: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #94A3B8;
+  --sidebar-text-hover: #F1F5F9;
+  --sidebar-text-strong: #F8FAFC;
+  --sidebar-label: #64748B;
+  --sidebar-active-bg: rgba(96, 165, 250, 0.15);
+  --sidebar-active-fg: #60A5FA;
+
+  /* — Couleur secondaire (teal) pour diversité chromatique — */
+  --accent2: #0891b2;
+  --accent2-bg: rgba(8, 145, 178, 0.1);
+  --accent2-border: rgba(8, 145, 178, 0.25);
+
   /* Base de document : 16px (densité back-office, vs 18px du template). */
   font: var(--fs-md) / 150% var(--sans);
   letter-spacing: 0.1px;
@@ -118,10 +132,10 @@
     --border: #2e303a;
     --border-strong: #3f414d;
 
-    --accent: #818cf8;
-    --accent-strong: #a5b4fc;
-    --accent-bg: rgba(129, 140, 248, 0.16);
-    --accent-border: rgba(129, 140, 248, 0.5);
+    --accent: #60A5FA;
+    --accent-strong: #93C5FD;
+    --accent-bg: rgba(96, 165, 250, 0.14);
+    --accent-border: rgba(96, 165, 250, 0.5);
 
     --success: #4ade80;
     --success-bg: rgba(74, 222, 128, 0.14);
@@ -140,6 +154,11 @@
     --shadow-lg:
       0 10px 25px -5px rgba(0, 0, 0, 0.5),
       0 8px 10px -6px rgba(0, 0, 0, 0.35);
+
+    --sidebar-surface: #060B14;
+    --sidebar-border-col: rgba(255, 255, 255, 0.06);
+    --sidebar-active-bg: rgba(96, 165, 250, 0.2);
+    --sidebar-active-fg: #60A5FA;
   }
 }
 

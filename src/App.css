@@ -2899,3 +2899,461 @@ a.btn-ghost {
     background: var(--bg);
   }
 }
+
+/* ============================================================================
+   THEME BLEU PROFESSIONNEL — Sidebar navy sombre, accents bleus, enterprise
+   ========================================================================== */
+
+/* ── 1. SIDEBAR SOMBRE (NAVY) ─────────────────────────────────────────────── */
+
+.sidebar {
+  background: var(--sidebar-surface, #0F172A);
+  border-right: 1px solid var(--sidebar-border-col, rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-topbar {
+  background: var(--sidebar-surface, #0F172A);
+  border-bottom-color: var(--sidebar-border-col, rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-topbar-title {
+  color: var(--sidebar-text-strong, #F8FAFC);
+}
+
+.sidebar-burger {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: transparent;
+}
+
+.sidebar-burger span {
+  background: #94A3B8;
+}
+
+.sidebar-burger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-brand {
+  padding: 20px 18px;
+  border-bottom-color: var(--sidebar-border-col, rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-brand-icon {
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #60A5FA;
+  font-size: 20px;
+}
+
+.sidebar-brand-text strong {
+  color: var(--sidebar-text-strong, #F8FAFC);
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+
+.sidebar-brand-text small {
+  color: var(--sidebar-text, #94A3B8);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.nav-group-label {
+  color: var(--sidebar-label, #64748B);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.nav-item {
+  color: var(--sidebar-text, #94A3B8);
+  font-size: 14px;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sidebar-text-hover, #F1F5F9);
+}
+
+.nav-item.active {
+  background: var(--sidebar-active-bg, rgba(96, 165, 250, 0.15));
+  color: var(--sidebar-active-fg, #60A5FA);
+  font-weight: var(--fw-semibold);
+}
+
+.nav-item.active::before {
+  background: #60A5FA;
+}
+
+.nav-item--danger {
+  color: var(--sidebar-text, #94A3B8);
+}
+
+.nav-item--danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.nav-item--danger.active {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.nav-item--danger.active::before {
+  background: #f87171;
+}
+
+.sidebar-foot {
+  border-top-color: var(--sidebar-border-col, rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-user-info strong {
+  color: var(--sidebar-text-strong, #F8FAFC);
+}
+
+.sidebar .avatar {
+  color: #60A5FA;
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.sidebar .role-badge {
+  color: #60A5FA;
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.sidebar .btn-ghost {
+  color: var(--sidebar-text, #94A3B8);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  font-size: 13px;
+}
+
+.sidebar .btn-ghost:hover {
+  color: var(--sidebar-text-hover, #F1F5F9);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sidebar .btn-primary {
+  background: #2563EB;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.sidebar .btn-primary:hover:not(:disabled) {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.sidebar .front-foot-note {
+  color: var(--sidebar-label, #64748B);
+}
+
+/* ── 2. EN-TETES DE ZONE ─────────────────────────────────────────────────── */
+
+.content-header,
+.front-topbar {
+  background: var(--bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.front-topbar-text strong {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ── 3. PAGE DE CONNEXION (deux colonnes) ────────────────────────────────── */
+
+.login-wrap {
+  padding: 0;
+  background: none;
+  min-height: 100svh;
+  display: flex;
+}
+
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100svh;
+  width: 100%;
+}
+
+.login-brand-panel {
+  background: linear-gradient(160deg, #0A0F1E 0%, #0F2957 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.login-brand-content {
+  max-width: 360px;
+  color: #fff;
+}
+
+.login-brand-logo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-size: 28px;
+  border-radius: 18px;
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  color: #60A5FA;
+  margin-bottom: 28px;
+}
+
+.login-brand-content h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: #F8FAFC;
+  line-height: 1.1;
+}
+
+.login-brand-content > p {
+  font-size: 16px;
+  color: #94A3B8;
+  margin: 0 0 36px;
+}
+
+.login-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: #CBD5E1;
+}
+
+.login-features li i {
+  color: #60A5FA;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.login-form-panel {
+  display: grid;
+  place-items: center;
+  padding: 48px 32px;
+  background: var(--bg-subtle);
+}
+
+.login-form-panel .login-card {
+  box-shadow: 0 4px 32px rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+}
+
+.login-card h1 {
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 768px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+  }
+  .login-brand-panel {
+    display: none;
+  }
+  .login-form-panel {
+    padding: 24px 16px;
+    min-height: 100svh;
+  }
+}
+
+/* ── 4. KPI TILES ────────────────────────────────────────────────────────── */
+
+.kpi-tile {
+  border-top: none;
+  border-left: 4px solid var(--accent);
+  padding-top: 22px;
+  border-radius: 12px;
+  transition: box-shadow 0.15s;
+}
+
+.kpi-tile:hover {
+  box-shadow: var(--shadow);
+  transform: none;
+}
+
+.kpi-row .kpi-tile:nth-child(1) { border-left-color: var(--accent); }
+.kpi-row .kpi-tile:nth-child(1) .kpi-icon {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.kpi-row .kpi-tile:nth-child(1) .kpi-value { color: var(--accent-strong); }
+
+.kpi-row .kpi-tile:nth-child(2) { border-left-color: #0891b2; }
+.kpi-row .kpi-tile:nth-child(2) .kpi-icon {
+  background: rgba(8, 145, 178, 0.1);
+  border-color: rgba(8, 145, 178, 0.25);
+  color: #0891b2;
+}
+.kpi-row .kpi-tile:nth-child(2) .kpi-value { color: #0e7490; }
+
+.kpi-row .kpi-tile:nth-child(3) { border-left-color: #d97706; }
+.kpi-row .kpi-tile:nth-child(3) .kpi-icon {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.22);
+  color: #d97706;
+}
+
+.kpi-row .kpi-tile:nth-child(4) { border-left-color: #dc2626; }
+.kpi-row .kpi-tile:nth-child(4) .kpi-icon {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
+/* ── 5. BARRES STAT ──────────────────────────────────────────────────────── */
+
+.stat-bar-fill {
+  background: var(--accent);
+}
+
+.stat-breakdown {
+  border-radius: 12px;
+  transition: box-shadow 0.15s;
+}
+
+.stat-breakdown:hover {
+  box-shadow: var(--shadow);
+}
+
+/* ── 6. BOUTONS PRIMAIRES ────────────────────────────────────────────────── */
+
+.btn-primary,
+.login-card button[type='submit'] {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.btn-primary:hover:not(:disabled),
+.login-card button[type='submit']:hover:not(:disabled) {
+  background: var(--accent-strong);
+  transform: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+/* ── 7. TABLEAUX ─────────────────────────────────────────────────────────── */
+
+.data-table th {
+  background: var(--bg-sunken);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.data-table tbody tr {
+  transition: background 0.1s;
+}
+
+/* ── 8. KANBAN — colonnes teintees ───────────────────────────────────────── */
+
+.kanban-col--new      { --col-fg: #1D4ED8; background: #EFF6FF; }
+.kanban-col--progress { --col-fg: #92400E; background: #FFFBEB; }
+.kanban-col--done     { --col-fg: #166534; background: #F0FDF4; }
+
+.kanban-card {
+  border: 1px solid var(--border);
+  box-shadow: none;
+  border-radius: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kanban-card:hover {
+  border-color: var(--accent-border);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  transform: none;
+}
+
+/* ── 9. MODALES ──────────────────────────────────────────────────────────── */
+
+.modal-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* ── 10. EN-TETE DE SECTION ─────────────────────────────────────────────── */
+
+.panel-head {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.panel-head h2 {
+  font-size: 20px;
+  letter-spacing: -0.3px;
+}
+
+/* ── 11. TICKETS ─────────────────────────────────────────────────────────── */
+
+.ticket-row {
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.ticket-row:hover {
+  border-color: var(--accent-border);
+  box-shadow: none;
+}
+
+.ticket-row.active {
+  box-shadow: none;
+}
+
+/* ── 12. MODE SOMBRE SYSTEME ─────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  .sidebar,
+  .sidebar-topbar {
+    background: var(--sidebar-surface, #060B14);
+    border-right-color: var(--sidebar-border-col, rgba(255, 255, 255, 0.06));
+  }
+
+  .sidebar-topbar {
+    border-bottom-color: var(--sidebar-border-col, rgba(255, 255, 255, 0.06));
+  }
+
+  .kanban-col--new      { background: #1E3A5F; }
+  .kanban-col--progress { background: #261C0E; }
+  .kanban-col--done     { background: #052E16; }
+
+  .kanban-card {
+    background: var(--bg);
+    border-color: var(--border);
+  }
+
+  .login-brand-panel {
+    background: linear-gradient(160deg, #020408 0%, #0A1A35 100%);
+  }
+}

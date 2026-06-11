@@ -23,39 +23,59 @@ export function LoginForm() {
 
   return (
     <div className="login-wrap">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <h1><i className="bi bi-shield-lock" aria-hidden="true" /> Connexion admin</h1>
-        <p className="subtitle">Espace d'administration GLPI — entrez votre code d'accès.</p>
+      <div className="login-layout">
+        <div className="login-brand-panel">
+          <div className="login-brand-content">
+            <div className="login-brand-logo">
+              <i className="bi bi-shield-lock" aria-hidden="true" />
+            </div>
+            <h2>GLPI Admin</h2>
+            <p>Plateforme de gestion informatique</p>
+            <ul className="login-features">
+              <li><i className="bi bi-ticket-perforated" aria-hidden="true" /> Gestion des tickets</li>
+              <li><i className="bi bi-kanban" aria-hidden="true" /> Tableau Kanban</li>
+              <li><i className="bi bi-bar-chart-line" aria-hidden="true" /> Statistiques avancées</li>
+              <li><i className="bi bi-upload" aria-hidden="true" /> Import de données</li>
+            </ul>
+          </div>
+        </div>
 
-        <label htmlFor="code">Code d'accès</label>
-        <input
-          id="code"
-          type="password"
-          autoComplete="current-password"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          required
-          autoFocus
-        />
+        <div className="login-form-panel">
+          <form className="login-card" onSubmit={handleSubmit}>
+            <h1>Connexion</h1>
+            <p className="subtitle">Espace d'administration GLPI — entrez votre code d'accès.</p>
 
-        {error && (
-          <p className="login-error" role="alert">
-            {error}
-          </p>
-        )}
+            <label htmlFor="code">Code d'accès</label>
+            <input
+              id="code"
+              type="password"
+              autoComplete="current-password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              autoFocus
+            />
 
-        <button type="submit" disabled={submitting || !code}>
-          {submitting ? 'Connexion…' : 'Se connecter'}
-        </button>
+            {error && (
+              <p className="login-error" role="alert">
+                {error}
+              </p>
+            )}
 
-        <button
-          type="button"
-          className="login-back"
-          onClick={() => navigate('/')}
-        >
-          ← Retour à l'espace utilisateur
-        </button>
-      </form>
+            <button type="submit" disabled={submitting || !code}>
+              {submitting ? 'Connexion…' : 'Se connecter'}
+            </button>
+
+            <button
+              type="button"
+              className="login-back"
+              onClick={() => navigate('/')}
+            >
+              ← Retour à l'espace utilisateur
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
