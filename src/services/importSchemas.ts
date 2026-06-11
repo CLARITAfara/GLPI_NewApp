@@ -312,6 +312,8 @@ export const PRIORITES_TICKET: Record<string, number> = {
   '2': 2,
   low: 2,
   l: 2,
+  // « Bass » : libellé EN tel qu'affiché par GLPI pour le niveau Basse.
+  bass: 2,
   minor: 2,
   mineure: 2,
   basse: 2,
@@ -319,6 +321,8 @@ export const PRIORITES_TICKET: Record<string, number> = {
   // 3 — Moyenne
   '3': 3,
   medium: 3,
+  // « Average » : libellé EN tel qu'affiché par GLPI pour le niveau Moyenne.
+  average: 3,
   med: 3,
   mid: 3,
   m: 3,
