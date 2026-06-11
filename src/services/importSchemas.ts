@@ -21,6 +21,12 @@ export interface ColonneSchema {
   regle: RegleType
   /** Pour `enum` : libellé (minuscule) → code GLPI. */
   correspondances?: Record<string, string | number>
+  /**
+   * Pour `enum` : autorise un rattrapage FLOU quand aucune correspondance
+   * exacte n'est trouvée (distance de Levenshtein ≤ seuil). Utile pour tolérer
+   * les fautes de frappe d'une colonne saisie à la main (ex. `Priority`).
+   */
+  flou?: boolean
 }
 
 export interface FichierSchema {
@@ -285,32 +291,75 @@ export const STATUTS_TICKET: Record<string, number> = {
   fermé: 6,
 }
 
-/** Priorité de ticket → code GLPI (1..6 ; 6 = Majeure). */
+/**
+ * Priorité de ticket → code GLPI (1..6 ; 6 = Majeure).
+ * Outre ces libellés exacts, la colonne `Priority` active aussi un matching
+ * FLOU (cf. `flou` du schéma) qui rattrape les fautes de frappe courantes
+ * (ex. « mdeium » → medium, « hgih » → high).
+ */
 export const PRIORITES_TICKET: Record<string, number> = {
+  // 1 — Très basse
   '1': 1,
   'very low': 1,
+  verylow: 1,
+  lowest: 1,
+  vl: 1,
   'très basse': 1,
   'tres basse': 1,
+  'très faible': 1,
+  'tres faible': 1,
+  // 2 — Basse
   '2': 2,
   low: 2,
+  l: 2,
+  minor: 2,
+  mineure: 2,
   basse: 2,
+  faible: 2,
+  // 3 — Moyenne
   '3': 3,
   medium: 3,
+  med: 3,
+  mid: 3,
+  m: 3,
+  normal: 3,
+  normale: 3,
+  moderate: 3,
+  modere: 3,
+  modéré: 3,
+  moyen: 3,
   moyenne: 3,
+  // 4 — Haute
   '4': 4,
   high: 4,
+  h: 4,
+  urgent: 4,
+  urgente: 4,
   haute: 4,
+  elevee: 4,
+  élevée: 4,
+  // 5 — Très haute
   '5': 5,
   'very high': 5,
+  veryhigh: 5,
+  vh: 5,
+  highest: 5,
   critical: 5,
   critique: 5,
   'très haute': 5,
   'tres haute': 5,
-  // GLPI possède un 6e niveau « Majeure » (au-dessus de « Très haute »).
+  'très élevée': 5,
+  'tres elevee': 5,
+  // 6 — Majeure : GLPI possède un 6e niveau (au-dessus de « Très haute »).
   '6': 6,
   major: 6,
   majeure: 6,
   majeur: 6,
+  blocker: 6,
+  bloquant: 6,
+  'blocking': 6,
+  immediate: 6,
+  immédiate: 6,
 }
 
 /** Normalise une clé de correspondance (minuscule, espaces compactés). */
@@ -352,7 +401,7 @@ export const SCHEMA_TICKETS: FichierSchema = {
     { nom: 'Titre', regle: 'texte' },
     { nom: 'Description', regle: 'texte' },
     { nom: 'Status', regle: 'enum', correspondances: STATUTS_TICKET },
-    { nom: 'Priority', regle: 'enum', correspondances: PRIORITES_TICKET },
+    { nom: 'Priority', regle: 'enum', correspondances: PRIORITES_TICKET, flou: true },
     { nom: 'Items', regle: 'json-array' },
   ],
 }

@@ -125,6 +125,48 @@ function validerDate(v: string): ResCellule {
   return { ok: true, valeur: `${y}-${p(mo)}-${p(d)}` }
 }
 
+/** Distance de Levenshtein (insertions/suppressions/substitutions). */
+function distanceLevenshtein(a: string, b: string): number {
+  if (a === b) return 0
+  if (a.length === 0) return b.length
+  if (b.length === 0) return a.length
+  let prec = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    const cour = [i]
+    for (let j = 1; j <= b.length; j++) {
+      const cout = a[i - 1] === b[j - 1] ? 0 : 1
+      cour[j] = Math.min(cour[j - 1] + 1, prec[j] + 1, prec[j - 1] + cout)
+    }
+    prec = cour
+  }
+  return prec[b.length]
+}
+
+/**
+ * Rattrapage flou : renvoie le code de la clé la plus proche de `saisie` dans
+ * `map`, à condition que la distance reste sous un seuil adapté à la longueur
+ * (≤1 pour les libellés courts, ≤2 sinon). Ignore les clés numériques/très
+ * courtes pour éviter les faux positifs (« 1 » ≈ « l »). `undefined` si rien
+ * d'assez proche.
+ */
+function correspondanceFloue(
+  saisie: string,
+  map: Record<string, string | number>,
+): string | number | undefined {
+  let meilleur: string | number | undefined
+  let meilleureDist = Infinity
+  for (const cle of Object.keys(map)) {
+    if (cle.length < 3) continue
+    const seuil = cle.length <= 4 ? 1 : 2
+    const d = distanceLevenshtein(saisie, cle)
+    if (d <= seuil && d < meilleureDist) {
+      meilleureDist = d
+      meilleur = map[cle]
+    }
+  }
+  return meilleur
+}
+
 function validerCellule(col: ColonneSchema, brut: string): ResCellule {
   const v = brut.trim()
 
@@ -168,7 +210,13 @@ function validerCellule(col: ColonneSchema, brut: string): ResCellule {
 
     case 'enum': {
       const map = col.correspondances ?? {}
-      const code = map[normaliser(v)]
+      const cle = normaliser(v)
+      // 1. Correspondance exacte. 2. Sinon, si la colonne l'autorise, rattrapage
+      //    flou tolérant aux fautes de frappe (ex. « mdeium » → medium).
+      let code = map[cle]
+      if (code === undefined && col.flou && cle !== '') {
+        code = correspondanceFloue(cle, map)
+      }
       if (code === undefined) {
         return {
           ok: false,
