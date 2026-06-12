@@ -48,7 +48,11 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
       if (liens.length === 0) return
       const couts = await getSousItemsLegacy('Ticket', ticket.id, 'TicketCost')
       const coutImportTicket = couts.reduce((somme, cout) => somme + (Number(cout.cost_fixed) || 0), 0)
-      const coutTimeTicket = couts.reduce((somme, cout) => somme + (Number(cout.cost_time) || 0), 0)
+      const coutTimeTicket = couts.reduce((somme, cout) => {
+        const dureeSecondes = Number(cout.actiontime) || 0
+        const tarifHoraire = Number(cout.cost_time) || 0
+        return somme + (dureeSecondes / 3600) * tarifHoraire
+      }, 0)
       const partImport = coutImportTicket / liens.length
       const partTime = coutTimeTicket / liens.length
       const partManuel = (coutManuelParTicket.get(ticket.id) ?? 0) / liens.length
