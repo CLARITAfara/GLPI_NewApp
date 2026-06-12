@@ -24,6 +24,7 @@ export function CoutsPanel() {
   }, [])
 
   const totalImport = lignes.reduce((somme, ligne) => somme + ligne.coutImport, 0)
+  const totalTime = lignes.reduce((somme, ligne) => somme + ligne.coutTime, 0)
   const totalManuel = lignes.reduce((somme, ligne) => somme + ligne.coutManuel, 0)
 
   return (
@@ -42,7 +43,9 @@ export function CoutsPanel() {
               <tr>
                 <th>Matériel</th>
                 <th>Coût import</th>
+                <th>Coût temps</th>
                 <th>Coût manuel</th>
+                <th>Total fixe</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -51,8 +54,10 @@ export function CoutsPanel() {
                 <tr key={ligne.libelle}>
                   <td>{ligne.libelle}</td>
                   <td>{formatMontant(ligne.coutImport)}</td>
+                  <td>{formatMontant(ligne.coutTime)}</td>
                   <td>{formatMontant(ligne.coutManuel)}</td>
                   <td>{formatMontant(ligne.coutImport + ligne.coutManuel)}</td>
+                  <td>{formatMontant(ligne.coutImport + ligne.coutTime + ligne.coutManuel)}</td>
                 </tr>
               ))}
             </tbody>
@@ -60,8 +65,10 @@ export function CoutsPanel() {
               <tr>
                 <td>Total</td>
                 <td>{formatMontant(totalImport)}</td>
+                <td>{formatMontant(totalTime)}</td>
                 <td>{formatMontant(totalManuel)}</td>
                 <td>{formatMontant(totalImport + totalManuel)}</td>
+                <td>{formatMontant(totalImport + totalTime + totalManuel)}</td>
               </tr>
             </tfoot>
           </table>

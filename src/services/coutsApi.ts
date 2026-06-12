@@ -21,6 +21,7 @@ export async function enregistrerCoutFixe(ticketId: number, coutFixe: number): P
 export interface CoutMateriel {
   libelle: string
   coutImport: number
+  coutTime: number
   coutManuel: number
 }
 
@@ -38,7 +39,7 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
 
   const tickets = await listerTicketsFront()
   const totaux = new Map<string, CoutMateriel>(
-    TYPES_MATERIEL.map((type) => [type.itemtype, { libelle: type.libelle, coutImport: 0, coutManuel: 0 }]),
+    TYPES_MATERIEL.map((type) => [type.itemtype, { libelle: type.libelle, coutImport: 0, coutTime: 0, coutManuel: 0 }]),
   )
 
   await pool(tickets, 6, async (ticket) => {
@@ -47,12 +48,15 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
       if (liens.length === 0) return
       const couts = await getSousItemsLegacy('Ticket', ticket.id, 'TicketCost')
       const coutImportTicket = couts.reduce((somme, cout) => somme + (Number(cout.cost_fixed) || 0), 0)
+      const coutTimeTicket = couts.reduce((somme, cout) => somme + (Number(cout.cost_time) || 0), 0)
       const partImport = coutImportTicket / liens.length
+      const partTime = coutTimeTicket / liens.length
       const partManuel = (coutManuelParTicket.get(ticket.id) ?? 0) / liens.length
       for (const lien of liens) {
         const cible = totaux.get(String(lien.itemtype ?? ''))
         if (!cible) continue
         cible.coutImport += partImport
+        cible.coutTime += partTime
         cible.coutManuel += partManuel
       }
     } catch {
