@@ -355,12 +355,12 @@ function texteBrut(html?: string): string {
   return (doc.body.textContent ?? '').trim()
 }
 
-/** Durée en secondes → « 1 h 30 » / « 45 min » / « — ». */
-function formatDuree(seconds?: number): string { 
+/** Durée en secondes → « 1 h 30 min 15 s » / « 45 min 0 s » / « 30 s » / « — ». */
+function formatDuree(seconds?: number): string {
   if (!seconds || seconds <= 0) return '—'
   const h = Math.floor(seconds / 3600)
-  const m = Math.round((seconds % 3600) / 60)
-  const s = seconds % 60
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.round(seconds % 60)
   if (h > 0) return `${h} h ${m} min ${s} s`
   if (m > 0) return `${m} min ${s} s`
   return `${s} s`
