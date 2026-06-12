@@ -10,6 +10,7 @@ const NAV: SidebarNavItem[] = [
   { id: '/', label: 'Mes éléments', icon: 'bi bi-box-seam', group: 'Navigation' },
   { id: '/kanban', label: 'Tableau Kanban', icon: 'bi bi-kanban', group: 'Tickets' },
   { id: '/tickets/create', label: 'Nouveau ticket', icon: 'bi bi-plus-square', group: 'Tickets' },
+  { id: '/couts', label: 'Coûts matériel', icon: 'bi bi-cash-coin', group: 'Tickets' },
 ]
 
 /** Titre + sous-titre de la barre d'accueil selon la page courante. */
@@ -17,6 +18,7 @@ const PAGE_INTRO: Record<string, { titre: string; sous: string }> = {
   '/': { titre: 'Bienvenue dans votre espace', sous: 'Consultez et filtrez votre parc en libre-service.' },
   '/kanban': { titre: 'Suivi des tickets', sous: 'Glissez les cartes pour faire avancer vos demandes.' },
   '/tickets/create': { titre: 'Nouveau ticket', sous: 'Décrivez votre besoin, on s’occupe du reste.' },
+  '/couts': { titre: 'Coûts par matériel', sous: 'Total des coûts dépensés par type d’équipement.' },
 }
 
 export function FrontLayout() {

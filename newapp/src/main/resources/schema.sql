@@ -58,3 +58,10 @@ CREATE TABLE IF NOT EXISTS kanban_status_colors (
     FOREIGN KEY (status_id) REFERENCES kanban_statuses (id) ON DELETE CASCADE,
     UNIQUE (status_id)
 );
+
+CREATE TABLE IF NOT EXISTS ticket_fixed_costs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL UNIQUE,
+    cout_fixe REAL NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

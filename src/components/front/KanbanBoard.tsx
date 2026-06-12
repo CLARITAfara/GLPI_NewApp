@@ -11,6 +11,7 @@ import {
 } from '../../services/ticketsFrontApi'
 import type { KanbanColumnId, InfoRequise, SolutionTicket } from '../../services/ticketsFrontApi'
 import { chargerConfigKanban, chargerLangues } from '../../services/kanbanConfigApi'
+import { enregistrerCoutFixe } from '../../services/coutsApi'
 import type { KanbanColumnConfig, Language } from '../../services/kanbanConfigApi'
 import {
   libellePriorite,
@@ -151,13 +152,20 @@ export function KanbanBoard() {
   }
 
   // Confirmation de la boîte de dialogue (ex. résolution avec solution saisie).
-  async function confirmerInfo(texte: string) {
+  async function confirmerInfo(texte: string, coutFixe: number) {
     if (!pendingMove) return
     const { ticketId, colId } = pendingMove
     const colDef = KANBAN_COLUMNS.find((c) => c.id === colId)!
     const ancien = tickets.find((t) => t.id === ticketId)?.status ?? colDef.statutCible
     setPendingMove(null)
     await appliquer(ticketId, colDef.statutCible, ancien, () => resoudreTicket(ticketId, texte))
+    if (coutFixe > 0) {
+      try {
+        await enregistrerCoutFixe(ticketId, coutFixe)
+      } catch {
+        void 0
+      }
+    }
   }
 
   return (
@@ -359,11 +367,12 @@ function KanbanCard(
 interface InfoDialogProps {
   info: InfoRequise
   onCancel: () => void
-  onConfirm: (texte: string) => void | Promise<void>
+  onConfirm: (texte: string, coutFixe: number) => void | Promise<void>
 }
 
 function InfoDialog({ info, onCancel, onConfirm }: InfoDialogProps) {
   const [texte, setTexte] = useState('')
+  const [coutFixe, setCoutFixe] = useState('')
   const [err, setErr] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -374,7 +383,7 @@ function InfoDialog({ info, onCancel, onConfirm }: InfoDialogProps) {
       setErr('Ce champ est obligatoire.')
       return
     }
-    onConfirm(texte.trim())
+    onConfirm(texte.trim(), Number(coutFixe) || 0)
   }
 
   return (
@@ -396,6 +405,22 @@ function InfoDialog({ info, onCancel, onConfirm }: InfoDialogProps) {
           rows={4}
         />
         {err && <span className="field-error">{err}</span>}
+        {info.coutFixe && (
+          <>
+            <label className="modal-label" htmlFor="kanban-cout-field">Coût fixe (optionnel)</label>
+            <input
+              id="kanban-cout-field"
+              type="number"
+              min="0"
+              step="0.01"
+              className="modal-input"
+              value={coutFixe}
+              onChange={(e) => setCoutFixe(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
+              placeholder="0"
+            />
+          </>
+        )}
         <div className="modal-actions">
           <button type="button" className="btn-ghost" onClick={onCancel}>Annuler</button>
           <button type="button" className="btn-primary" onClick={valider}>Confirmer</button>

@@ -22,6 +22,7 @@ export interface InfoRequise {
   placeholder: string
   /** Phrase d'explication affichée sous le titre (optionnel). */
   hint?: string
+  coutFixe?: boolean
 }
 
 /**
@@ -58,6 +59,7 @@ export const KANBAN_COLUMNS: KanbanColumnDef[] = [
       label: 'Solution',
       placeholder: 'Décrivez la solution apportée…',
       hint: 'Le ticket passera au statut « Clos ». La solution sera enregistrée dans la fiche.',
+      coutFixe: true,
     },
   },
 ]
