@@ -249,7 +249,9 @@ function TicketFiche({ id }: { id: number }) {
                   <th>Libellé</th>
                   <th>Durée</th>
                   <th>Coût horaire</th>
+                  <th>Coût main d'œuvre</th>
                   <th>Coût fixe</th>
+                  <th>Coût réel</th>
                 </tr>
               </thead>
               <tbody>
@@ -258,10 +260,22 @@ function TicketFiche({ id }: { id: number }) {
                     <td>{c.name || '—'}</td>
                     <td>{formatDuree(c.duration)}</td>
                     <td>{formatMontant(c.cost_time)}</td>
+                    <td>{formatMontant(coutMainOeuvre(c))}</td>
                     <td>{formatMontant(c.cost_fixed)}</td>
+                    <td>{formatMontant(coutReel(c))}</td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <th>Total</th>
+                  <th>{formatDuree(couts.reduce((s, c) => s + (c.duration ?? 0), 0))}</th>
+                  <th></th>
+                  <th>{formatMontant(couts.reduce((s, c) => s + coutMainOeuvre(c), 0))}</th>
+                  <th></th>
+                  <th>{formatMontant(couts.reduce((s, c) => s + coutReel(c), 0))}</th>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -349,6 +363,19 @@ function formatDuree(seconds?: number): string {
   if (h && m) return `${h} h ${m} min`
   if (h) return `${h} h`
   return `${m} min`
+}
+
+/**
+ * Coût réel d'une ligne : coût horaire ramené à la durée réelle (en heures)
+ * + coût fixe + coût matériel. La durée est exprimée en secondes.
+ */
+function coutReel(c: CoutTicket): number {
+  return coutMainOeuvre(c) + (c.cost_fixed ?? 0) + (c.cost_material ?? 0)
+}
+
+/** Coût de la main d'œuvre : coût horaire ramené à la durée réelle (en heures). */
+function coutMainOeuvre(c: CoutTicket): number {
+  return (c.cost_time ?? 0) * ((c.duration ?? 0) / 3600)
 }
 
 /** Montant numérique → « 1 234,50 ». */
