@@ -24,6 +24,12 @@ public class TicketFixedCost {
     @Column(name = "cout_fixe", nullable = false)
     private Double coutFixe = 0.0;
 
+    @Column(name = "frais_reouverture", nullable = false)
+    private Double fraisReouverture = 0.0;
+
+    @Column(name = "dernier_cout", nullable = false)
+    private Double dernierCout = 0.0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

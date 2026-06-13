@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface TicketFixedCostRepository extends JpaRepository<TicketFixedCost, Long> {
     Optional<TicketFixedCost> findByTicketId(Long ticketId);
+
+    void deleteByTicketId(Long ticketId);
 }

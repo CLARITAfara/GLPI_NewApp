@@ -26,6 +26,7 @@ export function CoutsPanel() {
   const totalImport = lignes.reduce((somme, ligne) => somme + ligne.coutImport, 0)
   const totalTime = lignes.reduce((somme, ligne) => somme + ligne.coutTime, 0)
   const totalManuel = lignes.reduce((somme, ligne) => somme + ligne.coutManuel, 0)
+  const totalReouverture = lignes.reduce((somme, ligne) => somme + ligne.coutReouverture, 0)
 
   return (
     <section className="panel">
@@ -45,6 +46,7 @@ export function CoutsPanel() {
                 <th>Coût import</th>
                 <th>Coût temps</th>
                 <th>Coût manuel</th>
+                <th>Frais réouverture</th>
                 <th>Total fixe</th>
                 <th>Total</th>
               </tr>
@@ -56,8 +58,9 @@ export function CoutsPanel() {
                   <td>{formatMontant(ligne.coutImport)}</td>
                   <td>{formatMontant(ligne.coutTime)}</td>
                   <td>{formatMontant(ligne.coutManuel)}</td>
-                  <td>{formatMontant(ligne.coutImport + ligne.coutManuel)}</td>
-                  <td>{formatMontant(ligne.coutImport + ligne.coutTime + ligne.coutManuel)}</td>
+                  <td>{formatMontant(ligne.coutReouverture)}</td>
+                  <td>{formatMontant(ligne.coutImport + ligne.coutManuel + ligne.coutReouverture)}</td>
+                  <td>{formatMontant(ligne.coutImport + ligne.coutTime + ligne.coutManuel + ligne.coutReouverture)}</td>
                 </tr>
               ))}
             </tbody>
@@ -67,8 +70,9 @@ export function CoutsPanel() {
                 <td>{formatMontant(totalImport)}</td>
                 <td>{formatMontant(totalTime)}</td>
                 <td>{formatMontant(totalManuel)}</td>
-                <td>{formatMontant(totalImport + totalManuel)}</td>
-                <td>{formatMontant(totalImport + totalTime + totalManuel)}</td>
+                <td>{formatMontant(totalReouverture)}</td>
+                <td>{formatMontant(totalImport + totalManuel + totalReouverture)}</td>
+                <td>{formatMontant(totalImport + totalTime + totalManuel + totalReouverture)}</td>
               </tr>
             </tfoot>
           </table>

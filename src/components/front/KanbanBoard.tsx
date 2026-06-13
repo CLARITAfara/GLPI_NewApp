@@ -11,7 +11,7 @@ import {
 } from '../../services/ticketsFrontApi'
 import type { KanbanColumnId, InfoRequise, SolutionTicket } from '../../services/ticketsFrontApi'
 import { chargerConfigKanban, chargerLangues } from '../../services/kanbanConfigApi'
-import { enregistrerCoutFixe } from '../../services/coutsApi'
+import { ajouterCoutFixe, annulerDernierCoutFixe, appliquerReouverture } from '../../services/coutsApi'
 import type { KanbanColumnConfig, Language } from '../../services/kanbanConfigApi'
 import {
   libellePriorite,
@@ -54,6 +54,7 @@ export function KanbanBoard() {
   const [pendingMove, setPendingMove] = useState<
     { ticketId: number; colId: KanbanColumnId; info: InfoRequise } | null
   >(null)
+  const [pendingReopen, setPendingReopen] = useState<{ ticketId: number; ancien: Ticket['status'] } | null>(null)
   // Ticket dont on affiche la fiche détaillée (modale).
   const [detailId, setDetailId] = useState<number | null>(null)
 
@@ -142,6 +143,11 @@ export function KanbanBoard() {
     const colDef = KANBAN_COLUMNS.find((c) => c.id === colId)!
     if (!ticket || colonnePourStatut(ticket.status) === colId) return
 
+    if (colId === 'progress' && colonnePourStatut(ticket.status) === 'done') {
+      setPendingReopen({ ticketId: id, ancien: ticket.status })
+      return
+    }
+
     // Le changement nécessite une saisie → on ouvre la boîte de dialogue.
     if (colDef.infoRequise) {
       setPendingMove({ ticketId: id, colId, info: colDef.infoRequise })
@@ -161,10 +167,34 @@ export function KanbanBoard() {
     await appliquer(ticketId, colDef.statutCible, ancien, () => resoudreTicket(ticketId, texte))
     if (coutFixe > 0) {
       try {
-        await enregistrerCoutFixe(ticketId, coutFixe)
+        await ajouterCoutFixe(ticketId, coutFixe)
       } catch {
         void 0
       }
+    }
+  }
+
+  async function annulerCloture() {
+    if (!pendingReopen) return
+    const { ticketId, ancien } = pendingReopen
+    setPendingReopen(null)
+    await appliquer(ticketId, 2, ancien, () => changerStatutTicket(ticketId, 2))
+    try {
+      await annulerDernierCoutFixe(ticketId)
+    } catch {
+      void 0
+    }
+  }
+
+  async function confirmerReouverture(pourcentage: number) {
+    if (!pendingReopen) return
+    const { ticketId, ancien } = pendingReopen
+    setPendingReopen(null)
+    await appliquer(ticketId, 2, ancien, () => changerStatutTicket(ticketId, 2))
+    try {
+      await appliquerReouverture(ticketId, pourcentage)
+    } catch {
+      void 0
     }
   }
 
@@ -224,6 +254,14 @@ export function KanbanBoard() {
           info={pendingMove.info}
           onCancel={() => setPendingMove(null)}
           onConfirm={confirmerInfo}
+        />
+      )}
+
+      {pendingReopen && (
+        <ReopenDialog
+          onCancel={() => setPendingReopen(null)}
+          onAnnuler={annulerCloture}
+          onReouvrir={confirmerReouverture}
         />
       )}
 
@@ -424,6 +462,39 @@ function InfoDialog({ info, onCancel, onConfirm }: InfoDialogProps) {
         <div className="modal-actions">
           <button type="button" className="btn-ghost" onClick={onCancel}>Annuler</button>
           <button type="button" className="btn-primary" onClick={valider}>Confirmer</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ReopenDialog({ onCancel, onAnnuler, onReouvrir }: {
+  onCancel: () => void
+  onAnnuler: () => void | Promise<void>
+  onReouvrir: (pourcentage: number) => void | Promise<void>
+}) {
+  const [pourcentage, setPourcentage] = useState('')
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onCancel}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <h3 className="modal-title">Rouvrir le ticket</h3>
+        <p className="modal-hint">« Annulation » rouvre et supprime le coût saisi (clôture erronée). « Réouverture » rouvre et ajoute un pourcentage du dernier coût.</p>
+        <label className="modal-label" htmlFor="kanban-reopen-pct">Pourcentage du dernier coût (%)</label>
+        <input
+          id="kanban-reopen-pct"
+          type="number"
+          min="0"
+          step="0.1"
+          className="modal-input"
+          value={pourcentage}
+          onChange={(e) => setPourcentage(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}
+          placeholder="0"
+        />
+        <div className="modal-actions">
+          <button type="button" className="btn-ghost" onClick={onAnnuler}>Annulation</button>
+          <button type="button" className="btn-primary" onClick={() => onReouvrir(Number(pourcentage) || 0)}>Réouverture</button>
         </div>
       </div>
     </div>

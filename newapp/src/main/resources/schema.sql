@@ -63,5 +63,7 @@ CREATE TABLE IF NOT EXISTS ticket_fixed_costs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ticket_id INTEGER NOT NULL UNIQUE,
     cout_fixe REAL NOT NULL DEFAULT 0,
+    frais_reouverture REAL NOT NULL DEFAULT 0,
+    dernier_cout REAL NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

@@ -10,12 +10,16 @@ export const TYPES_MATERIEL: { itemtype: string; libelle: string }[] = [
   { itemtype: 'Phone', libelle: 'Téléphone' },
 ]
 
-export async function enregistrerCoutFixe(ticketId: number, coutFixe: number): Promise<void> {
-  await fetch(`${BASE}/ticket-fixed-costs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ ticketId, coutFixe }),
-  })
+export async function ajouterCoutFixe(ticketId: number, montant: number): Promise<void> {
+  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/add?montant=${montant}`, { method: 'POST' })
+}
+
+export async function annulerDernierCoutFixe(ticketId: number): Promise<void> {
+  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/cancel-last`, { method: 'POST' })
+}
+
+export async function appliquerReouverture(ticketId: number, pourcentage: number): Promise<void> {
+  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/reopen?pourcentage=${pourcentage}`, { method: 'POST' })
 }
 
 export interface CoutMateriel {
@@ -23,11 +27,13 @@ export interface CoutMateriel {
   coutImport: number
   coutTime: number
   coutManuel: number
+  coutReouverture: number
 }
 
 interface CoutFixeApi {
   ticketId: number
   coutFixe: number
+  fraisReouverture: number
 }
 
 export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
@@ -35,11 +41,15 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
     .then((reponse) => (reponse.ok ? (reponse.json() as Promise<CoutFixeApi[]>) : []))
     .catch(() => [] as CoutFixeApi[])
   const coutManuelParTicket = new Map<number, number>()
-  for (const manuel of manuels) coutManuelParTicket.set(manuel.ticketId, manuel.coutFixe)
+  const coutReouvertureParTicket = new Map<number, number>()
+  for (const manuel of manuels) {
+    coutManuelParTicket.set(manuel.ticketId, manuel.coutFixe)
+    coutReouvertureParTicket.set(manuel.ticketId, manuel.fraisReouverture ?? 0)
+  }
 
   const tickets = await listerTicketsFront()
   const totaux = new Map<string, CoutMateriel>(
-    TYPES_MATERIEL.map((type) => [type.itemtype, { libelle: type.libelle, coutImport: 0, coutTime: 0, coutManuel: 0 }]),
+    TYPES_MATERIEL.map((type) => [type.itemtype, { libelle: type.libelle, coutImport: 0, coutTime: 0, coutManuel: 0, coutReouverture: 0 }]),
   )
 
   await pool(tickets, 6, async (ticket) => {
@@ -56,12 +66,14 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
       const partImport = coutImportTicket / liens.length
       const partTime = coutTimeTicket / liens.length
       const partManuel = (coutManuelParTicket.get(ticket.id) ?? 0) / liens.length
+      const partReouverture = (coutReouvertureParTicket.get(ticket.id) ?? 0) / liens.length
       for (const lien of liens) {
         const cible = totaux.get(String(lien.itemtype ?? ''))
         if (!cible) continue
         cible.coutImport += partImport
         cible.coutTime += partTime
         cible.coutManuel += partManuel
+        cible.coutReouverture += partReouverture
       }
     } catch {
       void 0

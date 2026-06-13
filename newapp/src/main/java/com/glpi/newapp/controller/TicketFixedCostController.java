@@ -19,8 +19,18 @@ public class TicketFixedCostController {
         return service.findAll();
     }
 
-    @PostMapping
-    public TicketFixedCost save(@RequestBody TicketFixedCost cout) {
-        return service.enregistrer(cout);
+    @PostMapping("/by-ticket/{ticketId}/add")
+    public TicketFixedCost addCout(@PathVariable Long ticketId, @RequestParam double montant) {
+        return service.ajouterCout(ticketId, montant);
+    }
+
+    @PostMapping("/by-ticket/{ticketId}/cancel-last")
+    public TicketFixedCost cancelLast(@PathVariable Long ticketId) {
+        return service.annulerDernierCout(ticketId);
+    }
+
+    @PostMapping("/by-ticket/{ticketId}/reopen")
+    public TicketFixedCost reopen(@PathVariable Long ticketId, @RequestParam double pourcentage) {
+        return service.appliquerReouverture(ticketId, pourcentage);
     }
 }
