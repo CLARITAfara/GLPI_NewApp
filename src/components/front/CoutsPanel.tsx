@@ -43,9 +43,9 @@ export function CoutsPanel() {
             <thead>
               <tr>
                 <th>Matériel</th>
-                <th>Coût import</th>
-                <th>Coût temps</th>
-                <th>Coût manuel</th>
+                <th>Coût import(GLPI)</th>
+                <th>Coût temps(GLPI)</th>
+                <th>Super Coût</th>
                 <th>Frais réouverture</th>
                 <th>Total fixe</th>
                 <th>Total</th>
