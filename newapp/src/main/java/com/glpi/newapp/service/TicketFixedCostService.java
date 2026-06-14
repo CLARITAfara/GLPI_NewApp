@@ -51,9 +51,15 @@ public class TicketFixedCostService {
     @Transactional
     public TicketFixedCost appliquerReouverture(Long ticketId, double pourcentage) {
         TicketFixedCost cible = trouverOuCreer(ticketId);
+        double cumul = cible.getPourcentageReouverture() == null ? 0.0 : cible.getPourcentageReouverture();
+        cible.setPourcentageReouverture(cumul + pourcentage);
+        // On fige la base de calcul (dernier coût au moment de la réouverture) :
+        // ainsi les frais survivent à une annulation ultérieure, qui ne supprime
+        // QUE le dernier coût (remise à 0 de dernier_cout) sans toucher cette base.
         double base = cible.getDernierCout() == null ? 0.0 : cible.getDernierCout();
-        double cumul = cible.getFraisReouverture() == null ? 0.0 : cible.getFraisReouverture();
-        cible.setFraisReouverture(cumul + base * (pourcentage / 100.0));
+        if (base > 0) {
+            cible.setBaseReouverture(base);
+        }
         return repository.save(cible);
     }
 }

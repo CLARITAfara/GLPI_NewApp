@@ -33,7 +33,8 @@ export interface CoutMateriel {
 interface CoutFixeApi {
   ticketId: number
   coutFixe: number
-  fraisReouverture: number
+  pourcentageReouverture: number
+  baseReouverture: number
 }
 
 export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
@@ -44,7 +45,11 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
   const coutReouvertureParTicket = new Map<number, number>()
   for (const manuel of manuels) {
     coutManuelParTicket.set(manuel.ticketId, manuel.coutFixe)
-    coutReouvertureParTicket.set(manuel.ticketId, manuel.fraisReouverture ?? 0)
+    // Frais recalculés à la volée : base FIGÉE à la réouverture × pourcentage cumulé / 100.
+    // (la base n'est pas dernier_cout, qu'une annulation remet à 0 → les frais survivent.)
+    const base = manuel.baseReouverture ?? 0
+    const pourcentage = manuel.pourcentageReouverture ?? 0
+    coutReouvertureParTicket.set(manuel.ticketId, base * (pourcentage / 100))
   }
 
   const tickets = await listerTicketsFront()
