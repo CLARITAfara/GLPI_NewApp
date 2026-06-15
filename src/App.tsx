@@ -8,6 +8,7 @@ import { ElementsPanel } from './components/front/ElementsPanel'
 import { CreateTicketPanel } from './components/front/CreateTicketPanel'
 import { KanbanBoard } from './components/front/KanbanBoard'
 import { CoutsPanel } from './components/front/CoutsPanel'
+import { ImportMvtPanel } from './components/front/ImportMvtPanel'
 import './App.css'
 
 const ADMIN_PROFILES = ['Super-Admin', 'Admin', 'Supervisor']
@@ -56,6 +57,7 @@ export default function App() {
           <Route index element={<ElementsPanel />} />
           <Route path="kanban" element={<KanbanBoard />} />
           <Route path="couts" element={<CoutsPanel />} />
+          <Route path="import" element={<ImportMvtPanel />} />
           <Route path="tickets/create" element={<CreateTicketPanel />} />
         </Route>
       </Route>

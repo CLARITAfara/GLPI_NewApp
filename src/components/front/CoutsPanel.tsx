@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { chargerCoutsParMateriel } from '../../services/coutsApi'
+import { chargerCoutsParMateriel, TYPES_MATERIEL } from '../../services/coutsApi'
 import type { CoutMateriel } from '../../services/coutsApi'
+import { chargerMvtParMateriel } from '../../services/mvtApi'
+import type { MouvementMateriel } from '../../services/mvtApi'
+import { formatDate } from '../../format'
 
 type Etat = 'loading' | 'ready' | 'error'
 
@@ -12,6 +15,9 @@ export function CoutsPanel() {
   const [lignes, setLignes] = useState<CoutMateriel[]>([])
   const [etat, setEtat] = useState<Etat>('loading')
   const [erreur, setErreur] = useState('')
+  const [mvts, setMvts] = useState<Record<string, MouvementMateriel[]>>({})
+  // itemtype + libellé du matériel sélectionné (modale ouverte si non-null).
+  const [selection, setSelection] = useState<{ itemtype: string; libelle: string } | null>(null)
 
   useEffect(() => {
     let actif = true
@@ -20,8 +26,12 @@ export function CoutsPanel() {
       .catch((e) => {
         if (actif) { setErreur(e instanceof Error ? e.message : 'Erreur de chargement.'); setEtat('error') }
       })
+    chargerMvtParMateriel().then((m) => { if (actif) setMvts(m) }).catch(() => {})
     return () => { actif = false }
   }, [])
+
+  const itemtypePour = (libelle: string) =>
+    TYPES_MATERIEL.find((t) => t.libelle === libelle)?.itemtype ?? ''
 
   const totalImport = lignes.reduce((somme, ligne) => somme + ligne.coutImport, 0)
   const totalTime = lignes.reduce((somme, ligne) => somme + ligne.coutTime, 0)
@@ -53,7 +63,12 @@ export function CoutsPanel() {
             </thead>
             <tbody>
               {lignes.map((ligne) => (
-                <tr key={ligne.libelle}>
+                <tr
+                  key={ligne.libelle}
+                  className="row-clickable"
+                  title="Voir les mouvements"
+                  onClick={() => setSelection({ itemtype: itemtypePour(ligne.libelle), libelle: ligne.libelle })}
+                >
                   <td>{ligne.libelle}</td>
                   <td>{formatMontant(ligne.coutImport)}</td>
                   <td>{formatMontant(ligne.coutTime)}</td>
@@ -76,6 +91,45 @@ export function CoutsPanel() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {selection && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setSelection(null)}>
+          <div className="modal-card modal-card--lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3 className="modal-title">Mouvements — {selection.libelle}</h3>
+              <button type="button" className="modal-close" onClick={() => setSelection(null)} aria-label="Fermer">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="modal-body">
+              {(mvts[selection.itemtype] ?? []).length === 0 ? (
+                <p className="muted">Aucun mouvement enregistré pour ce matériel.</p>
+              ) : (
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Ticket</th><th>Date</th><th>Mouvement</th><th>Par</th></tr>
+                    </thead>
+                    <tbody>
+                      {(mvts[selection.itemtype] ?? []).map((m, i) => (
+                        <tr key={`${m.ticketId}-${i}`}>
+                          <td>#{m.ticketId}</td>
+                          <td>{formatDate(m.date)}</td>
+                          <td>{m.de} → {m.vers}</td>
+                          <td>{m.auteur}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn-primary" onClick={() => setSelection(null)}>Fermer</button>
+            </div>
+          </div>
         </div>
       )}
     </section>

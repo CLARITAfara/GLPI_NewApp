@@ -10,16 +10,27 @@ export const TYPES_MATERIEL: { itemtype: string; libelle: string }[] = [
   { itemtype: 'Phone', libelle: 'Téléphone' },
 ]
 
+/** POST kanban-api en remontant l'échec (sinon un backend down passe inaperçu). */
+async function postCout(url: string): Promise<void> {
+  let res: Response
+  try {
+    res = await fetch(url, { method: 'POST' })
+  } catch {
+    throw new Error('Backend des coûts injoignable (kanban-api :8080)')
+  }
+  if (!res.ok) throw new Error(`kanban-api ${res.status}`)
+}
+
 export async function ajouterCoutFixe(ticketId: number, montant: number): Promise<void> {
-  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/add?montant=${montant}`, { method: 'POST' })
+  await postCout(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/add?montant=${montant}`)
 }
 
 export async function annulerDernierCoutFixe(ticketId: number): Promise<void> {
-  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/cancel-last`, { method: 'POST' })
+  await postCout(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/cancel-last`)
 }
 
 export async function appliquerReouverture(ticketId: number, pourcentage: number): Promise<void> {
-  await fetch(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/reopen?pourcentage=${pourcentage}`, { method: 'POST' })
+  await postCout(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/reopen?pourcentage=${pourcentage}`)
 }
 
 export interface CoutMateriel {

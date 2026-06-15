@@ -493,6 +493,10 @@
   background: var(--social-bg);
 }
 
+.row-clickable {
+  cursor: pointer;
+}
+
 /* ===== Vue d'ensemble (statistiques) ===== */
 /* Cartes KPI : grandes valeurs en tête de page. */
 .kpi-row {
