@@ -4,6 +4,41 @@ import { pool } from './concurrency'
 
 const BASE = '/kanban-api'
 
+// ── Types pour le panneau de détail ──────────────────────────────────────────
+
+/** Une entrée brute de coût GLPI (TicketCost). */
+export interface EntreePrix {
+  ticketId: number
+  nom: string
+  date: string
+  coutFixe: number
+  coutTemps: number
+  /** (coutFixe + coutTemps) / N liens du ticket */
+  part: number
+  /** false si coutFixe = 0 et coutTemps = 0 → entrée annulée */
+  actif: boolean
+}
+
+/** État agrégé des frais manuels + réouverture d'un ticket (ticket_fixed_costs). */
+export interface EntreeFrais {
+  ticketId: number
+  coutManuel: number
+  /** coutManuel / N liens */
+  partManuel: number
+  pourcentage: number
+  baseReouverture: number
+  fraisReouverture: number
+  /** fraisReouverture / N liens */
+  partFrais: number
+  /** false si coutManuel = 0 (annulé) */
+  actif: boolean
+}
+
+export interface DetailCoutMateriel {
+  prix: EntreePrix[]
+  frais: EntreeFrais[]
+}
+
 export const TYPES_MATERIEL: { itemtype: string; libelle: string }[] = [
   { itemtype: 'Computer', libelle: 'PC' },
   { itemtype: 'Monitor', libelle: 'Moniteur' },
@@ -96,4 +131,70 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
   })
 
   return [...totaux.values()]
+}
+
+/**
+ * Charge le détail ligne par ligne des coûts pour un type de matériel.
+ * Pour chaque ticket lié à ce type :
+ *  - toutes ses entrées TicketCost (prix GLPI), non agrégées
+ *  - son entrée ticket_fixed_costs (frais manuels + réouverture)
+ * La part de l'élément = valeur / N liens total du ticket.
+ */
+export async function chargerDetailCoutMateriel(itemtype: string): Promise<DetailCoutMateriel> {
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' } })
+    .then((r) => (r.ok ? (r.json() as Promise<CoutFixeApi[]>) : []))
+    .catch(() => [] as CoutFixeApi[])
+  const fixedParTicket = new Map<number, CoutFixeApi>()
+  for (const m of manuels) fixedParTicket.set(m.ticketId, m)
+
+  const tickets = await listerTicketsFront()
+  const prixEntrees: EntreePrix[] = []
+  const fraisEntrees: EntreeFrais[] = []
+
+  await pool(tickets, 6, async (ticket) => {
+    try {
+      const liens = await getSousItemsLegacy('Ticket', ticket.id, 'Item_Ticket')
+      const liensType = liens.filter((l) => String(l.itemtype ?? '') === itemtype)
+      if (liensType.length === 0) return
+
+      const nLiens = liens.length
+      const couts = await getSousItemsLegacy('Ticket', ticket.id, 'TicketCost')
+
+      for (const cout of couts) {
+        const coutFixe = Number(cout.cost_fixed) || 0
+        const coutTemps = ((Number(cout.actiontime) || 0) / 3600) * (Number(cout.cost_time) || 0)
+        prixEntrees.push({
+          ticketId: ticket.id,
+          nom: String(cout.name ?? ''),
+          date: String(cout.begin_date ?? ''),
+          coutFixe,
+          coutTemps,
+          part: (coutFixe + coutTemps) / nLiens,
+          actif: coutFixe > 0 || coutTemps > 0,
+        })
+      }
+
+      const fixed = fixedParTicket.get(ticket.id)
+      if (fixed) {
+        const coutManuel = fixed.coutFixe ?? 0
+        const fraisReouverture = fixed.fraisReouverture ?? 0
+        if (coutManuel > 0 || fraisReouverture > 0) {
+          fraisEntrees.push({
+            ticketId: ticket.id,
+            coutManuel,
+            partManuel: coutManuel / nLiens,
+            pourcentage: fixed.pourcentageReouverture ?? 0,
+            baseReouverture: fixed.baseReouverture ?? 0,
+            fraisReouverture,
+            partFrais: fraisReouverture / nLiens,
+            actif: coutManuel > 0,
+          })
+        }
+      }
+    } catch {
+      void 0
+    }
+  })
+
+  return { prix: prixEntrees, frais: fraisEntrees }
 }

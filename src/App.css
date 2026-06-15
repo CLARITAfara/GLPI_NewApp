@@ -2893,6 +2893,143 @@ a.btn-ghost {
   }
 }
 
+/* ===== Drawer latéral (détail coûts matériel) ===== */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(16, 24, 40, 0.35);
+  animation: panel-fade 0.15s ease;
+}
+
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 101;
+  width: min(800px, 100vw);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: drawer-slide-in 0.22s ease;
+}
+
+@keyframes drawer-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5) var(--sp-6);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-sunken);
+}
+
+.drawer-label {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.drawer-title {
+  margin: 2px 0 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--text-h);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+/* ===== KPI résumé ===== */
+.detail-resume-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--sp-3);
+}
+
+.detail-kpi {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.detail-kpi--accent {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.detail-kpi__label {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-kpi__value {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-h);
+}
+
+.detail-section-title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--text-h);
+  margin: 0 0 var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ===== Badges statut (Actif / Annulé) ===== */
+.badge-actif {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+
+.badge-annule {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Ligne annulée dans un tableau */
+.row-annule td {
+  text-decoration: line-through;
+  color: var(--text-muted) !important;
+  opacity: 0.65;
+}
+
 /* Sous 860px, la barre hamburger mobile occupe déjà le haut : on évite un
    double en-tête « collant » en rendant les barres de contenu statiques. */
 @media (max-width: 860px) {
