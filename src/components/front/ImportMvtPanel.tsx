@@ -74,7 +74,7 @@ export function ImportMvtPanel() {
                     <td>{r.numLigne}</td>
                     <td>{r.ticket || '—'}</td>
                     <td>{r.mvt}</td>
-                    <td>{r.ok ? '✅' : '❌'}</td>
+                    <td>{r.ok ? 'ok' : 'ko'}</td>
                     <td>{r.message}</td>
                   </tr>
                 ))}
