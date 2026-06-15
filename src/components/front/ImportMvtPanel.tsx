@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { parserImportMvt, appliquerLigne } from '../../services/importMvtApi'
+import { parserImportMvt, appliquerLigne, chargerResolveurRef } from '../../services/importMvtApi'
 import type { ResultatLigne } from '../../services/importMvtApi'
 
 export function ImportMvtPanel() {
@@ -20,9 +20,11 @@ export function ImportMvtPanel() {
     try {
       const contenu = await fichier.text()
       const { lignes, erreurs } = parserImportMvt(contenu)
+      // Ref_Ticket → id GLPI (par ordre de création), chargé une seule fois.
+      const resoudreRef = await chargerResolveurRef()
       const out: ResultatLigne[] = [...erreurs]
       // Séquentiel : évite de surcharger GLPI et garde un ordre de rapport stable.
-      for (const l of lignes) out.push(await appliquerLigne(l))
+      for (const l of lignes) out.push(await appliquerLigne(l, resoudreRef))
       out.sort((a, b) => a.numLigne - b.numLigne)
       setResultats(out)
     } catch (err) {
@@ -42,7 +44,8 @@ export function ImportMvtPanel() {
       </div>
 
       <p className="muted">
-        Colonnes attendues : <code>ticket, mvt, valeur</code>. Mouvements acceptés :{' '}
+        Colonnes attendues : <code>ticket, mvt, valeur</code>. La colonne <code>ticket</code> est le{' '}
+        <strong>Ref_Ticket</strong> (ordre de création : 1 = 1er ticket importé). Mouvements acceptés :{' '}
         <code>reopened</code> (valeur = % du dernier coût), <code>cancel</code>/<code>annuler</code>{' '}
         (valeur ignorée), <code>close</code>/<code>terminer</code> (valeur = coût fixe en €).
       </p>
@@ -63,7 +66,7 @@ export function ImportMvtPanel() {
           <div className="table-scroll">
             <table className="data-table">
               <thead>
-                <tr><th>Ligne</th><th>Ticket</th><th>Mvt</th><th>Statut</th><th>Détail</th></tr>
+                <tr><th>Ligne</th><th>Ref</th><th>Mvt</th><th>Statut</th><th>Détail</th></tr>
               </thead>
               <tbody>
                 {resultats.map((r) => (

@@ -1,19 +1,37 @@
 // Import CSV des mouvements de tickets — réutilise la logique métier du Kanban.
 // CSV à 3 colonnes : ticket, mvt, valeur.
+//  - colonne ticket = Ref_Ticket (référence libre du CSV d'import des tickets),
+//    résolue vers l'id GLPI par ORDRE DE CRÉATION : Ref N = Nème ticket trié par
+//    id croissant (le Ref_Ticket n'est pas persisté côté GLPI).
 //  - reopened : réouverture (valeur = pourcentage du dernier coût)
 //  - cancel   : annulation d'une clôture erronée (valeur ignorée)
-//  - close    : clôture (valeur = solution)
+//  - close    : clôture (valeur = montant du coût fixe « Super Coût »)
 import { analyserCsv } from './csvUtil'
-import { changerStatutTicket, resoudreTicket } from './ticketsFrontApi'
+import { changerStatutTicket, resoudreTicket, listerTicketsFront } from './ticketsFrontApi'
 import { ajouterCoutFixe, annulerDernierCoutFixe, appliquerReouverture } from './coutsApi'
 
 export type MvtType = 'reopened' | 'cancel' | 'close'
 
 export interface LigneImport {
   numLigne: number
-  ticket: number
+  /** Ref_Ticket (1-based) tel que saisi dans le CSV — résolu plus tard en id GLPI. */
+  ref: number
   mvt: MvtType
   valeur: string
+}
+
+/** Résout un Ref_Ticket (1-based) vers un id GLPI, ou undefined si hors borne. */
+export type ResolveurRef = (ref: number) => number | undefined
+
+/**
+ * Construit le résolveur Ref → id GLPI : Ref N = Nème ticket trié par id
+ * croissant. Hypothèse (cf. choix « par ordre de création ») : les tickets
+ * proviennent d'un import sur une base propre.
+ */
+export async function chargerResolveurRef(): Promise<ResolveurRef> {
+  const tickets = await listerTicketsFront(1000)
+  const tries = [...tickets].sort((a, b) => a.id - b.id)
+  return (ref) => tries[ref - 1]?.id
 }
 
 export interface ResultatLigne {
@@ -39,38 +57,45 @@ export function parserImportMvt(contenu: string): { lignes: LigneImport[]; erreu
   const ok: LigneImport[] = []
   const erreurs: ResultatLigne[] = []
   for (const { numLigne, valeurs } of lignes) {
-    const ticket = Number((valeurs[0] ?? '').trim())
+    const ref = Number((valeurs[0] ?? '').trim())
     const mvt = normaliserMvt(valeurs[1] ?? '')
     const valeur = (valeurs[2] ?? '').trim()
-    if (!ticket || !mvt) {
-      erreurs.push({ numLigne, ticket, mvt: valeurs[1] ?? '', ok: false, message: 'Ticket ou mouvement invalide' })
+    if (!ref || !mvt) {
+      erreurs.push({ numLigne, ticket: ref, mvt: valeurs[1] ?? '', ok: false, message: 'Ref ou mouvement invalide' })
       continue
     }
-    ok.push({ numLigne, ticket, mvt, valeur })
+    ok.push({ numLigne, ref, mvt, valeur })
   }
   return { lignes: ok, erreurs }
 }
 
-/** Applique une ligne. Si mvt = cancel, la valeur n'est PAS prise en compte. */
-export async function appliquerLigne(l: LigneImport): Promise<ResultatLigne> {
+/**
+ * Applique une ligne. La colonne ticket est un Ref_Ticket résolu vers l'id GLPI
+ * via `resoudreRef`. Si mvt = cancel, la valeur n'est PAS prise en compte.
+ */
+export async function appliquerLigne(l: LigneImport, resoudreRef: ResolveurRef): Promise<ResultatLigne> {
+  const ticketId = resoudreRef(l.ref)
+  if (ticketId === undefined) {
+    return { numLigne: l.numLigne, ticket: l.ref, mvt: l.mvt, ok: false, message: `Ref ${l.ref} introuvable` }
+  }
   try {
     if (l.mvt === 'reopened') {
-      await changerStatutTicket(l.ticket, 2)
-      await appliquerReouverture(l.ticket, Number(l.valeur) || 0)
+      await changerStatutTicket(ticketId, 2)
+      await appliquerReouverture(ticketId, Number(l.valeur) || 0)
     } else if (l.mvt === 'cancel') {
-      await changerStatutTicket(l.ticket, 2)
-      await annulerDernierCoutFixe(l.ticket) // valeur ignorée
+      await changerStatutTicket(ticketId, 2)
+      await annulerDernierCoutFixe(ticketId) // valeur ignorée
     } else {
       // close / terminer : valeur = montant du coût fixe (« Super Coût »).
       // GLPI exige une solution → texte générique ; le montant alimente /couts.
-      await resoudreTicket(l.ticket, 'Clôturé via import CSV')
+      await resoudreTicket(ticketId, 'Clôturé via import CSV')
       const cout = Number(l.valeur) || 0
-      if (cout > 0) await ajouterCoutFixe(l.ticket, cout)
+      if (cout > 0) await ajouterCoutFixe(ticketId, cout)
     }
-    return { numLigne: l.numLigne, ticket: l.ticket, mvt: l.mvt, ok: true, message: 'OK' }
+    return { numLigne: l.numLigne, ticket: l.ref, mvt: l.mvt, ok: true, message: `OK (ticket #${ticketId})` }
   } catch (e) {
     return {
-      numLigne: l.numLigne, ticket: l.ticket, mvt: l.mvt,
+      numLigne: l.numLigne, ticket: l.ref, mvt: l.mvt,
       ok: false, message: e instanceof Error ? e.message : 'Erreur',
     }
   }
