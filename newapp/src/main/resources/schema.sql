@@ -65,6 +65,20 @@ CREATE TABLE IF NOT EXISTS ticket_fixed_costs (
     cout_fixe REAL NOT NULL DEFAULT 0,
     pourcentage_reouverture REAL NOT NULL DEFAULT 0,
     base_reouverture REAL NOT NULL DEFAULT 0,
+    frais_reouverture REAL NOT NULL DEFAULT 0,
     dernier_cout REAL NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 6. ticket_refs
+--    Correspondance Ref_Ticket (CSV) → id de ticket GLPI.
+--    Les Ref ne sont pas persistés côté GLPI : on les mémorise ici à l'import
+--    pour résoudre un Ref vers le vrai id GLPI (coûts/mouvements).
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ticket_refs (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    ref            INTEGER NOT NULL UNIQUE,
+    glpi_ticket_id INTEGER NOT NULL UNIQUE,
+    created_at     DATETIME DEFAULT CURRENT_TIMESTAMP
 );

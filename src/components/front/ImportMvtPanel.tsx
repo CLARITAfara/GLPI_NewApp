@@ -45,7 +45,8 @@ export function ImportMvtPanel() {
 
       <p className="muted">
         Colonnes attendues : <code>ticket, mvt, valeur</code>. La colonne <code>ticket</code> est le{' '}
-        <strong>Ref_Ticket</strong> (ordre de création : 1 = 1er ticket importé). Mouvements acceptés :{' '}
+        <strong>Ref_Ticket</strong> (la même référence que la Feuille 2 d'import des tickets).
+        Mouvements acceptés :{' '}
         <code>reopened</code> (valeur = % du dernier coût), <code>cancel</code>/<code>annuler</code>{' '}
         (valeur ignorée), <code>close</code>/<code>terminer</code> (valeur = coût fixe en €).
       </p>

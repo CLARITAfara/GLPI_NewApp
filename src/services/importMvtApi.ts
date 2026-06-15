@@ -1,14 +1,16 @@
 // Import CSV des mouvements de tickets — réutilise la logique métier du Kanban.
 // CSV à 3 colonnes : ticket, mvt, valeur.
-//  - colonne ticket = Ref_Ticket (référence libre du CSV d'import des tickets),
-//    résolue vers l'id GLPI par ORDRE DE CRÉATION : Ref N = Nème ticket trié par
-//    id croissant (le Ref_Ticket n'est pas persisté côté GLPI).
+//  - colonne ticket = Ref_Ticket (la même référence que la Feuille 2 d'import),
+//    résolue vers l'id GLPI via la correspondance persistée à l'import dans
+//    newapp.db (table ticket_refs). À défaut (table vide / ancien import), repli
+//    sur l'ordre de création : Ref N = Nème ticket trié par id croissant.
 //  - reopened : réouverture (valeur = pourcentage du dernier coût)
 //  - cancel   : annulation d'une clôture erronée (valeur ignorée)
 //  - close    : clôture (valeur = montant du coût fixe « Super Coût »)
 import { analyserCsv } from './csvUtil'
 import { changerStatutTicket, resoudreTicket, listerTicketsFront } from './ticketsFrontApi'
 import { ajouterCoutFixe, annulerDernierCoutFixe, appliquerReouverture } from './coutsApi'
+import { chargerRefs } from './ticketRefApi'
 
 export type MvtType = 'reopened' | 'cancel' | 'close'
 
@@ -24,11 +26,15 @@ export interface LigneImport {
 export type ResolveurRef = (ref: number) => number | undefined
 
 /**
- * Construit le résolveur Ref → id GLPI : Ref N = Nème ticket trié par id
- * croissant. Hypothèse (cf. choix « par ordre de création ») : les tickets
- * proviennent d'un import sur une base propre.
+ * Construit le résolveur Ref → id GLPI. Source principale : la correspondance
+ * Ref_Ticket → id GLPI persistée à l'import (newapp.db). Repli, si la table est
+ * vide (ancien import) : Ref N = Nème ticket trié par id croissant.
  */
 export async function chargerResolveurRef(): Promise<ResolveurRef> {
+  // Source fiable : la table Ref → id GLPI persistée à l'import (newapp.db).
+  const refs = await chargerRefs()
+  if (refs.size > 0) return (ref) => refs.get(ref)
+  // Repli (table vide / anciens imports) : Ref N = Nème ticket par id croissant.
   const tickets = await listerTicketsFront(1000)
   const tries = [...tickets].sort((a, b) => a.id - b.id)
   return (ref) => tries[ref - 1]?.id

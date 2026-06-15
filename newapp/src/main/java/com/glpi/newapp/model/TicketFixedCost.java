@@ -30,6 +30,14 @@ public class TicketFixedCost {
     @Column(name = "base_reouverture", nullable = false)
     private Double baseReouverture = 0.0;
 
+    /**
+     * Montant CUMULÉ des frais de réouverture, figé à chaque réouverture
+     * (dernier coût × pourcentage). Ne diminue jamais : une annulation ne touche
+     * que coutFixe/dernierCout, jamais ce champ.
+     */
+    @Column(name = "frais_reouverture", nullable = false)
+    private Double fraisReouverture = 0.0;
+
     @Column(name = "dernier_cout", nullable = false)
     private Double dernierCout = 0.0;
 

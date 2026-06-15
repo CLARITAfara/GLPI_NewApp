@@ -23,6 +23,7 @@ import {
   uploaderDocument,
   uploadDisponible,
 } from './legacyApi'
+import { enregistrerRefs } from './ticketRefApi'
 
 export interface ProgressionImport {
   etape: string
@@ -636,6 +637,15 @@ export async function importer(
         }
         onProgress({ etape: etape6, courant: ++faits6, total: aBasculer.length })
       })
+    }
+
+    // ── Persistance Ref_Ticket → id GLPI (newapp.db) ──
+    // Les Ref ne sont pas stockés côté GLPI ; on les mémorise pour que les
+    // imports ultérieurs (coûts/mouvements) résolvent un Ref de façon fiable.
+    try {
+      await enregistrerRefs(ticketIdParRef)
+    } catch {
+      /* best-effort : un échec de persistance ne doit pas annuler l'import GLPI */
     }
 
     rapport.ok = true

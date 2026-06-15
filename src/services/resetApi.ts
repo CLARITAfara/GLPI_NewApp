@@ -6,6 +6,7 @@ import {
 } from './legacyApi'
 import { ITEM_TYPES, type ItemType } from './importSchemas'
 import { pool } from './concurrency'
+import { purgerRefs } from './ticketRefApi'
 
 /** Nombre de suppressions menées en parallèle lors d'une réinitialisation. */
 const CONCURRENCE_SUPPRESSION = 8
@@ -368,6 +369,17 @@ export async function reinitialiserModule(
     traites++
     onProgression?.({ total, traites })
   })
+
+  // Le mapping Ref_Ticket → id GLPI (newapp.db) n'a de sens qu'avec les tickets :
+  // on le purge en même temps que le reset du module Tickets. Best-effort — un
+  // échec côté backend ne doit pas invalider la suppression GLPI déjà faite.
+  if (module.id === 'tickets') {
+    try {
+      await purgerRefs()
+    } catch {
+      /* best-effort */
+    }
+  }
 
   return {
     moduleId: module.id,
