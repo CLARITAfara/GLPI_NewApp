@@ -115,5 +115,9 @@ Le **changement de statut** (→ En cours) est commun aux deux actions et passe 
 Voir aussi : [`couts-par-materiel.md`](./couts-par-materiel.md) pour le détail du tableau de coûts.
 
 
+<<<<<<< HEAD
 
 Miojoro
+=======
+testbg
+>>>>>>> 5863708c1bb46c1f19ab5e322897ae5fa49b19c9
