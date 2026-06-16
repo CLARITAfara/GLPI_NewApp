@@ -54,7 +54,7 @@ export interface ResultatLigne {
 /** Normalise le libellé du mouvement (FR/EN, casse libre) vers un type canonique. */
 function normaliserMvt(brut: string): MvtType | null {
   const v = brut.trim().toLowerCase()
-  if (['reopened', 'reouverture', 'réouverture'].includes(v)) return 'reopened'
+  if (['reopened', 'reopen', 'open', 'reouverture', 'réouverture'].includes(v)) return 'reopened'
   if (['cancel', 'annuler', 'annulation'].includes(v)) return 'cancel'
   if (['close', 'closed', 'terminer', 'cloturer', 'clôturer'].includes(v)) return 'close'
   return null
