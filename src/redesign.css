@@ -1,0 +1,561 @@
+/* Refonte sobre : couleurs unies, composants simples, aucune animation. */
+
+:root {
+  --bg: #ffffff;
+  --bg-subtle: #f3f9fd;
+  --bg-sunken: #f7fbfe;
+  --social-bg: #eaf5fb;
+  --code-bg: #eaf5fb;
+  --text-h: #24445c;
+  --text: #5f7a8d;
+  --text-muted: #8ca4b4;
+  --border: #d5e7f1;
+  --border-strong: #bad6e5;
+  --accent: #4a9dcc;
+  --accent-strong: #3184b5;
+  --accent-bg: #eaf7fd;
+  --accent-border: #acd9ee;
+  --accent-gradient: #4a9dcc;
+  --focus-ring: 0 0 0 3px #d5effa;
+  --success: #15803d;
+  --success-bg: #f0fdf4;
+  --success-border: #bbf7d0;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --shadow-sm: 0 1px 3px rgba(36, 68, 92, 0.08);
+  --shadow: 0 3px 10px rgba(36, 68, 92, 0.08);
+  --shadow-lg: 0 8px 20px rgba(36, 68, 92, 0.14);
+  --radius-sm: 6px;
+  --radius: 7px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --sans: Arial, Helvetica, sans-serif;
+  --heading: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+  font-family: var(--sans);
+}
+
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+body,
+.app-shell {
+  background: var(--bg-subtle);
+}
+
+button,
+input,
+select,
+textarea,
+h1,
+h2,
+h3,
+h4 {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Structure principale */
+.dash-main,
+.front-main {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+.panel-head {
+  min-height: 42px;
+  margin-bottom: 20px;
+}
+
+.panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-h);
+  font-size: 26px;
+}
+
+.panel-head h2 i {
+  color: var(--accent);
+}
+
+/* Navigation */
+.sidebar {
+  width: 260px;
+  color: #e7f4fb;
+  background: #5a9fc5;
+  border-right: 0;
+}
+
+.sidebar-brand {
+  padding: 20px 18px;
+  border-bottom-color: #78b2d1;
+}
+
+.sidebar-brand-icon {
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 7px;
+}
+
+.sidebar-brand-text strong,
+.sidebar-user-info strong {
+  color: #ffffff;
+}
+
+.sidebar-brand-text small,
+.front-foot-note {
+  color: #d2eaf6;
+}
+
+.nav-group-label {
+  color: #d0e8f4;
+}
+
+.nav-item {
+  color: #edf8fd;
+  border-radius: 6px;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+  background: #4a8db4;
+}
+
+.nav-item.active {
+  color: #ffffff;
+  background: var(--accent);
+}
+
+.nav-item.active::before {
+  display: none;
+}
+
+.nav-item--danger,
+.nav-item--danger.active {
+  color: #fca5a5;
+}
+
+.nav-item--danger:hover,
+.nav-item--danger.active {
+  background: #7f1d1d;
+}
+
+.sidebar-foot {
+  background: #4d90b6;
+  border-top-color: #78b2d1;
+}
+
+.avatar {
+  color: #ffffff;
+  background: #77b5d5;
+  border-color: #a3d2e8;
+}
+
+.role-badge {
+  color: #ffffff;
+  background: #4384aa;
+  border-color: #88c1de;
+}
+
+.role-badge.role-helpdesk {
+  color: #ffffff;
+  background: #4384aa;
+  border-color: #88c1de;
+}
+
+.sidebar .btn-ghost {
+  color: #ffffff;
+  background: transparent;
+  border-color: #9bcae2;
+}
+
+.sidebar .btn-ghost:hover {
+  color: #ffffff;
+  background: #4384aa;
+}
+
+/* En-tetes */
+.content-header,
+.front-topbar {
+  padding: 18px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: none;
+}
+
+.front-topbar-text strong {
+  color: var(--text-h);
+  font-size: 24px;
+}
+
+/* Boutons et champs */
+.btn-primary,
+.btn-ghost,
+.page-btn,
+.kanban-page-btn {
+  min-height: 40px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.btn-primary,
+.login-card button[type="submit"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-primary:hover:not(:disabled),
+.login-card button[type="submit"]:hover:not(:disabled) {
+  background: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-ghost,
+.page-btn,
+.kanban-page-btn {
+  color: var(--text-h);
+  background: #ffffff;
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled),
+.page-btn:hover:not(:disabled),
+.kanban-page-btn:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+input,
+select,
+textarea,
+.tickets-search,
+.modal-input,
+.kanban-lang-select {
+  color: var(--text-h);
+  background: #ffffff;
+  border-color: var(--border);
+  border-radius: 6px;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.tickets-search:focus,
+.modal-input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.count-badge,
+.type-badge,
+.auto-badge {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.statut-badge.st-new {
+  color: #3184b5;
+  background: #eaf7fd;
+  border-color: #acd9ee;
+}
+
+.statut-badge.st-pending {
+  color: #9a6700;
+  background: #fff8dc;
+  border-color: #ead58c;
+}
+
+.statut-badge.st-approval {
+  color: #527f99;
+  background: #eef7fb;
+  border-color: #c4dfeb;
+}
+
+/* Cartes et formulaires */
+.elements-filters,
+.ticket-section,
+.kanban-config-card,
+.reset-ressource-card,
+.import-input,
+.item-selector,
+.ticket-fiche,
+.stat-breakdown,
+.tickets-list {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.elements-filters {
+  margin-bottom: 20px;
+  padding: 18px;
+}
+
+.ticket-form {
+  max-width: none;
+}
+
+.ticket-section,
+.stat-breakdown,
+.ticket-fiche {
+  padding: 22px;
+}
+
+.filter-field label,
+.ticket-field label,
+.modal-label {
+  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-field input,
+.filter-field select,
+.ticket-field input,
+.ticket-field select,
+.ticket-field textarea {
+  min-height: 42px;
+  padding: 9px 11px;
+  border-radius: 6px;
+}
+
+.item-selector-row:hover,
+.item-selector-row.checked,
+.ticket-row.active {
+  background: var(--accent-bg);
+}
+
+/* Tableaux */
+.table-scroll {
+  max-height: 72vh;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 14px;
+  border-bottom-color: var(--border);
+}
+
+.data-table th {
+  color: #607e91;
+  font-size: 11px;
+  background: #f7fbfe;
+}
+
+.data-table tbody tr:hover {
+  background: #f2f9fd;
+}
+
+.data-table tfoot {
+  background: #eaf5fb;
+}
+
+/* Statistiques et tickets */
+.kpi-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.kpi-tile {
+  min-height: 125px;
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-icon {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  border-radius: 7px;
+}
+
+.kpi-value {
+  color: var(--text-h);
+  font-size: 42px;
+}
+
+.stat-bar-fill {
+  background: var(--accent);
+}
+
+.tickets-layout {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+.tickets-list {
+  padding: 12px;
+}
+
+.ticket-row {
+  border-radius: 6px;
+}
+
+.fiche-champ {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Kanban */
+.kanban-board {
+  gap: 16px;
+}
+
+.kanban-col {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.kanban-col--new {
+  --col-bg: #eaf7fd;
+  --col-fg: #3184b5;
+}
+
+.kanban-col--progress {
+  --col-bg: #fffbeb;
+  --col-fg: #b45309;
+}
+
+.kanban-col--done {
+  --col-bg: #f0fdf4;
+  --col-fg: #15803d;
+}
+
+.kanban-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kanban-card:hover {
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
+.kanban-add-btn {
+  width: 100%;
+  justify-content: center;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+}
+
+/* Fenetres et connexion */
+.modal-overlay,
+.drawer-overlay {
+  background: rgba(36, 68, 92, 0.5);
+  backdrop-filter: none;
+}
+
+.modal-card,
+.drawer {
+  background: #ffffff;
+}
+
+.modal-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.drawer-head {
+  background: #f7fbfe;
+}
+
+.login-wrap {
+  background: #eaf5fb;
+}
+
+.login-card {
+  max-width: 400px;
+  padding: 36px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.login-card h1 i {
+  color: var(--accent);
+}
+
+.login-card input,
+.login-card button[type="submit"] {
+  min-height: 46px;
+  border-radius: 6px;
+}
+
+@media (max-width: 860px) {
+  .sidebar-topbar {
+    color: #ffffff;
+    background: #5a9fc5;
+    border-bottom: 0;
+  }
+
+  .sidebar-topbar-title {
+    color: #ffffff;
+  }
+
+  .sidebar-burger span {
+    background: #ffffff;
+  }
+
+  .tickets-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .dash-main,
+  .front-main {
+    padding: 18px 14px;
+  }
+
+  .content-header,
+  .front-topbar {
+    padding: 15px 14px;
+  }
+
+  .panel-head h2 {
+    font-size: 22px;
+  }
+
+  .kpi-row,
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-section,
+  .stat-breakdown,
+  .ticket-fiche,
+  .modal-card {
+    padding: 16px;
+  }
+}

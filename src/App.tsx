@@ -10,6 +10,7 @@ import { KanbanBoard } from './components/front/KanbanBoard'
 import { CoutsPanel } from './components/front/CoutsPanel'
 import { ImportMvtPanel } from './components/front/ImportMvtPanel'
 import './App.css'
+import './redesign.css'
 
 const ADMIN_PROFILES = ['Super-Admin', 'Admin', 'Supervisor']
 
