@@ -1,4 +1,4 @@
-# À faire — Détail des mouvements par matériel (page /couts)
+# Détail des mouvements par matériel (page /couts)
 
 Objectif : sur [/couts](http://localhost:5173/couts), rendre chaque ligne **Matériel**
 cliquable. Au clic, afficher dans une modale **tous les `mvt` (mouvements de statut)**
