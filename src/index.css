@@ -1,61 +1,152 @@
+/* ============================================================================
+   DESIGN SYSTEM — tokens globaux
+   Convention :
+   - Couleurs : neutres froids (slate) + accent indigo + couleurs sémantiques.
+   - Espacement : échelle 4/8px (--sp-*). N'utiliser QUE ces pas.
+   - Rayon : --radius-* (sm → pill).
+   - Typo : --fs-* (taille) et --fw-* (graisse).
+   Les anciens noms (--accent, --bg, --text-h, --border, --shadow, --social-bg…)
+   sont conservés pour rétrocompatibilité avec le CSS existant.
+   ========================================================================== */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* — Neutres (slate, froids) — */
+  --bg: #ffffff;               /* surfaces / cartes */
+  --bg-subtle: #f1f5f9;        /* fond de page (slate-100) */
+  --bg-sunken: #f8fafc;        /* zones en creux (encadrés, en-têtes de table) */
+  --social-bg: #f1f5f9;        /* alias hérité (survol) */
+  --code-bg: #f1f5f9;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --text-h: #0f172a;           /* texte fort : titres, valeurs */
+  --text: #51607a;             /* texte secondaire / labels */
+  --text-muted: #94a3b8;       /* texte tertiaire / placeholder */
+
+  --border: #e2e8f0;           /* bordures par défaut */
+  --border-strong: #cbd5e1;    /* bordures marquées (hover, focus neutre) */
+
+  /* — Accent (indigo) — */
+  --accent: #6366f1;
+  --accent-strong: #4f46e5;    /* survol / pressed */
+  --accent-bg: rgba(99, 102, 241, 0.1);
+  --accent-border: rgba(99, 102, 241, 0.45);
+  /* Dégradé des boutons primaires (indigo → violet) + halo de focus. */
+  --accent-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.1);
+
+  /* — Couleurs sémantiques — */
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.1);
+  --success-border: rgba(22, 163, 74, 0.35);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.3);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --warning-border: rgba(217, 119, 6, 0.35);
+
+  /* — Élévation — */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow:
+    0 4px 6px -2px rgba(15, 23, 42, 0.05),
+    0 10px 15px -3px rgba(15, 23, 42, 0.1);
+  --shadow-lg:
+    0 10px 25px -5px rgba(15, 23, 42, 0.12),
+    0 8px 10px -6px rgba(15, 23, 42, 0.08);
+
+  /* — Espacement (grille 4 / 8) — */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* — Rayons (style « cartes douces ») — */
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  /* — Typographie — */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-2xl: 30px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  /* Base de document : 16px (densité back-office, vs 18px du template). */
+  font: var(--fs-md) / 150% var(--sans);
+  letter-spacing: 0.1px;
   color-scheme: light dark;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-subtle);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
   @media (max-width: 1024px) {
-    font-size: 16px;
+    font: var(--fs-base) / 150% var(--sans);
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
     --bg: #16171d;
-    --border: #2e303a;
+    --bg-subtle: #101117;
+    --bg-sunken: #1f2028;
+    --social-bg: #1f2028;
     --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    --text-h: #f3f4f6;
+    --text: #9ca3af;
+    --text-muted: #6b7280;
+
+    --border: #2e303a;
+    --border-strong: #3f414d;
+
+    --accent: #818cf8;
+    --accent-strong: #a5b4fc;
+    --accent-bg: rgba(129, 140, 248, 0.16);
+    --accent-border: rgba(129, 140, 248, 0.5);
+
+    --success: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.14);
+    --success-border: rgba(74, 222, 128, 0.4);
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.14);
+    --danger-border: rgba(248, 113, 113, 0.4);
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.14);
+    --warning-border: rgba(251, 191, 36, 0.4);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow:
+      0 4px 6px -2px rgba(0, 0, 0, 0.25),
+      0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    --shadow-lg:
+      0 10px 25px -5px rgba(0, 0, 0, 0.5),
+      0 8px 10px -6px rgba(0, 0, 0, 0.35);
   }
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
+  margin: 0;
+  text-align: left;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -69,26 +160,28 @@ body {
 h1,
 h2 {
   font-family: var(--heading);
-  font-weight: 500;
+  font-weight: var(--fw-bold);
   color: var(--text-h);
+  letter-spacing: -0.2px;
 }
 
+/* h1 ramené à une taille de produit (le template Vite était à 56px). */
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.6px;
+  margin: var(--sp-6) 0;
   @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    font-size: var(--fs-xl);
+    margin: var(--sp-5) 0;
   }
 }
 h2 {
-  font-size: 24px;
-  line-height: 118%;
+  font-size: var(--fs-xl);
+  line-height: 1.2;
   letter-spacing: -0.24px;
-  margin: 0 0 8px;
+  margin: 0 0 var(--sp-2);
   @media (max-width: 1024px) {
-    font-size: 20px;
+    font-size: var(--fs-lg);
   }
 }
 p {
@@ -99,13 +192,13 @@ code,
 .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--text-h);
 }
 
 code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
+  font-size: var(--fs-base);
+  line-height: 1.35;
+  padding: var(--sp-1) var(--sp-2);
   background: var(--code-bg);
 }

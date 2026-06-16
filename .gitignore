@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Variables d'environnement (contiennent des secrets — ne pas committer)
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +27,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+*.sqlite
+vite.config.ts
+newapp/newapp.db
+
+
+*.class
+
+# Sortie de build Maven (régénérée à chaque compilation — ne pas versionner)
+target/
+newapp/target/
