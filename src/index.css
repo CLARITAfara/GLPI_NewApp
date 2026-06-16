@@ -23,14 +23,14 @@
   --border: #e2e8f0;           /* bordures par défaut */
   --border-strong: #cbd5e1;    /* bordures marquées (hover, focus neutre) */
 
-  /* — Accent (indigo) — */
-  --accent: #6366f1;
-  --accent-strong: #4f46e5;    /* survol / pressed */
-  --accent-bg: rgba(99, 102, 241, 0.1);
-  --accent-border: rgba(99, 102, 241, 0.45);
-  /* Dégradé des boutons primaires (indigo → violet) + halo de focus. */
-  --accent-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
-  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  /* — Accent (bleu ciel / sky) — */
+  --accent: #0ea5e9;
+  --accent-strong: #0284c7;    /* survol / pressed */
+  --accent-bg: rgba(14, 165, 233, 0.1);
+  --accent-border: rgba(14, 165, 233, 0.4);
+  /* Dégradé des boutons primaires (sky-600 → sky-400) + halo de focus. */
+  --accent-gradient: linear-gradient(135deg, #0369a1, #0ea5e9);
+  --focus-ring: 0 0 0 3px rgba(14, 165, 233, 0.15);
 
   /* — Couleurs sémantiques — */
   --success: #16a34a;
@@ -118,10 +118,10 @@
     --border: #2e303a;
     --border-strong: #3f414d;
 
-    --accent: #818cf8;
-    --accent-strong: #a5b4fc;
-    --accent-bg: rgba(129, 140, 248, 0.16);
-    --accent-border: rgba(129, 140, 248, 0.5);
+    --accent: #38bdf8;
+    --accent-strong: #7dd3fc;
+    --accent-bg: rgba(56, 189, 248, 0.16);
+    --accent-border: rgba(56, 189, 248, 0.5);
 
     --success: #4ade80;
     --success-bg: rgba(74, 222, 128, 0.14);

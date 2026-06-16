@@ -86,7 +86,7 @@
 
 .login-card button[type='submit']:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
 }
 
 .login-card button:disabled {
@@ -146,8 +146,7 @@
   height: 100svh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  border-right: 1px solid var(--border);
+  /* couleur gérée par la section SIDEBAR marine en fin de fichier */
 }
 
 .sidebar-brand {
@@ -267,14 +266,12 @@
     align-items: center;
     gap: 14px;
     padding: 12px 16px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    /* couleurs gérées par la section SIDEBAR marine en fin de fichier */
   }
 
   .sidebar-topbar-title {
     font-size: 15px;
     font-weight: 700;
-    color: var(--text-h);
   }
 
   .sidebar-burger {
@@ -285,8 +282,6 @@
     width: 38px;
     height: 38px;
     padding: 0 8px;
-    background: transparent;
-    border: 1px solid var(--border);
     border-radius: 8px;
     cursor: pointer;
   }
@@ -295,7 +290,6 @@
     display: block;
     height: 2px;
     border-radius: 2px;
-    background: var(--text-h);
   }
 
   .sidebar-overlay {
@@ -1869,7 +1863,7 @@
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
 }
 
 .btn-primary:disabled {
@@ -2770,10 +2764,7 @@
   text-decoration: underline;
 }
 
-/* La sidebar passe sur fond blanc « surface » au-dessus du fond de page. */
-.sidebar {
-  background: var(--bg);
-}
+/* La sidebar utilise le thème bleu marine (voir section SIDEBAR en fin de fichier). */
 
 /* Densité de contenu cohérente avec la grille 8px. */
 .dash-main {
@@ -2902,4 +2893,341 @@ a.btn-ghost {
     backdrop-filter: none;
     background: var(--bg);
   }
+}
+
+/* ============================================================================
+   DARK MODE — surcharges pour les couleurs codées en dur
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+
+  /* — Kanban : colonnes — */
+  .kanban-col              { --col-bg: var(--bg-sunken); }
+  .kanban-col--new         { --col-bg: rgba(14, 165, 233, 0.1);  --col-fg: #7dd3fc; }
+  .kanban-col--progress    { --col-bg: rgba(251, 146, 60, 0.1);  --col-fg: #fdba74; }
+  .kanban-col--done        { --col-bg: rgba(74, 222, 128, 0.1);  --col-fg: #86efac; }
+
+  .kanban-col-count {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* — Kanban : cartes — */
+  .kanban-card {
+    background: var(--bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  .kanban-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  }
+  .kanban-card-title { color: var(--text-h); }
+  .kanban-card-id    { color: var(--text-muted); }
+
+  /* — Kanban : badges de priorité — */
+  .prio-badge {
+    background: var(--bg-sunken);
+    color: var(--text);
+  }
+  .prio-badge.prio-4 {
+    background: rgba(217, 119, 6, 0.18);
+    color: #fcd34d;
+  }
+  .prio-badge.prio-5,
+  .prio-badge.prio-6 {
+    background: rgba(220, 38, 38, 0.18);
+    color: #fca5a5;
+  }
+
+  /* — Kanban : formulaire d'ajout inline — */
+  .kanban-add-btn {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .kanban-add-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .kanban-add-form {
+    background: var(--bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  .kanban-add-input {
+    color: var(--text-h);
+    background: var(--bg-sunken);
+  }
+  .kanban-add-cancel { color: var(--text); }
+  .kanban-add-cancel:hover {
+    color: #f87171;
+    border-color: #f87171;
+  }
+
+  /* — Kanban : config aperçu — */
+  .kanban-config-preview { color: var(--text-h); }
+  .kanban-config-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  .kanban-config-message--ok {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+  .kanban-config-message--error {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+
+  /* — Badges de statut ticket (lisibles sur fond sombre) — */
+  .statut-badge.st-new {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(96, 165, 250, 0.4);
+  }
+  .statut-badge.st-progress {
+    color: #fb923c;
+    background: rgba(251, 146, 60, 0.14);
+    border-color: rgba(251, 146, 60, 0.4);
+  }
+  .statut-badge.st-pending {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.14);
+    border-color: rgba(167, 139, 250, 0.4);
+  }
+  .statut-badge.st-approval {
+    color: #22d3ee;
+    background: rgba(34, 211, 238, 0.14);
+    border-color: rgba(34, 211, 238, 0.4);
+  }
+  .statut-badge.st-solved {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.14);
+    border-color: rgba(74, 222, 128, 0.4);
+  }
+
+  /* — Badge rôle helpdesk — */
+  .role-badge.role-helpdesk {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(96, 165, 250, 0.4);
+  }
+
+  /* — Badges rapport reset (ok / err) — */
+  .badge-ok {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.14);
+    border-color: rgba(74, 222, 128, 0.35);
+  }
+  .badge-err {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.35);
+  }
+
+  /* — Messages d'état reset / erreurs formulaire — */
+  .reset-msg--ok {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+  .reset-msg--err,
+  .reset-warning,
+  .login-error {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+  .reset-dialog {
+    border-color: rgba(248, 113, 113, 0.35);
+  }
+  .reset-dialog h3,
+  .reset-dialog-list li::before {
+    color: #f87171;
+  }
+  .reset-echec-list { color: #f87171; }
+  .field-error, .req { color: #f87171; }
+
+  /* — Avertissement tronqué éléments — */
+  .elements-truncated { color: #fbbf24; }
+
+  /* — En-têtes de tableau — */
+  .data-table th {
+    background: var(--bg-sunken);
+    box-shadow: inset 0 -1px 0 var(--border);
+  }
+
+  /* — Modale — */
+  .modal-overlay { background: rgba(0, 0, 0, 0.65); }
+  .modal-close:hover {
+    color: #f87171;
+    border-color: #f87171;
+  }
+}
+
+/* ============================================================================
+   SIDEBAR — thème bleu marine (fixe, mode clair et sombre combinés)
+   Palette :
+     --navy        : #0c1e3d  fond principal
+     --navy-hover  : rgba(255,255,255,0.07)
+     --navy-active : rgba(14,165,233,0.18)  (sky-500 @ 18 %)
+     --navy-border : rgba(255,255,255,0.09)
+   ========================================================================== */
+
+/* — Shell : fond de page légèrement bleuté pour s'harmoniser — */
+.app-shell {
+  background: #f0f4fa;
+}
+
+/* — Bloc principal — */
+.sidebar,
+.sidebar-topbar {
+  background: #0c1e3d;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/* Retire la bordure droite par défaut remplacée par un séparateur doux */
+.sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  /* Légère ombre portée vers le contenu pour la profondeur */
+  box-shadow: 4px 0 18px rgba(12, 30, 61, 0.35);
+}
+
+/* — En-tête marque — */
+.sidebar-brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 20px 16px;
+}
+
+.sidebar-brand-icon {
+  background: rgba(14, 165, 233, 0.22);
+  border: 1px solid rgba(14, 165, 233, 0.45);
+  color: #7dd3fc;
+}
+
+.sidebar-brand-text strong {
+  color: #ffffff;
+}
+
+.sidebar-brand-text small {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* — Séparateurs de groupes de navigation — */
+.nav-group-label {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+/* — Items de navigation — */
+.nav-item {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.18);
+  font-weight: var(--fw-semibold);
+}
+
+/* Filet actif en sky blue vif */
+.nav-item.active::before {
+  background: #38bdf8;
+  width: 3px;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+/* — Item destructif — */
+.nav-item--danger {
+  color: rgba(248, 113, 113, 0.78);
+}
+.nav-item--danger:hover {
+  background: rgba(248, 113, 113, 0.1);
+  color: #fca5a5;
+}
+.nav-item--danger.active {
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.15);
+}
+.nav-item--danger.active::before {
+  background: #fca5a5;
+  box-shadow: none;
+}
+
+/* — Pied de sidebar — */
+.sidebar-foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.sidebar-user-info strong {
+  color: #ffffff;
+}
+
+/* — Avatar et badge rôle (contexte sidebar) — */
+.sidebar .avatar {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.2);
+  border-color: rgba(14, 165, 233, 0.4);
+}
+
+.sidebar .role-badge {
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.18);
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+/* — Bouton déconnexion (ghost sur fond marine) — */
+.sidebar .btn-ghost {
+  color: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: transparent;
+}
+
+.sidebar .btn-ghost:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* — Barre mobile (topbar hamburger) — */
+.sidebar-topbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+.sidebar-topbar-title {
+  color: #ffffff;
+}
+
+.sidebar-burger {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+}
+
+.sidebar-burger span {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* — Ombre renforcée quand le tiroir mobile est ouvert — */
+@media (max-width: 860px) {
+  .sidebar {
+    box-shadow: 6px 0 24px rgba(12, 30, 61, 0.55);
+  }
+  .sidebar-overlay {
+    background: rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* — Scrollbar discrète dans la nav — */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
