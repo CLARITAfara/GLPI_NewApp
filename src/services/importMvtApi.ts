@@ -102,7 +102,7 @@ export async function appliquerLigne(l: LigneImport, resoudreRef: ResolveurRef):
       // GLPI exige une solution → texte générique ; le montant alimente /couts.
       await resoudreTicket(ticketId, 'Clôturé via import CSV')
       const cout = Number(l.valeur) || 0
-      if (cout > 0) await ajouterCoutFixe(ticketId, cout)
+      await ajouterCoutFixe(ticketId, cout) // toujours : une clôture à 0 € compte aussi dans nombre_couts (moyenne mode 3)
     }
     return { numLigne: l.numLigne, ticket: l.ref, mvt: l.mvt, ok: true, message: `OK (ticket #${ticketId})` }
   } catch (e) {
