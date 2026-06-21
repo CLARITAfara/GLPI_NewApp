@@ -1,11 +1,4 @@
 ticket,mvt,valeur,mode
-1,close,50,
-2,close,150,
-1,open,5,1
-1,close,46,
-1,open,10,4
-2,open,10,3
-2,close,300,
 1,close,0,
 1,open,10,3
 2,open,7.5,4
