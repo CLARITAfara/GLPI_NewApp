@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -38,7 +39,7 @@ public class TicketFixedCostService {
     // -- Operations publiques : on journalise puis on rejoue --------------------
 
     @Transactional
-    public TicketFixedCost ajouterCout(Long ticketId, double montant) {
+    public List<TicketFixedCost> ajouterCout(Long ticketId, double montant) {
         TicketCostEvent event = new TicketCostEvent();
         event.setTicketId(ticketId);
         event.setType(TicketCostEvent.TYPE_COST);
@@ -49,7 +50,7 @@ public class TicketFixedCostService {
     }
 
     @Transactional
-    public TicketFixedCost appliquerReouverture(Long ticketId, double pourcentage, int modeCalcul) {
+    public List<TicketFixedCost> appliquerReouverture(Long ticketId, double pourcentage, int modeCalcul) {
         TicketCostEvent event = new TicketCostEvent();
         event.setTicketId(ticketId);
         event.setType(TicketCostEvent.TYPE_REOPEN);
@@ -65,7 +66,7 @@ public class TicketFixedCostService {
      * puis on rejoue. (Conserve le comportement "annuler le dernier ajout".)
      */
     @Transactional
-    public TicketFixedCost annulerDernierCout(Long ticketId) {
+    public List<TicketFixedCost> annulerDernierCout(Long ticketId) {
         List<TicketCostEvent> events = eventRepository.findByTicketIdOrderByOrdreAscIdAsc(ticketId);
         TicketCostEvent dernierCout = null;
         for (TicketCostEvent e : events) {
@@ -89,10 +90,10 @@ public class TicketFixedCostService {
      * Les parametres null sont ignores (laisses inchanges).
      */
     @Transactional
-    public TicketFixedCost modifierEvent(Long eventId, Double montant, Double pourcentage, Integer modeCalcul) {
+    public List<TicketFixedCost> modifierEvent(Long eventId, Double montant, Double pourcentage, Integer modeCalcul) {
         TicketCostEvent event = eventRepository.findById(eventId).orElse(null);
         if (event == null) {
-            return null;
+            return List.of();
         }
         if (TicketCostEvent.TYPE_COST.equals(event.getType())) {
             if (montant != null) {
@@ -112,105 +113,94 @@ public class TicketFixedCostService {
 
     /** Retablit un mouvement annule (annule = false) puis recalcule le ticket. */
     @Transactional
-    public TicketFixedCost restaurerEvent(Long eventId) {
+    public List<TicketFixedCost> restaurerEvent(Long eventId) {
         TicketCostEvent event = eventRepository.findById(eventId).orElse(null);
         if (event == null) {
-            return null;
+            return List.of();
         }
         event.setAnnule(false);
         eventRepository.save(event);
         return recalculerTicket(event.getTicketId());
     }
 
-    // -- Reconstruction de l'agregat par rejeu des events -----------------------
+    // -- Reconstruction du journal par rejeu des events -------------------------
 
     /**
-     * Rejoue tous les events du ticket dans l'ordre pour reconstruire la ligne
-     * agregee ticket_fixed_costs. C'est le coeur du recalcul exact.
+     * Rejoue tous les events actifs du ticket dans l'ordre et reconstruit le
+     * journal ticket_fixed_costs : UNE LIGNE PAR OPERATION.
+     *
+     * Chaque ligne REOPEN fige sa base / son frais a partir des couts deja
+     * inseres AVANT elle. Un cout posterieur cree sa propre ligne et ne touche
+     * plus les frais des reouvertures precedentes.
      */
     @Transactional
-    public TicketFixedCost recalculerTicket(Long ticketId) {
-        TicketFixedCost cible = repository.findByTicketId(ticketId).orElseGet(() -> {
-            TicketFixedCost neuf = new TicketFixedCost();
-            neuf.setTicketId(ticketId);
-            return neuf;
-        });
-
-        // Remise a zero de l'agregat avant rejeu.
-        cible.setCoutFixe(0.0);
-        cible.setPremierCout(0.0);
-        cible.setDernierCout(0.0);
-        cible.setNombreCouts(0);
-        cible.setPourcentageReouverture(0.0);
-        cible.setBaseReouverture(0.0);
-        cible.setFraisReouverture(0.0);
-        cible.setModeReouverture(1);
+    public List<TicketFixedCost> recalculerTicket(Long ticketId) {
+        // On reconstruit entierement le journal du ticket.
+        repository.deleteByTicketId(ticketId);
 
         List<TicketCostEvent> events = eventRepository.findByTicketIdOrderByOrdreAscIdAsc(ticketId);
+
+        // Plafond eventuel : total des frais <= plafond% du cumul supercost FINAL.
+        Double plafond = lirePlafondReouverture();
+        double cumulFinal = 0.0;
+        for (TicketCostEvent e : events) {
+            if (!Boolean.TRUE.equals(e.getAnnule()) && TicketCostEvent.TYPE_COST.equals(e.getType())) {
+                cumulFinal += e.getMontant();
+            }
+        }
+        double cap = plafond != null ? (plafond / 100.0) * cumulFinal : Double.MAX_VALUE;
+
+        // Etat courant (en memoire) servant a calculer la base selon le mode.
+        double cumul = 0.0;
+        double premier = 0.0;
+        double dernier = 0.0;
+        double fraisRunning = 0.0;
+        int nombre = 0;
+
+        List<TicketFixedCost> lignes = new ArrayList<>();
         for (TicketCostEvent e : events) {
             if (Boolean.TRUE.equals(e.getAnnule())) {
                 continue;
             }
+            TicketFixedCost ligne = new TicketFixedCost();
+            ligne.setTicketId(ticketId);
+            ligne.setOrdre(e.getOrdre());
+
             if (TicketCostEvent.TYPE_COST.equals(e.getType())) {
-                appliquerCout(cible, e.getMontant());
+                double montant = e.getMontant();
+                if (nombre == 0) {
+                    premier = montant;
+                }
+                cumul += montant;
+                dernier = montant;
+                nombre++;
+
+                ligne.setType(TicketFixedCost.TYPE_COST);
+                ligne.setMontant(montant);
+                ligne.setCoutFixe(cumul);
             } else {
-                appliquerReopen(cible, e.getPourcentage(), e.getModeCalcul());
+                double pct = e.getPourcentage();
+                int mode = e.getModeCalcul();
+                double base = calculerBase(mode, dernier, premier, cumul, nombre);
+                double frais = base * (pct / 100.0);
+                // Plafond : on n'ajoute pas au-dela du cap restant.
+                double reste = Math.max(0.0, cap - fraisRunning);
+                if (frais > reste) {
+                    frais = reste;
+                }
+                fraisRunning += frais;
+
+                ligne.setType(TicketFixedCost.TYPE_REOPEN);
+                ligne.setCoutFixe(cumul);
+                ligne.setBaseReouverture(base);
+                ligne.setPourcentageReouverture(pct);
+                ligne.setFraisReouverture(frais);
+                ligne.setModeReouverture(mode);
             }
+            lignes.add(ligne);
         }
 
-        // Base + frais calcules une seule fois sur l'agregat FINAL : le mode
-        // (ex. 1 = dernier cout) s'applique au dernier cout reellement insere sur
-        // le ticket, pas a celui connu au moment de chaque reouverture.
-        if (cible.getPourcentageReouverture() > 0) {
-            double base = calculerBase(cible, cible.getModeReouverture());
-            cible.setBaseReouverture(base);
-            cible.setFraisReouverture(base * (cible.getPourcentageReouverture() / 100.0));
-        }
-
-        // Plafond de reouverture : le total des frais ne depasse pas
-        // (plafond % du supercost). Applique au recalcul -> retroactif.
-        Double plafond = lirePlafondReouverture();
-        if (plafond != null) {
-            double cap = (plafond / 100.0) * cible.getCoutFixe();
-            if (cible.getFraisReouverture() > cap) {
-                cible.setFraisReouverture(cap);
-            }
-        }
-
-        // Plus aucun event actif => on supprime la ligne agregee (coherence).
-        boolean aucunActif = events.stream().noneMatch(e -> !Boolean.TRUE.equals(e.getAnnule()));
-        if (aucunActif) {
-            if (cible.getId() != null) {
-                repository.delete(cible);
-            }
-            return cible;
-        }
-        return repository.save(cible);
-    }
-
-    /** Applique un ajout de supercost a l'agregat (logique d'origine de ajouterCout). */
-    private void appliquerCout(TicketFixedCost cible, double montant) {
-        int nombreCouts = cible.getNombreCouts() == null ? 0 : cible.getNombreCouts();
-        if (nombreCouts == 0) {
-            cible.setPremierCout(montant);
-        }
-        double cumul = cible.getCoutFixe() == null ? 0.0 : cible.getCoutFixe();
-        cible.setCoutFixe(cumul + montant);
-        cible.setDernierCout(montant);
-        cible.setNombreCouts(nombreCouts + 1);
-    }
-
-    /**
-     * Applique une reouverture a l'agregat : on accumule seulement le pourcentage
-     * et on memorise le mode. La base et les frais sont calcules une seule fois,
-     * APRES rejeu de tous les events (voir recalculerTicket), pour que le mode 1
-     * ("dernier cout") s'appuie sur le dernier cout REELLEMENT insere sur le ticket,
-     * et non sur celui connu au moment de cette reouverture.
-     */
-    private void appliquerReopen(TicketFixedCost cible, double pourcentage, int modeCalcul) {
-        double cumulPct = cible.getPourcentageReouverture() == null ? 0.0 : cible.getPourcentageReouverture();
-        cible.setPourcentageReouverture(cumulPct + pourcentage);
-        cible.setModeReouverture(modeCalcul);
+        return repository.saveAll(lignes);
     }
 
     /**
@@ -230,21 +220,17 @@ public class TicketFixedCostService {
     }
 
     /** Calcule la base de reouverture selon le mode (1 a 4). */
-    private double calculerBase(TicketFixedCost cible, int modeCalcul) {
-        double dernierCout = cible.getDernierCout() == null ? 0.0 : cible.getDernierCout();
-        double premierCout = cible.getPremierCout() == null ? 0.0 : cible.getPremierCout();
-        double sommeCouts = cible.getCoutFixe() == null ? 0.0 : cible.getCoutFixe();
-        int nombreCouts = cible.getNombreCouts() == null ? 0 : cible.getNombreCouts();
+    private double calculerBase(int modeCalcul, double dernier, double premier, double somme, int nombre) {
         switch (modeCalcul) {
             case 2:
-                return premierCout;
+                return premier;
             case 3:
-                return nombreCouts > 0 ? sommeCouts / nombreCouts : 0.0;
+                return nombre > 0 ? somme / nombre : 0.0;
             case 4:
-                return sommeCouts;
+                return somme;
             case 1:
             default:
-                return dernierCout;
+                return dernier;
         }
     }
 }

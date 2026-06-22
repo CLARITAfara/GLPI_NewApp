@@ -87,12 +87,21 @@ export interface CoutMateriel {
   coutReouverture: number
 }
 
+/**
+ * Une LIGNE du journal ticket_fixed_costs : soit un supercost (COST), soit une
+ * réouverture (REOPEN) avec ses valeurs figées. Il y a plusieurs lignes par
+ * ticket — on agrège côté front.
+ */
 interface CoutFixeApi {
   ticketId: number
+  ordre: number
+  type: 'COST' | 'REOPEN'
+  montant: number
   coutFixe: number
-  pourcentageReouverture: number
   baseReouverture: number
+  pourcentageReouverture: number
   fraisReouverture: number
+  modeReouverture: number
 }
 
 export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
@@ -101,11 +110,15 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
     .catch(() => [] as CoutFixeApi[])
   const coutManuelParTicket = new Map<number, number>()
   const coutReouvertureParTicket = new Map<number, number>()
-  for (const manuel of manuels) {
-    coutManuelParTicket.set(manuel.ticketId, manuel.coutFixe)
-    // Frais de réouverture = montant CUMULÉ figé à chaque réouverture (backend).
-    // Il n'est jamais supprimé ni recalculé : une annulation ne le touche pas.
-    coutReouvertureParTicket.set(manuel.ticketId, manuel.fraisReouverture ?? 0)
+  for (const ligne of manuels) {
+    if (ligne.type === 'COST') {
+      // Super coût = somme des montants des lignes COST du ticket.
+      coutManuelParTicket.set(ligne.ticketId, (coutManuelParTicket.get(ligne.ticketId) ?? 0) + (ligne.montant ?? 0))
+    } else {
+      // Frais de réouverture = somme des frais figés de chaque réouverture.
+      // Chaque ligne est figée : une nouvelle clôture/coût ne la modifie pas.
+      coutReouvertureParTicket.set(ligne.ticketId, (coutReouvertureParTicket.get(ligne.ticketId) ?? 0) + (ligne.fraisReouverture ?? 0))
+    }
   }
 
   const tickets = await listerTicketsFront()
@@ -155,8 +168,12 @@ export async function chargerDetailCoutMateriel(itemtype: string): Promise<Detai
   const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then((r) => (r.ok ? (r.json() as Promise<CoutFixeApi[]>) : []))
     .catch(() => [] as CoutFixeApi[])
-  const fixedParTicket = new Map<number, CoutFixeApi>()
-  for (const m of manuels) fixedParTicket.set(m.ticketId, m)
+  const lignesParTicket = new Map<number, CoutFixeApi[]>()
+  for (const m of manuels) {
+    const liste = lignesParTicket.get(m.ticketId) ?? []
+    liste.push(m)
+    lignesParTicket.set(m.ticketId, liste)
+  }
 
   const tickets = await listerTicketsFront()
   const prixEntrees: EntreePrix[] = []
@@ -185,20 +202,40 @@ export async function chargerDetailCoutMateriel(itemtype: string): Promise<Detai
         })
       }
 
-      const fixed = fixedParTicket.get(ticket.id)
-      if (fixed) {
-        const coutManuel = fixed.coutFixe ?? 0
-        const fraisReouverture = fixed.fraisReouverture ?? 0
-        if (coutManuel > 0 || fraisReouverture > 0) {
+      const lignes = lignesParTicket.get(ticket.id) ?? []
+      // Super coût du ticket = somme des lignes COST.
+      const coutManuel = lignes
+        .filter((l) => l.type === 'COST')
+        .reduce((s, l) => s + (l.montant ?? 0), 0)
+      // Une ligne d'affichage PAR réouverture : base × % = frais sur chaque ligne.
+      const reouvertures = lignes.filter((l) => l.type === 'REOPEN')
+      if (coutManuel > 0 || reouvertures.length > 0) {
+        if (reouvertures.length === 0) {
           fraisEntrees.push({
             ticketId: ticket.id,
             coutManuel,
             partManuel: coutManuel / nLiens,
-            pourcentage: fixed.pourcentageReouverture ?? 0,
-            baseReouverture: fixed.baseReouverture ?? 0,
-            fraisReouverture,
-            partFrais: fraisReouverture / nLiens,
+            pourcentage: 0,
+            baseReouverture: 0,
+            fraisReouverture: 0,
+            partFrais: 0,
             actif: coutManuel > 0,
+          })
+        } else {
+          reouvertures.forEach((r, idx) => {
+            const fraisReouverture = r.fraisReouverture ?? 0
+            fraisEntrees.push({
+              ticketId: ticket.id,
+              coutManuel,
+              // Part manuel comptée une seule fois par ticket (1re ligne) pour ne
+              // pas surévaluer le total en pied de tableau.
+              partManuel: idx === 0 ? coutManuel / nLiens : 0,
+              pourcentage: r.pourcentageReouverture ?? 0,
+              baseReouverture: r.baseReouverture ?? 0,
+              fraisReouverture,
+              partFrais: fraisReouverture / nLiens,
+              actif: coutManuel > 0,
+            })
           })
         }
       }

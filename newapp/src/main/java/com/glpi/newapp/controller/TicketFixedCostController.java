@@ -37,8 +37,8 @@ public class TicketFixedCostController {
      * (champs optionnels selon le type d'event).
      */
     @PutMapping("/events/{eventId}")
-    public TicketFixedCost modifierEvent(@PathVariable Long eventId,
-                                         @RequestBody ModifierEventRequest corps) {
+    public List<TicketFixedCost> modifierEvent(@PathVariable Long eventId,
+                                               @RequestBody ModifierEventRequest corps) {
         return service.modifierEvent(eventId, corps.montant(), corps.pourcentage(), corps.modeCalcul());
     }
 
@@ -47,24 +47,24 @@ public class TicketFixedCostController {
 
     /** Retablit un mouvement annule puis recalcule le ticket. */
     @PostMapping("/events/{eventId}/restore")
-    public TicketFixedCost restaurerEvent(@PathVariable Long eventId) {
+    public List<TicketFixedCost> restaurerEvent(@PathVariable Long eventId) {
         return service.restaurerEvent(eventId);
     }
 
     @PostMapping("/by-ticket/{ticketId}/add")
-    public TicketFixedCost addCout(@PathVariable Long ticketId, @RequestParam double montant) {
+    public List<TicketFixedCost> addCout(@PathVariable Long ticketId, @RequestParam double montant) {
         return service.ajouterCout(ticketId, montant);
     }
 
     @PostMapping("/by-ticket/{ticketId}/cancel-last")
-    public TicketFixedCost cancelLast(@PathVariable Long ticketId) {
+    public List<TicketFixedCost> cancelLast(@PathVariable Long ticketId) {
         return service.annulerDernierCout(ticketId);
     }
 
     @PostMapping("/by-ticket/{ticketId}/reopen")
-    public TicketFixedCost reopen(@PathVariable Long ticketId,
-                                  @RequestParam double pourcentage,
-                                  @RequestParam(defaultValue = "1") int modeCalcul) {
+    public List<TicketFixedCost> reopen(@PathVariable Long ticketId,
+                                        @RequestParam double pourcentage,
+                                        @RequestParam(defaultValue = "1") int modeCalcul) {
         return service.appliquerReouverture(ticketId, pourcentage, modeCalcul);
     }
 }

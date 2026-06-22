@@ -59,17 +59,26 @@ CREATE TABLE IF NOT EXISTS kanban_status_colors (
     UNIQUE (status_id)
 );
 
+-- Journal des operations de cout : UNE LIGNE PAR OPERATION (supercost OU
+-- reouverture), reconstruit par rejeu de ticket_cost_events. Chaque ligne
+-- REOPEN fige sa base / son pourcentage / son frais au moment de la reouverture,
+-- ce qui evite qu'un cout ajoute plus tard ne fausse un frais deja calcule.
+--
+-- Table 100% DERIVEE de ticket_cost_events : on la recree a chaque demarrage
+-- (le RebuildFixedCostsRunner la repeuple en rejouant les events). Le DROP
+-- assure aussi la migration depuis l'ancien schema 1-ligne-par-ticket.
+DROP TABLE IF EXISTS ticket_fixed_costs;
 CREATE TABLE IF NOT EXISTS ticket_fixed_costs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticket_id INTEGER NOT NULL UNIQUE,
-    cout_fixe REAL NOT NULL DEFAULT 0,
-    pourcentage_reouverture REAL NOT NULL DEFAULT 0,
-    base_reouverture REAL NOT NULL DEFAULT 0,
-    frais_reouverture REAL NOT NULL DEFAULT 0,
-    dernier_cout REAL NOT NULL DEFAULT 0,
-    premier_cout REAL NOT NULL DEFAULT 0,
-    nombre_couts INTEGER NOT NULL DEFAULT 0,
-    mode_reouverture INTEGER NOT NULL DEFAULT 1,
+    ticket_id INTEGER NOT NULL,
+    ordre INTEGER NOT NULL DEFAULT 0,
+    type TEXT NOT NULL,                              -- 'COST' | 'REOPEN'
+    montant REAL NOT NULL DEFAULT 0,                 -- pour COST
+    cout_fixe REAL NOT NULL DEFAULT 0,               -- cumul supercost a cet instant
+    base_reouverture REAL NOT NULL DEFAULT 0,        -- pour REOPEN (figee)
+    pourcentage_reouverture REAL NOT NULL DEFAULT 0, -- pour REOPEN (cette operation)
+    frais_reouverture REAL NOT NULL DEFAULT 0,       -- pour REOPEN (figee = base x %)
+    mode_reouverture INTEGER NOT NULL DEFAULT 1,     -- pour REOPEN
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
