@@ -11,6 +11,7 @@ const NAV: SidebarNavItem[] = [
   { id: '/kanban', label: 'Tableau Kanban', icon: 'bi bi-kanban', group: 'Tickets' },
   { id: '/tickets/create', label: 'Nouveau ticket', icon: 'bi bi-plus-square', group: 'Tickets' },
   { id: '/couts', label: 'Coûts matériel', icon: 'bi bi-cash-coin', group: 'Tickets' },
+  { id: '/couts/edition', label: 'Édition des coûts', icon: 'bi bi-pencil-square', group: 'Tickets' },
   { id: '/import', label: 'Import CSV', icon: 'bi bi-upload', group: 'Tickets' },
 ]
 
@@ -20,6 +21,7 @@ const PAGE_INTRO: Record<string, { titre: string; sous: string }> = {
   '/kanban': { titre: 'Suivi des tickets', sous: 'Glissez les cartes pour faire avancer vos demandes.' },
   '/tickets/create': { titre: 'Nouveau ticket', sous: 'Décrivez votre besoin, on s’occupe du reste.' },
   '/couts': { titre: 'Coûts par matériel', sous: 'Total des coûts dépensés par type d’équipement.' },
+  '/couts/edition': { titre: 'Édition des coûts', sous: 'Modifiez une réouverture ou un supercost ; les totaux sont recalculés.' },
   '/import': { titre: 'Import des mouvements', sous: 'Rejouez réouvertures, annulations et clôtures depuis un CSV.' },
 }
 

@@ -1,5 +1,6 @@
 package com.glpi.newapp.controller;
 
+import com.glpi.newapp.model.TicketCostEvent;
 import com.glpi.newapp.model.TicketFixedCost;
 import com.glpi.newapp.service.TicketFixedCostService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,26 @@ public class TicketFixedCostController {
     public void deleteAll() {
         service.supprimerTout();
     }
+
+    /** Historique complet des events (reouvertures + supercosts). */
+    @GetMapping("/events")
+    public List<TicketCostEvent> getAllEvents() {
+        return service.findAllEvents();
+    }
+
+    /**
+     * Modifie un event puis recalcule le ticket.
+     * Corps JSON : { "montant": .., "pourcentage": .., "modeCalcul": .. }
+     * (champs optionnels selon le type d'event).
+     */
+    @PutMapping("/events/{eventId}")
+    public TicketFixedCost modifierEvent(@PathVariable Long eventId,
+                                         @RequestBody ModifierEventRequest corps) {
+        return service.modifierEvent(eventId, corps.montant(), corps.pourcentage(), corps.modeCalcul());
+    }
+
+    /** Payload d'edition d'un event. Champs null = inchanges. */
+    public record ModifierEventRequest(Double montant, Double pourcentage, Integer modeCalcul) {}
 
     @PostMapping("/by-ticket/{ticketId}/add")
     public TicketFixedCost addCout(@PathVariable Long ticketId, @RequestParam double montant) {

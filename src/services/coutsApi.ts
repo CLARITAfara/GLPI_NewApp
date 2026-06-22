@@ -96,7 +96,7 @@ interface CoutFixeApi {
 }
 
 export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
-  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' } })
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then((reponse) => (reponse.ok ? (reponse.json() as Promise<CoutFixeApi[]>) : []))
     .catch(() => [] as CoutFixeApi[])
   const coutManuelParTicket = new Map<number, number>()
@@ -152,7 +152,7 @@ export async function chargerCoutsParMateriel(): Promise<CoutMateriel[]> {
  * La part de l'élément = valeur / N liens total du ticket.
  */
 export async function chargerDetailCoutMateriel(itemtype: string): Promise<DetailCoutMateriel> {
-  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' } })
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then((r) => (r.ok ? (r.json() as Promise<CoutFixeApi[]>) : []))
     .catch(() => [] as CoutFixeApi[])
   const fixedParTicket = new Map<number, CoutFixeApi>()

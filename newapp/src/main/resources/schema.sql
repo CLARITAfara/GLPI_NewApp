@@ -85,3 +85,22 @@ CREATE TABLE IF NOT EXISTS ticket_refs (
     glpi_ticket_id INTEGER NOT NULL UNIQUE,
     created_at     DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ------------------------------------------------------------
+-- 7. ticket_cost_events
+--    Historique ordonne des operations de cout d'un ticket.
+--    type = 'COST'   -> ajout d'un supercost (champ montant)
+--    type = 'REOPEN' -> reouverture (champs pourcentage + mode_calcul)
+--    La ligne agregee ticket_fixed_costs est reconstruite en rejouant
+--    ces events dans l'ordre (colonne ordre).
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ticket_cost_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id   INTEGER NOT NULL,
+    type        TEXT    NOT NULL,                 -- 'COST' | 'REOPEN'
+    montant     REAL    NOT NULL DEFAULT 0,       -- pour COST
+    pourcentage REAL    NOT NULL DEFAULT 0,       -- pour REOPEN
+    mode_calcul INTEGER NOT NULL DEFAULT 1,       -- pour REOPEN (1..4)
+    ordre       INTEGER NOT NULL,                 -- ordre d'application
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);

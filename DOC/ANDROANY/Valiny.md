@@ -417,6 +417,8 @@ export interface CoutEvent {
 export async function chargerEvents(): Promise<CoutEvent[]> {
   const reponse = await fetch(`${BASE}/ticket-fixed-costs/events`, {
     headers: { Accept: 'application/json' },
+    // Jamais servi depuis le cache HTTP : on veut l'état recalculé le plus récent.
+    cache: 'no-store',
   })
   if (!reponse.ok) return []
   return reponse.json() as Promise<CoutEvent[]>
@@ -721,13 +723,80 @@ WHERE pourcentage_reouverture > 0;
 
 ---
 
+## 6 bis. Actualisation de la page « Coûts par matériel »
+
+Objectif : après une modif de réouverture/supercost, la page `/couts` doit afficher
+les nouvelles valeurs.
+
+### Pourquoi ça marche automatiquement
+- `recalculerTicket()` réécrit `fraisReouverture` (et `coutFixe`) dans
+  `ticket_fixed_costs`, **exactement la table lue** par la page Coûts par matériel
+  (`coutsApi.chargerCoutsParMateriel`, champ `fraisReouverture` → colonne
+  *Frais réouverture* ; `coutFixe` → colonne *Super Coût*).
+- `CoutsPanel` recharge ses données à chaque **montage** (`useEffect(..., [])`).
+  `/couts/edition` et `/couts` étant deux routes distinctes, revenir sur `/couts`
+  remonte le composant → re-fetch → valeurs à jour.
+
+### Garde-fou anti-cache HTTP (recommandé)
+### Fichier à MODIFIER : `GLPI_NewApp/src/services/coutsApi.ts`
+
+Ajouter `cache: 'no-store'` aux deux GET de la table des frais, pour ne jamais
+afficher une réponse mise en cache par le navigateur après un recalcul.
+
+Ligne 94 (`chargerCoutsParMateriel`) :
+
+```ts
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+```
+
+Ligne 150 (`chargerDetailCoutMateriel`) :
+
+```ts
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    .then((r) => (r.ok ? (r.json() as Promise<CoutFixeApi[]>) : []))
+```
+
+### Option : rafraîchir sans changer de page
+Si tu veux que `/couts` se mette à jour même sans navigation (ex. l'utilisateur
+laisse l'onglet ouvert), expose un bouton « Actualiser » qui rappelle le chargement.
+### Fichier à MODIFIER : `GLPI_NewApp/src/components/front/CoutsPanel.tsx`
+
+Extraire le chargement dans une fonction réutilisable et l'appeler depuis un bouton :
+
+```tsx
+  // Remplace le corps du useEffect : on nomme la fonction pour pouvoir la rappeler.
+  const charger = useCallback(() => {
+    setEtat('loading')
+    chargerCoutsParMateriel()
+      .then((donnees) => { setLignes(donnees); setEtat('ready') })
+      .catch((e) => { setErreur(e instanceof Error ? e.message : 'Erreur de chargement.'); setEtat('error') })
+  }, [])
+
+  useEffect(() => { charger() }, [charger])
+```
+
+Puis dans `panel-head`, à côté du titre :
+
+```tsx
+        <button type="button" className="btn-ghost" onClick={charger}>
+          <i className="bi bi-arrow-clockwise" aria-hidden="true" /> Actualiser
+        </button>
+```
+
+(Pense à importer `useCallback` depuis `react`.)
+
+---
+
 ## 7. Vérifications après mise en place
 
 - Relancer le **backend Spring Boot** (nouvelle table + nouveaux endpoints).
 - Vérifier `GET /kanban-api/ticket-fixed-costs/events` → renvoie la liste.
 - Page `/couts/edition` : liste visible, bouton **Modifier** par ligne.
-- Modifier un supercost → le **Super Coût** de `/couts` change en conséquence.
-- Modifier le pourcentage/mode d'une réouverture → **Frais réouverture** recalculé.
+- Modifier un supercost → revenir sur `/couts` → la colonne **Super Coût** change.
+- Modifier le pourcentage/mode d'une réouverture → revenir sur `/couts` → la colonne
+  **Frais réouverture** est recalculée (et le **Total**). Si elle ne bouge pas :
+  vérifier que `cache: 'no-store'` est bien posé (§ 6 bis) et que le ticket modifié
+  est bien lié à un matériel des `TYPES_MATERIEL` (Computer/Monitor/Phone).
 - Reset du module **Tickets** vide aussi `ticket_cost_events` (via `supprimerTout()`).
 
 ---
@@ -742,6 +811,7 @@ WHERE pourcentage_reouverture > 0;
 | Modifier | `newapp/.../service/TicketFixedCostService.java` (journalisation + rejeu) |
 | Modifier | `newapp/.../controller/TicketFixedCostController.java` (endpoints events) |
 | Créer | `src/services/coutEventsApi.ts` |
+| Modifier | `src/services/coutsApi.ts` (ajout `cache: 'no-store'`, § 6 bis) |
 | Créer | `src/components/front/EditionCoutsPanel.tsx` |
 | Modifier | `src/App.tsx` (route `/couts/edition`) |
 | Modifier | `src/components/front/FrontLayout.tsx` (lien + intro) |
