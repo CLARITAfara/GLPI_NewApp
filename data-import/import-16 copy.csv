@@ -1,6 +1,6 @@
 ticket,mvt,valeur,mode
-1,close,0,
-1,open,10,3
-2,open,7.5,4
+1,close,123,
+1,open,17,1
+2,open,7.8,4
 2,close,0,
-2,open,10,3
+2,open,11,3

@@ -1,43 +1,26 @@
 # Valiny — Page d'édition des réouvertures & supercosts (avec recalcul)
 
-> Objectif : une nouvelle page qui **liste tout l'historique** des réouvertures et
-> des supercosts (coûts fixes manuels), avec un bouton **Modifier** par ligne.
-> - Réouverture → on modifie **pourcentage** + **mode** de calcul.
-> - Supercost → on modifie le **montant**.
-> - À la validation → **recalcul exact** de tout ce qui dépend de la valeur modifiée.
-
-## Approche retenue : Option A — Ledger (recalcul exact)
-
-La table actuelle `ticket_fixed_costs` ne stocke que des **agrégats par ticket**
-(`cout_fixe` cumulé, `pourcentage_reouverture` cumulé, `frais_reouverture` figé…).
-Impossible donc de lister/modifier une opération individuelle de façon fiable.
-
-On introduit une **table d'historique** `ticket_cost_events` : 1 ligne par opération
-(COST avec un montant, ou REOPEN avec pourcentage + mode), horodatée et **ordonnée**.
-
-- Toute opération (`add`, `reopen`) **ajoute un event** puis **rejoue** tous les
-  events du ticket dans l'ordre pour reconstruire la ligne agrégée `ticket_fixed_costs`.
-- **Modifier** un event = mettre à jour sa valeur, puis **rejouer** tout le ticket
-  → `ticket_fixed_costs` est recalculé exactement et de façon cohérente.
-
-`ticket_fixed_costs` reste la table de lecture (rien à changer côté `coutsApi`/affichage).
-`ticket_cost_events` devient la **source de vérité**.
+> Etat : **implémenté**. Ce document ne liste que les **portions à modifier** par
+> fichier (et le contenu des fichiers réellement **nouveaux**).
+>
+> Principe : la table `ticket_fixed_costs` (agrégat par ticket) reste la table de
+> lecture. On ajoute une table d'historique **`ticket_cost_events`** (1 ligne par
+> opération, ordonnée) qui devient la source de vérité. Chaque opération journalise
+> un event puis **rejoue** tous les events du ticket pour reconstruire l'agrégat.
+> Modifier un event = update + rejeu → recalcul exact.
 
 ---
 
-## 1. Base de données — nouvelle table
+## 1. `newapp/src/main/resources/schema.sql` — MODIFIER
 
-### Fichier : `GLPI_NewApp/newapp/src/main/resources/schema.sql`
-À AJOUTER à la fin du fichier (après la table `ticket_refs`, ligne 87) :
+AJOUTER après la table `ticket_refs` :
 
 ```sql
 -- ------------------------------------------------------------
 -- 7. ticket_cost_events
---    Historique ordonné des opérations de coût d'un ticket.
+--    Historique ordonne des operations de cout d'un ticket.
 --    type = 'COST'   -> ajout d'un supercost (champ montant)
---    type = 'REOPEN' -> réouverture (champs pourcentage + mode_calcul)
---    La ligne agrégée ticket_fixed_costs est reconstruite en rejouant
---    ces events dans l'ordre (colonne ordre).
+--    type = 'REOPEN' -> reouverture (champs pourcentage + mode_calcul)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ticket_cost_events (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,10 +36,7 @@ CREATE TABLE IF NOT EXISTS ticket_cost_events (
 
 ---
 
-## 2. Backend — entité, repository, service, contrôleur
-
-### 2.1 Nouvelle entité
-### Fichier à CRÉER : `GLPI_NewApp/newapp/src/main/java/com/glpi/newapp/model/TicketCostEvent.java`
+## 2. `newapp/.../model/TicketCostEvent.java` — CRÉER (fichier neuf)
 
 ```java
 package com.glpi.newapp.model;
@@ -75,7 +55,6 @@ import java.time.LocalDateTime;
 @Table(name = "ticket_cost_events")
 public class TicketCostEvent {
 
-    /** Type d'opération tracée dans l'historique. */
     public static final String TYPE_COST = "COST";
     public static final String TYPE_REOPEN = "REOPEN";
 
@@ -86,23 +65,18 @@ public class TicketCostEvent {
     @Column(name = "ticket_id", nullable = false)
     private Long ticketId;
 
-    /** 'COST' ou 'REOPEN'. */
     @Column(name = "type", nullable = false)
     private String type;
 
-    /** Montant du supercost (type COST). */
     @Column(name = "montant", nullable = false)
     private Double montant = 0.0;
 
-    /** Pourcentage de réouverture (type REOPEN). */
     @Column(name = "pourcentage", nullable = false)
     private Double pourcentage = 0.0;
 
-    /** Mode de calcul de la base de réouverture 1..4 (type REOPEN). */
     @Column(name = "mode_calcul", nullable = false)
     private Integer modeCalcul = 1;
 
-    /** Ordre d'application des events du ticket (croissant). */
     @Column(name = "ordre", nullable = false)
     private Integer ordre = 0;
 
@@ -116,8 +90,9 @@ public class TicketCostEvent {
 }
 ```
 
-### 2.2 Nouveau repository
-### Fichier à CRÉER : `GLPI_NewApp/newapp/src/main/java/com/glpi/newapp/repository/TicketCostEventRepository.java`
+---
+
+## 3. `newapp/.../repository/TicketCostEventRepository.java` — CRÉER (fichier neuf)
 
 ```java
 package com.glpi.newapp.repository;
@@ -131,64 +106,48 @@ import java.util.List;
 @Repository
 public interface TicketCostEventRepository extends JpaRepository<TicketCostEvent, Long> {
 
-    /** Events d'un ticket dans l'ordre d'application. */
     List<TicketCostEvent> findByTicketIdOrderByOrdreAscIdAsc(Long ticketId);
 
-    /** Tout l'historique, regroupé par ticket puis ordonné. */
     List<TicketCostEvent> findAllByOrderByTicketIdAscOrdreAscIdAsc();
 
-    /** Nombre d'events déjà enregistrés pour un ticket (pour appendre). */
     int countByTicketId(Long ticketId);
 }
 ```
 
-### 2.3 Service — enregistrer les events + recalcul par rejeu
-### Fichier à MODIFIER : `GLPI_NewApp/newapp/src/main/java/com/glpi/newapp/service/TicketFixedCostService.java`
+---
 
-Le service garde la même API publique (`ajouterCout`, `annulerDernierCout`,
-`appliquerReouverture`) mais **journalise** chaque opération et **reconstruit**
-l'agrégat par rejeu. On ajoute une méthode `modifierEvent(...)` pour l'édition.
+## 4. `newapp/.../service/TicketFixedCostService.java` — MODIFIER
 
-REMPLACER l'intégralité du contenu de la classe par :
+### 4.1 Imports — AJOUTER
 
 ```java
-package com.glpi.newapp.service;
-
 import com.glpi.newapp.model.TicketCostEvent;
-import com.glpi.newapp.model.TicketFixedCost;
 import com.glpi.newapp.repository.TicketCostEventRepository;
-import com.glpi.newapp.repository.TicketFixedCostRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+```
 
-import java.util.List;
+### 4.2 Champ injecté — AJOUTER sous `repository`
 
-@Service
-@RequiredArgsConstructor
-public class TicketFixedCostService {
-
-    private final TicketFixedCostRepository repository;
+```java
     private final TicketCostEventRepository eventRepository;
+```
 
-    public List<TicketFixedCost> findAll() {
-        return repository.findAll();
-    }
+### 4.3 `supprimerTout()` — REMPLACER (vide aussi l'historique)
 
-    /** Tout l'historique des events (pour la page d'édition). */
-    public List<TicketCostEvent> findAllEvents() {
-        return eventRepository.findAllByOrderByTicketIdAscOrdreAscIdAsc();
-    }
-
-    /** Vide entièrement ticket_fixed_costs + l'historique (purge du reset Tickets). */
+```java
+    /** Vide entierement ticket_fixed_costs + l'historique (purge du reset Tickets). */
     @Transactional
     public void supprimerTout() {
         repository.deleteAllInBatch();
         eventRepository.deleteAllInBatch();
     }
+```
 
-    // ── Opérations publiques : on journalise puis on rejoue ──────────────────
+### 4.4 `ajouterCout` / `appliquerReouverture` / `annulerDernierCout` — REMPLACER
 
+Ces 3 méthodes journalisent désormais un event puis rejouent. La méthode privée
+`trouverOuCreer` n'est plus utilisée : la supprimer.
+
+```java
     @Transactional
     public TicketFixedCost ajouterCout(Long ticketId, double montant) {
         TicketCostEvent event = new TicketCostEvent();
@@ -212,10 +171,6 @@ public class TicketFixedCostService {
         return recalculerTicket(ticketId);
     }
 
-    /**
-     * Annulation du dernier coût = on supprime le dernier event COST du ticket,
-     * puis on rejoue. (Conserve le comportement « annuler le dernier ajout ».)
-     */
     @Transactional
     public TicketFixedCost annulerDernierCout(Long ticketId) {
         List<TicketCostEvent> events = eventRepository.findByTicketIdOrderByOrdreAscIdAsc(ticketId);
@@ -230,14 +185,20 @@ public class TicketFixedCostService {
         }
         return recalculerTicket(ticketId);
     }
+```
 
-    // ── Édition d'un event existant + recalcul ───────────────────────────────
+### 4.5 Méthodes nouvelles — AJOUTER
+
+```java
+    /** Tout l'historique des events (pour la page d'edition). */
+    public List<TicketCostEvent> findAllEvents() {
+        return eventRepository.findAllByOrderByTicketIdAscOrdreAscIdAsc();
+    }
 
     /**
      * Modifie un event puis recalcule tout le ticket par rejeu.
-     * - COST   : seul `montant` est pris en compte.
-     * - REOPEN : seuls `pourcentage` et `modeCalcul` sont pris en compte.
-     * Les paramètres null sont ignorés (laissés inchangés).
+     * - COST   : seul montant est pris en compte.
+     * - REOPEN : seuls pourcentage et modeCalcul sont pris en compte.
      */
     @Transactional
     public TicketFixedCost modifierEvent(Long eventId, Double montant, Double pourcentage, Integer modeCalcul) {
@@ -261,12 +222,7 @@ public class TicketFixedCostService {
         return recalculerTicket(event.getTicketId());
     }
 
-    // ── Reconstruction de l'agrégat par rejeu des events ─────────────────────
-
-    /**
-     * Rejoue tous les events du ticket dans l'ordre pour reconstruire la ligne
-     * agrégée ticket_fixed_costs. C'est le cœur du recalcul exact.
-     */
+    /** Rejoue tous les events du ticket dans l'ordre pour reconstruire l'agregat. */
     @Transactional
     public TicketFixedCost recalculerTicket(Long ticketId) {
         TicketFixedCost cible = repository.findByTicketId(ticketId).orElseGet(() -> {
@@ -275,7 +231,6 @@ public class TicketFixedCostService {
             return neuf;
         });
 
-        // Remise à zéro de l'agrégat avant rejeu.
         cible.setCoutFixe(0.0);
         cible.setPremierCout(0.0);
         cible.setDernierCout(0.0);
@@ -294,7 +249,6 @@ public class TicketFixedCostService {
             }
         }
 
-        // Plus aucun event => on supprime la ligne agrégée (cohérence).
         if (events.isEmpty()) {
             if (cible.getId() != null) {
                 repository.delete(cible);
@@ -304,7 +258,6 @@ public class TicketFixedCostService {
         return repository.save(cible);
     }
 
-    /** Applique un ajout de supercost à l'agrégat (logique d'origine de ajouterCout). */
     private void appliquerCout(TicketFixedCost cible, double montant) {
         int nombreCouts = cible.getNombreCouts() == null ? 0 : cible.getNombreCouts();
         if (nombreCouts == 0) {
@@ -316,7 +269,6 @@ public class TicketFixedCostService {
         cible.setNombreCouts(nombreCouts + 1);
     }
 
-    /** Applique une réouverture à l'agrégat (logique d'origine de appliquerReouverture). */
     private void appliquerReopen(TicketFixedCost cible, double pourcentage, int modeCalcul) {
         double cumulPct = cible.getPourcentageReouverture() == null ? 0.0 : cible.getPourcentageReouverture();
         cible.setPourcentageReouverture(cumulPct + pourcentage);
@@ -329,75 +281,45 @@ public class TicketFixedCostService {
         double fraisCumul = cible.getFraisReouverture() == null ? 0.0 : cible.getFraisReouverture();
         cible.setFraisReouverture(fraisCumul + fraisAjout);
     }
-
-    /** Calcule la base de réouverture selon le mode (1 à 4). */
-    private double calculerBase(TicketFixedCost cible, int modeCalcul) {
-        double dernierCout = cible.getDernierCout() == null ? 0.0 : cible.getDernierCout();
-        double premierCout = cible.getPremierCout() == null ? 0.0 : cible.getPremierCout();
-        double sommeCouts = cible.getCoutFixe() == null ? 0.0 : cible.getCoutFixe();
-        int nombreCouts = cible.getNombreCouts() == null ? 0 : cible.getNombreCouts();
-        switch (modeCalcul) {
-            case 2:
-                return premierCout;
-            case 3:
-                return nombreCouts > 0 ? sommeCouts / nombreCouts : 0.0;
-            case 4:
-                return sommeCouts;
-            case 1:
-            default:
-                return dernierCout;
-        }
-    }
-}
 ```
 
-> Note : ce recalcul rejoue la **base au moment de chaque réouverture** dans l'ordre
-> exact des events, donc le résultat est cohérent avec l'enchaînement réel des
-> opérations (et plus seulement « dernier coût × pourcentage » figé).
+> `calculerBase(...)` reste **inchangée**.
 
-### 2.4 Contrôleur — exposer l'historique et l'édition
-### Fichier à MODIFIER : `GLPI_NewApp/newapp/src/main/java/com/glpi/newapp/controller/TicketFixedCostController.java`
+---
 
-AJOUTER l'import en tête de fichier :
+## 5. `newapp/.../controller/TicketFixedCostController.java` — MODIFIER
+
+### 5.1 Import — AJOUTER
 
 ```java
 import com.glpi.newapp.model.TicketCostEvent;
 ```
 
-AJOUTER ces endpoints dans la classe (après `getAll()` / `deleteAll()`) :
+### 5.2 Endpoints — AJOUTER après `deleteAll()`
 
 ```java
-    /** Historique complet des events (réouvertures + supercosts). */
+    /** Historique complet des events (reouvertures + supercosts). */
     @GetMapping("/events")
     public List<TicketCostEvent> getAllEvents() {
         return service.findAllEvents();
     }
 
-    /**
-     * Modifie un event puis recalcule le ticket.
-     * Corps JSON : { "montant": .., "pourcentage": .., "modeCalcul": .. }
-     * (champs optionnels selon le type d'event).
-     */
+    /** Modifie un event puis recalcule le ticket. */
     @PutMapping("/events/{eventId}")
     public TicketFixedCost modifierEvent(@PathVariable Long eventId,
                                          @RequestBody ModifierEventRequest corps) {
         return service.modifierEvent(eventId, corps.montant(), corps.pourcentage(), corps.modeCalcul());
     }
 
-    /** Payload d'édition d'un event. Champs null = inchangés. */
+    /** Payload d'edition d'un event. Champs null = inchanges. */
     public record ModifierEventRequest(Double montant, Double pourcentage, Integer modeCalcul) {}
 ```
 
 ---
 
-## 3. Frontend — service d'accès aux events
-
-### Fichier à CRÉER : `GLPI_NewApp/src/services/coutEventsApi.ts`
+## 6. `src/services/coutEventsApi.ts` — CRÉER (fichier neuf)
 
 ```ts
-// Historique des opérations de coût (supercosts + réouvertures), source de
-// vérité côté backend. Permet de lister et de modifier une opération ; le
-// backend recalcule l'agrégat (ticket_fixed_costs) par rejeu après chaque modif.
 const BASE = '/kanban-api'
 
 export type TypeEvent = 'COST' | 'REOPEN'
@@ -413,23 +335,19 @@ export interface CoutEvent {
   createdAt: string
 }
 
-/** Charge tout l'historique des events, ordonné par ticket puis par ordre. */
 export async function chargerEvents(): Promise<CoutEvent[]> {
   const reponse = await fetch(`${BASE}/ticket-fixed-costs/events`, {
     headers: { Accept: 'application/json' },
-    // Jamais servi depuis le cache HTTP : on veut l'état recalculé le plus récent.
     cache: 'no-store',
   })
   if (!reponse.ok) return []
   return reponse.json() as Promise<CoutEvent[]>
 }
 
-/** Modifie un supercost (montant). Le backend recalcule le ticket. */
 export async function modifierSupercost(eventId: number, montant: number): Promise<void> {
   await envoyerModif(eventId, { montant })
 }
 
-/** Modifie une réouverture (pourcentage + mode). Le backend recalcule le ticket. */
 export async function modifierReouverture(
   eventId: number,
   pourcentage: number,
@@ -453,9 +371,11 @@ async function envoyerModif(
 
 ---
 
-## 4. Frontend — nouvelle page d'édition
+## 7. `src/components/front/EditionCoutsPanel.tsx` — CRÉER (fichier neuf)
 
-### Fichier à CRÉER : `GLPI_NewApp/src/components/front/EditionCoutsPanel.tsx`
+Page liste + modale d'édition. Points clés du style : la modale utilise les classes
+réellement stylées (`modal-card`, `modal-title`, `modal-input`) — fond **opaque** —
+et la colonne Mode n'affiche que des libellés (jamais le numéro).
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -550,7 +470,7 @@ export function EditionCoutsPanel() {
                   <td>{event.type === 'COST' ? 'Supercost' : 'Réouverture'}</td>
                   <td>{event.type === 'COST' ? formatMontant(event.montant) : '—'}</td>
                   <td>{event.type === 'REOPEN' ? `${event.pourcentage} %` : '—'}</td>
-                  <td>{event.type === 'REOPEN' ? LIBELLES_MODE[event.modeCalcul] ?? event.modeCalcul : '—'}</td>
+                  <td>{event.type === 'REOPEN' ? (LIBELLES_MODE[event.modeCalcul] ?? '—') : '—'}</td>
                   <td>{event.ordre}</td>
                   <td>
                     <button type="button" className="btn-ghost" onClick={() => setEdition(event)}>
@@ -595,9 +515,9 @@ function EditionDialog({
   const [modeCalcul, setModeCalcul] = useState(event.modeCalcul)
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div className="modal-box">
-        <h3>{event.type === 'COST' ? 'Modifier le supercost' : 'Modifier la réouverture'}</h3>
+    <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onAnnuler}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <h3 className="modal-title">{event.type === 'COST' ? 'Modifier le supercost' : 'Modifier la réouverture'}</h3>
 
         {event.type === 'COST' ? (
           <>
@@ -605,6 +525,7 @@ function EditionDialog({
             <input
               id="edit-montant"
               type="number"
+              className="modal-input"
               value={montant}
               onChange={(champ) => setMontant(champ.target.value)}
             />
@@ -615,12 +536,14 @@ function EditionDialog({
             <input
               id="edit-pct"
               type="number"
+              className="modal-input"
               value={pourcentage}
               onChange={(champ) => setPourcentage(champ.target.value)}
             />
             <label className="modal-label" htmlFor="edit-mode">Mode de calcul</label>
             <select
               id="edit-mode"
+              className="modal-input"
               value={modeCalcul}
               onChange={(champ) => setModeCalcul(Number(champ.target.value))}
             >
@@ -659,32 +582,31 @@ function EditionDialog({
 
 ---
 
-## 5. Frontend — route + lien de navigation
+## 8. `src/App.tsx` — MODIFIER
 
-### Fichier à MODIFIER : `GLPI_NewApp/src/App.tsx`
-
-AJOUTER l'import (à côté de la ligne 10 `import { CoutsPanel } …`) :
+AJOUTER l'import (à côté de `CoutsPanel`) :
 
 ```tsx
 import { EditionCoutsPanel } from './components/front/EditionCoutsPanel'
 ```
 
-AJOUTER la route dans le bloc `<Route element={<FrontLayout />}>` (après la ligne 59
-`<Route path="couts" element={<CoutsPanel />} />`) :
+AJOUTER la route après `<Route path="couts" element={<CoutsPanel />} />` :
 
 ```tsx
           <Route path="couts/edition" element={<EditionCoutsPanel />} />
 ```
 
-### Fichier à MODIFIER : `GLPI_NewApp/src/components/front/FrontLayout.tsx`
+---
 
-AJOUTER l'entrée de menu dans `NAV` (après la ligne 13 `{ id: '/couts', … }`) :
+## 9. `src/components/front/FrontLayout.tsx` — MODIFIER
+
+AJOUTER dans `NAV`, après l'entrée `/couts` :
 
 ```tsx
   { id: '/couts/edition', label: 'Édition des coûts', icon: 'bi bi-pencil-square', group: 'Tickets' },
 ```
 
-AJOUTER l'intro de page dans `PAGE_INTRO` (après la ligne 22 `'/couts': { … }`) :
+AJOUTER dans `PAGE_INTRO`, après l'entrée `'/couts'` :
 
 ```tsx
   '/couts/edition': { titre: 'Édition des coûts', sous: 'Modifiez une réouverture ou un supercost ; les totaux sont recalculés.' },
@@ -692,126 +614,56 @@ AJOUTER l'intro de page dans `PAGE_INTRO` (après la ligne 22 `'/couts': { … }
 
 ---
 
-## 6. Amorçage des données existantes (one-shot, optionnel)
+## 10. `src/services/coutsApi.ts` — MODIFIER (anti-cache après recalcul)
 
-Les lignes `ticket_fixed_costs` déjà présentes **n'ont pas d'events** : tant qu'on
-ne les modifie pas, elles s'affichent toujours via `coutsApi` (inchangé), mais
-elles **n'apparaîtront pas** dans la page d'édition et un recalcul les viderait.
+Sur les **deux** GET de `ticket-fixed-costs` (dans `chargerCoutsParMateriel` et
+`chargerDetailCoutMateriel`), ajouter `cache: 'no-store'` :
 
-Pour les rendre éditables, amorcer 1 event COST (montant = `cout_fixe`) et, si
-`pourcentage_reouverture > 0`, 1 event REOPEN (pourcentage + `mode_reouverture`).
-À exécuter une seule fois côté SQLite (base utilisée par le backend) :
+```ts
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+```
+
+---
+
+## 11. Amorçage des données existantes (one-shot, optionnel)
+
+Les lignes `ticket_fixed_costs` déjà présentes n'ont pas d'events : elles n'apparaissent
+pas dans la page d'édition tant qu'on ne les amorce pas. À exécuter **une fois** sur la
+base SQLite du backend :
 
 ```sql
--- 1 event COST par ticket ayant un supercost
 INSERT INTO ticket_cost_events (ticket_id, type, montant, pourcentage, mode_calcul, ordre)
 SELECT ticket_id, 'COST', cout_fixe, 0, 1, 1
 FROM ticket_fixed_costs
 WHERE cout_fixe > 0;
 
--- 1 event REOPEN par ticket ayant une réouverture
 INSERT INTO ticket_cost_events (ticket_id, type, montant, pourcentage, mode_calcul, ordre)
 SELECT ticket_id, 'REOPEN', 0, pourcentage_reouverture, mode_reouverture, 2
 FROM ticket_fixed_costs
 WHERE pourcentage_reouverture > 0;
 ```
 
-> Limite assumée : l'amorçage condense l'historique en **1 seul** COST (le cumul)
-> et **1 seul** REOPEN (le pourcentage cumulé). Le détail des ajouts/réouvertures
-> antérieurs est perdu (il ne l'était déjà plus), mais le recalcul reste cohérent.
-> Tout ce qui est créé **après** ce changement garde son historique fin.
-
 ---
 
-## 6 bis. Actualisation de la page « Coûts par matériel »
-
-Objectif : après une modif de réouverture/supercost, la page `/couts` doit afficher
-les nouvelles valeurs.
-
-### Pourquoi ça marche automatiquement
-- `recalculerTicket()` réécrit `fraisReouverture` (et `coutFixe`) dans
-  `ticket_fixed_costs`, **exactement la table lue** par la page Coûts par matériel
-  (`coutsApi.chargerCoutsParMateriel`, champ `fraisReouverture` → colonne
-  *Frais réouverture* ; `coutFixe` → colonne *Super Coût*).
-- `CoutsPanel` recharge ses données à chaque **montage** (`useEffect(..., [])`).
-  `/couts/edition` et `/couts` étant deux routes distinctes, revenir sur `/couts`
-  remonte le composant → re-fetch → valeurs à jour.
-
-### Garde-fou anti-cache HTTP (recommandé)
-### Fichier à MODIFIER : `GLPI_NewApp/src/services/coutsApi.ts`
-
-Ajouter `cache: 'no-store'` aux deux GET de la table des frais, pour ne jamais
-afficher une réponse mise en cache par le navigateur après un recalcul.
-
-Ligne 94 (`chargerCoutsParMateriel`) :
-
-```ts
-  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
-```
-
-Ligne 150 (`chargerDetailCoutMateriel`) :
-
-```ts
-  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
-    .then((r) => (r.ok ? (r.json() as Promise<CoutFixeApi[]>) : []))
-```
-
-### Option : rafraîchir sans changer de page
-Si tu veux que `/couts` se mette à jour même sans navigation (ex. l'utilisateur
-laisse l'onglet ouvert), expose un bouton « Actualiser » qui rappelle le chargement.
-### Fichier à MODIFIER : `GLPI_NewApp/src/components/front/CoutsPanel.tsx`
-
-Extraire le chargement dans une fonction réutilisable et l'appeler depuis un bouton :
-
-```tsx
-  // Remplace le corps du useEffect : on nomme la fonction pour pouvoir la rappeler.
-  const charger = useCallback(() => {
-    setEtat('loading')
-    chargerCoutsParMateriel()
-      .then((donnees) => { setLignes(donnees); setEtat('ready') })
-      .catch((e) => { setErreur(e instanceof Error ? e.message : 'Erreur de chargement.'); setEtat('error') })
-  }, [])
-
-  useEffect(() => { charger() }, [charger])
-```
-
-Puis dans `panel-head`, à côté du titre :
-
-```tsx
-        <button type="button" className="btn-ghost" onClick={charger}>
-          <i className="bi bi-arrow-clockwise" aria-hidden="true" /> Actualiser
-        </button>
-```
-
-(Pense à importer `useCallback` depuis `react`.)
-
----
-
-## 7. Vérifications après mise en place
-
-- Relancer le **backend Spring Boot** (nouvelle table + nouveaux endpoints).
-- Vérifier `GET /kanban-api/ticket-fixed-costs/events` → renvoie la liste.
-- Page `/couts/edition` : liste visible, bouton **Modifier** par ligne.
-- Modifier un supercost → revenir sur `/couts` → la colonne **Super Coût** change.
-- Modifier le pourcentage/mode d'une réouverture → revenir sur `/couts` → la colonne
-  **Frais réouverture** est recalculée (et le **Total**). Si elle ne bouge pas :
-  vérifier que `cache: 'no-store'` est bien posé (§ 6 bis) et que le ticket modifié
-  est bien lié à un matériel des `TYPES_MATERIEL` (Computer/Monitor/Phone).
-- Reset du module **Tickets** vide aussi `ticket_cost_events` (via `supprimerTout()`).
-
----
-
-## 8. Récapitulatif des fichiers
+## 12. Récapitulatif des fichiers
 
 | Action | Fichier |
 |---|---|
-| Modifier | `newapp/src/main/resources/schema.sql` (table `ticket_cost_events`) |
+| Modifier | `newapp/src/main/resources/schema.sql` |
 | Créer | `newapp/.../model/TicketCostEvent.java` |
 | Créer | `newapp/.../repository/TicketCostEventRepository.java` |
-| Modifier | `newapp/.../service/TicketFixedCostService.java` (journalisation + rejeu) |
-| Modifier | `newapp/.../controller/TicketFixedCostController.java` (endpoints events) |
+| Modifier | `newapp/.../service/TicketFixedCostService.java` |
+| Modifier | `newapp/.../controller/TicketFixedCostController.java` |
 | Créer | `src/services/coutEventsApi.ts` |
-| Modifier | `src/services/coutsApi.ts` (ajout `cache: 'no-store'`, § 6 bis) |
 | Créer | `src/components/front/EditionCoutsPanel.tsx` |
-| Modifier | `src/App.tsx` (route `/couts/edition`) |
-| Modifier | `src/components/front/FrontLayout.tsx` (lien + intro) |
+| Modifier | `src/App.tsx` |
+| Modifier | `src/components/front/FrontLayout.tsx` |
+| Modifier | `src/services/coutsApi.ts` |
+
+## 13. Vérifications
+
+- Relancer le backend Spring Boot (nouvelle table + endpoints).
+- `GET /kanban-api/ticket-fixed-costs/events` renvoie la liste.
+- `/couts/edition` : liste + bouton Modifier ; modale à fond opaque.
+- Modifier un supercost/réouverture → revenir sur `/couts` → colonnes recalculées.
+- Reset du module Tickets vide aussi `ticket_cost_events` (via `supprimerTout()`).
