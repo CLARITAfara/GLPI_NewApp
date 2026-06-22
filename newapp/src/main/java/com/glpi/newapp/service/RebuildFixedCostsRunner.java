@@ -5,6 +5,7 @@ import com.glpi.newapp.repository.TicketCostEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -17,6 +18,7 @@ import java.util.Set;
  * schema sans intervention manuelle en base.
  */
 @Component
+@Order(2)
 @RequiredArgsConstructor
 public class RebuildFixedCostsRunner implements ApplicationRunner {
 
