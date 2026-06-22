@@ -399,6 +399,7 @@ import {
   modifierSupercost,
 } from '../../services/coutEventsApi'
 import type { CoutEvent } from '../../services/coutEventsApi'
+import { listerTicketsFront } from '../../services/ticketsFrontApi'
 
 type Etat = 'loading' | 'ready' | 'error'
 
@@ -415,6 +416,7 @@ function formatMontant(valeur: number): string {
 
 export function EditionCoutsPanel() {
   const [events, setEvents] = useState<CoutEvent[]>([])
+  const [nomsParTicket, setNomsParTicket] = useState<Map<number, string>>(new Map())
   const [etat, setEtat] = useState<Etat>('loading')
   const [erreur, setErreur] = useState('')
   const [edition, setEdition] = useState<CoutEvent | null>(null)
@@ -424,7 +426,9 @@ export function EditionCoutsPanel() {
     setEtat('loading')
     setErreur('')
     try {
-      setEvents(await chargerEvents())
+      const [evenements, tickets] = await Promise.all([chargerEvents(), listerTicketsFront()])
+      setEvents(evenements)
+      setNomsParTicket(new Map(tickets.map((ticket) => [ticket.id, ticket.name])))
       setEtat('ready')
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Erreur de chargement.')
@@ -480,7 +484,7 @@ export function EditionCoutsPanel() {
             <tbody>
               {events.map((event) => (
                 <tr key={event.id}>
-                  <td>#{event.ticketId}</td>
+                  <td>#{event.ticketId}{nomsParTicket.get(event.ticketId) ? ` — ${nomsParTicket.get(event.ticketId)}` : ''}</td>
                   <td>{event.type === 'COST' ? 'Supercost' : 'Réouverture'}</td>
                   <td>{event.type === 'COST' ? formatMontant(event.montant) : '—'}</td>
                   <td>{event.type === 'REOPEN' ? `${event.pourcentage} %` : '—'}</td>
