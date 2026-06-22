@@ -547,10 +547,10 @@ function EditionDialog({
               value={modeCalcul}
               onChange={(champ) => setModeCalcul(Number(champ.target.value))}
             >
-              <option value={1}>Dernier coût</option>
-              <option value={2}>Premier coût</option>
-              <option value={3}>Moyenne</option>
-              <option value={4}>Somme</option>
+              <option value={1}>1 — Dernier coût</option>
+              <option value={2}>2 — Premier coût</option>
+              <option value={3}>3 — Moyenne</option>
+              <option value={4}>4 — Somme</option>
             </select>
           </>
         )}
