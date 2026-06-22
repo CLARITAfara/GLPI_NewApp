@@ -45,6 +45,12 @@ public class TicketFixedCostController {
     /** Payload d'edition d'un event. Champs null = inchanges. */
     public record ModifierEventRequest(Double montant, Double pourcentage, Integer modeCalcul) {}
 
+    /** Retablit un mouvement annule puis recalcule le ticket. */
+    @PostMapping("/events/{eventId}/restore")
+    public TicketFixedCost restaurerEvent(@PathVariable Long eventId) {
+        return service.restaurerEvent(eventId);
+    }
+
     @PostMapping("/by-ticket/{ticketId}/add")
     public TicketFixedCost addCout(@PathVariable Long ticketId, @RequestParam double montant) {
         return service.ajouterCout(ticketId, montant);

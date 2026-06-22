@@ -2,6 +2,7 @@ package com.glpi.newapp.service;
 
 import com.glpi.newapp.model.TicketCostEvent;
 import com.glpi.newapp.model.TicketFixedCost;
+import com.glpi.newapp.repository.AppSettingRepository;
 import com.glpi.newapp.repository.TicketCostEventRepository;
 import com.glpi.newapp.repository.TicketFixedCostRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ public class TicketFixedCostService {
 
     private final TicketFixedCostRepository repository;
     private final TicketCostEventRepository eventRepository;
+    private final AppSettingRepository appSettingRepository;
 
     public List<TicketFixedCost> findAll() {
         return repository.findAll();
@@ -67,12 +69,13 @@ public class TicketFixedCostService {
         List<TicketCostEvent> events = eventRepository.findByTicketIdOrderByOrdreAscIdAsc(ticketId);
         TicketCostEvent dernierCout = null;
         for (TicketCostEvent e : events) {
-            if (TicketCostEvent.TYPE_COST.equals(e.getType())) {
+            if (TicketCostEvent.TYPE_COST.equals(e.getType()) && !Boolean.TRUE.equals(e.getAnnule())) {
                 dernierCout = e;
             }
         }
         if (dernierCout != null) {
-            eventRepository.delete(dernierCout);
+            dernierCout.setAnnule(true);
+            eventRepository.save(dernierCout);
         }
         return recalculerTicket(ticketId);
     }
@@ -107,6 +110,18 @@ public class TicketFixedCostService {
         return recalculerTicket(event.getTicketId());
     }
 
+    /** Retablit un mouvement annule (annule = false) puis recalcule le ticket. */
+    @Transactional
+    public TicketFixedCost restaurerEvent(Long eventId) {
+        TicketCostEvent event = eventRepository.findById(eventId).orElse(null);
+        if (event == null) {
+            return null;
+        }
+        event.setAnnule(false);
+        eventRepository.save(event);
+        return recalculerTicket(event.getTicketId());
+    }
+
     // -- Reconstruction de l'agregat par rejeu des events -----------------------
 
     /**
@@ -133,6 +148,9 @@ public class TicketFixedCostService {
 
         List<TicketCostEvent> events = eventRepository.findByTicketIdOrderByOrdreAscIdAsc(ticketId);
         for (TicketCostEvent e : events) {
+            if (Boolean.TRUE.equals(e.getAnnule())) {
+                continue;
+            }
             if (TicketCostEvent.TYPE_COST.equals(e.getType())) {
                 appliquerCout(cible, e.getMontant());
             } else {
@@ -140,8 +158,19 @@ public class TicketFixedCostService {
             }
         }
 
-        // Plus aucun event => on supprime la ligne agregee (coherence).
-        if (events.isEmpty()) {
+        // Plafond de reouverture : le total des frais ne depasse pas
+        // (plafond % du supercost). Applique au recalcul -> retroactif.
+        Double plafond = lirePlafondReouverture();
+        if (plafond != null) {
+            double cap = (plafond / 100.0) * cible.getCoutFixe();
+            if (cible.getFraisReouverture() > cap) {
+                cible.setFraisReouverture(cap);
+            }
+        }
+
+        // Plus aucun event actif => on supprime la ligne agregee (coherence).
+        boolean aucunActif = events.stream().noneMatch(e -> !Boolean.TRUE.equals(e.getAnnule()));
+        if (aucunActif) {
             if (cible.getId() != null) {
                 repository.delete(cible);
             }
@@ -174,6 +203,22 @@ public class TicketFixedCostService {
         double fraisAjout = base * (pourcentage / 100.0);
         double fraisCumul = cible.getFraisReouverture() == null ? 0.0 : cible.getFraisReouverture();
         cible.setFraisReouverture(fraisCumul + fraisAjout);
+    }
+
+    /**
+     * Plafond de reouverture en % (parametre global 'plafond_reouverture').
+     * null = aucun plafond defini (pas de blocage).
+     */
+    private Double lirePlafondReouverture() {
+        return appSettingRepository.findById("plafond_reouverture")
+                .map(s -> {
+                    try {
+                        return Double.parseDouble(s.getValeur());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .orElse(null);
     }
 
     /** Calcule la base de reouverture selon le mode (1 a 4). */

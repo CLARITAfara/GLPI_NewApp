@@ -16,6 +16,9 @@ INSERT OR IGNORE INTO kanban_status_labels (id, status_id, language_id, label) V
 INSERT OR IGNORE INTO kanban_status_labels (id, status_id, language_id, label) VALUES (2, 2, 1, 'Efa manao');
 INSERT OR IGNORE INTO kanban_status_labels (id, status_id, language_id, label) VALUES (3, 3, 1, 'Vita');
 
+-- app_settings : plafond de reouverture par defaut (en %)
+INSERT OR IGNORE INTO app_settings (cle, valeur) VALUES ('plafond_reouverture', '20');
+
 -- Complète aussi une base existante dont les anciens IDs étaient associés au mauvais statut.
 -- kanban_status_colors
 

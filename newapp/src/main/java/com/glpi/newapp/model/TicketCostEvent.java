@@ -45,6 +45,10 @@ public class TicketCostEvent {
     @Column(name = "ordre", nullable = false)
     private Integer ordre = 0;
 
+    /** Soft-delete : true = mouvement annule (ignore au rejeu, listable / retablissable). */
+    @Column(name = "annule", nullable = false)
+    private Boolean annule = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

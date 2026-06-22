@@ -13,6 +13,7 @@ export interface CoutEvent {
   pourcentage: number
   modeCalcul: number
   ordre: number
+  annule: boolean
   createdAt: string
 }
 
@@ -39,6 +40,14 @@ export async function modifierReouverture(
   modeCalcul: number,
 ): Promise<void> {
   await envoyerModif(eventId, { pourcentage, modeCalcul })
+}
+
+/** Retablit un mouvement annule. Le backend recalcule le ticket. */
+export async function restaurerEvent(eventId: number): Promise<void> {
+  const reponse = await fetch(`${BASE}/ticket-fixed-costs/events/${eventId}/restore`, {
+    method: 'POST',
+  })
+  if (!reponse.ok) throw new Error(`kanban-api ${reponse.status}`)
 }
 
 async function envoyerModif(

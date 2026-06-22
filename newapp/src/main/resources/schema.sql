@@ -102,5 +102,17 @@ CREATE TABLE IF NOT EXISTS ticket_cost_events (
     pourcentage REAL    NOT NULL DEFAULT 0,       -- pour REOPEN
     mode_calcul INTEGER NOT NULL DEFAULT 1,       -- pour REOPEN (1..4)
     ordre       INTEGER NOT NULL,                 -- ordre d'application
+    annule      INTEGER NOT NULL DEFAULT 0,        -- 0 = actif, 1 = annule (soft-delete)
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 8. app_settings
+--    Parametres generaux de l'application (cle / valeur).
+--    'plafond_reouverture' : plafond (en %) du cout de reouverture par rapport
+--    au supercost. Pas d'interface : modifiable directement en base.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+    cle    TEXT PRIMARY KEY,
+    valeur TEXT NOT NULL
 );

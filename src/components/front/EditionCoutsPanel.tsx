@@ -3,9 +3,10 @@ import {
   chargerEvents,
   modifierReouverture,
   modifierSupercost,
+  restaurerEvent,
 } from '../../services/coutEventsApi'
 import type { CoutEvent } from '../../services/coutEventsApi'
-import { listerTicketsFront } from '../../services/ticketsFrontApi'
+import { listerTicketsFront, changerStatutTicket } from '../../services/ticketsFrontApi'
 
 type Etat = 'loading' | 'ready' | 'error'
 
@@ -64,6 +65,30 @@ export function EditionCoutsPanel() {
     }
   }
 
+  // 6 = statut « Clos » (Terminé) : rétablir une annulation reclôt le ticket.
+  const STATUT_TERMINE = 6
+
+  const actifs = events.filter((event) => !event.annule)
+  const annules = events.filter((event) => event.annule)
+
+  async function retablir(event: CoutEvent) {
+    setEnregistrement(true)
+    try {
+      await restaurerEvent(event.id)
+      // L'état « Terminé » revient : on referme le ticket côté GLPI (best-effort).
+      try {
+        await changerStatutTicket(event.ticketId, STATUT_TERMINE)
+      } catch {
+        /* best-effort : le recalcul des coûts a déjà eu lieu */
+      }
+      await recharger()
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : 'Échec du rétablissement.')
+    } finally {
+      setEnregistrement(false)
+    }
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -88,7 +113,7 @@ export function EditionCoutsPanel() {
               </tr>
             </thead>
             <tbody>
-              {events.map((event) => (
+              {actifs.map((event) => (
                 <tr key={event.id}>
                   <td>#{event.ticketId}{nomsParTicket.get(event.ticketId) ? ` — ${nomsParTicket.get(event.ticketId)}` : ''}</td>
                   <td>{event.type === 'COST' ? 'Supercost' : 'Réouverture'}</td>
@@ -103,9 +128,45 @@ export function EditionCoutsPanel() {
                   </td>
                 </tr>
               ))}
-              {events.length === 0 && (
-                <tr><td colSpan={7} className="muted">Aucune opération enregistrée.</td></tr>
+              {actifs.length === 0 && (
+                <tr><td colSpan={7} className="muted">Aucune opération active.</td></tr>
               )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {etat === 'ready' && annules.length > 0 && (
+        <div className="table-scroll" style={{ marginTop: '1.5rem' }}>
+          <h3 className="modal-title"><i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Mouvements annulés</h3>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Pourcentage</th>
+                <th>Mode</th>
+                <th>Ordre</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {annules.map((event) => (
+                <tr key={event.id}>
+                  <td>#{event.ticketId}{nomsParTicket.get(event.ticketId) ? ` — ${nomsParTicket.get(event.ticketId)}` : ''}</td>
+                  <td>{event.type === 'COST' ? 'Supercost' : 'Réouverture'}</td>
+                  <td>{event.type === 'COST' ? formatMontant(event.montant) : '—'}</td>
+                  <td>{event.type === 'REOPEN' ? `${event.pourcentage} %` : '—'}</td>
+                  <td>{event.type === 'REOPEN' ? (LIBELLES_MODE[event.modeCalcul] ?? '—') : '—'}</td>
+                  <td>{event.ordre}</td>
+                  <td>
+                    <button type="button" className="btn-ghost" disabled={enregistrement} onClick={() => retablir(event)}>
+                      <i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Rétablir
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
