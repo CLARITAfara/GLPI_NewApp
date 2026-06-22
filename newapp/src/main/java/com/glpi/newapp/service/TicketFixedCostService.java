@@ -158,6 +158,15 @@ public class TicketFixedCostService {
             }
         }
 
+        // Base + frais calcules une seule fois sur l'agregat FINAL : le mode
+        // (ex. 1 = dernier cout) s'applique au dernier cout reellement insere sur
+        // le ticket, pas a celui connu au moment de chaque reouverture.
+        if (cible.getPourcentageReouverture() > 0) {
+            double base = calculerBase(cible, cible.getModeReouverture());
+            cible.setBaseReouverture(base);
+            cible.setFraisReouverture(base * (cible.getPourcentageReouverture() / 100.0));
+        }
+
         // Plafond de reouverture : le total des frais ne depasse pas
         // (plafond % du supercost). Applique au recalcul -> retroactif.
         Double plafond = lirePlafondReouverture();
@@ -191,18 +200,17 @@ public class TicketFixedCostService {
         cible.setNombreCouts(nombreCouts + 1);
     }
 
-    /** Applique une reouverture a l'agregat (logique d'origine de appliquerReouverture). */
+    /**
+     * Applique une reouverture a l'agregat : on accumule seulement le pourcentage
+     * et on memorise le mode. La base et les frais sont calcules une seule fois,
+     * APRES rejeu de tous les events (voir recalculerTicket), pour que le mode 1
+     * ("dernier cout") s'appuie sur le dernier cout REELLEMENT insere sur le ticket,
+     * et non sur celui connu au moment de cette reouverture.
+     */
     private void appliquerReopen(TicketFixedCost cible, double pourcentage, int modeCalcul) {
         double cumulPct = cible.getPourcentageReouverture() == null ? 0.0 : cible.getPourcentageReouverture();
         cible.setPourcentageReouverture(cumulPct + pourcentage);
         cible.setModeReouverture(modeCalcul);
-
-        double base = calculerBase(cible, modeCalcul);
-        cible.setBaseReouverture(base);
-
-        double fraisAjout = base * (pourcentage / 100.0);
-        double fraisCumul = cible.getFraisReouverture() == null ? 0.0 : cible.getFraisReouverture();
-        cible.setFraisReouverture(fraisCumul + fraisAjout);
     }
 
     /**
