@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
   chargerEvents,
+  chargerPlafond,
+  definirPlafond,
   modifierReouverture,
   modifierSupercost,
   restaurerEvent,
@@ -28,18 +30,41 @@ export function EditionCoutsPanel() {
   const [erreur, setErreur] = useState('')
   const [edition, setEdition] = useState<CoutEvent | null>(null)
   const [enregistrement, setEnregistrement] = useState(false)
+  const [plafond, setPlafond] = useState('')
+  const [plafondEnCours, setPlafondEnCours] = useState(false)
 
   async function recharger() {
     setEtat('loading')
     setErreur('')
     try {
-      const [evenements, tickets] = await Promise.all([chargerEvents(), listerTicketsFront()])
+      const [evenements, tickets, valeurPlafond] = await Promise.all([
+        chargerEvents(),
+        listerTicketsFront(),
+        chargerPlafond(),
+      ])
       setEvents(evenements)
       setNomsParTicket(new Map(tickets.map((ticket) => [ticket.id, ticket.name])))
+      setPlafond(valeurPlafond === null ? '' : String(valeurPlafond))
       setEtat('ready')
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Erreur de chargement.')
       setEtat('error')
+    }
+  }
+
+  // Enregistre le plafond (vide = aucun plafond) puis recharge : les frais sont
+  // recalculés côté backend pour tous les tickets.
+  async function enregistrerPlafond() {
+    setPlafondEnCours(true)
+    setErreur('')
+    try {
+      const valeur = plafond.trim() === '' ? null : Number(plafond)
+      await definirPlafond(valeur === null || Number.isNaN(valeur) ? null : valeur)
+      await recharger()
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement du plafond.")
+    } finally {
+      setPlafondEnCours(false)
     }
   }
 
@@ -94,6 +119,38 @@ export function EditionCoutsPanel() {
       <div className="panel-head">
         <h2><i className="bi bi-pencil-square" aria-hidden="true" /> Édition des coûts</h2>
       </div>
+
+      {etat === 'ready' && (
+        <div className="plafond-editor">
+          <label className="modal-label" htmlFor="edit-plafond">
+            <i className="bi bi-shield-check" aria-hidden="true" /> Plafond de réouverture (% du super coût)
+          </label>
+          <div className="plafond-editor__row">
+            <input
+              id="edit-plafond"
+              type="number"
+              min={0}
+              step="any"
+              className="modal-input"
+              placeholder="Aucun plafond"
+              value={plafond}
+              onChange={(champ) => setPlafond(champ.target.value)}
+            />
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={plafondEnCours}
+              onClick={enregistrerPlafond}
+            >
+              {plafondEnCours ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
+          <p className="muted">
+            Le total des frais de réouverture d'un ticket ne dépassera pas ce pourcentage de son super coût.
+            Laisser vide pour ne pas plafonner. La modification recalcule tous les tickets.
+          </p>
+        </div>
+      )}
 
       {etat === 'loading' && <p className="muted">Chargement en cours…</p>}
       {etat === 'error' && <p className="login-error" role="alert">{erreur}</p>}

@@ -42,6 +42,27 @@ export async function modifierReouverture(
   await envoyerModif(eventId, { pourcentage, modeCalcul })
 }
 
+/** Lit le plafond de réouverture (% du supercost). null = aucun plafond. */
+export async function chargerPlafond(): Promise<number | null> {
+  const reponse = await fetch(`${BASE}/ticket-fixed-costs/plafond`, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (!reponse.ok) return null
+  const data = (await reponse.json()) as { plafond: number | null }
+  return data.plafond
+}
+
+/**
+ * Définit (ou supprime si null) le plafond de réouverture en %. Le backend
+ * recalcule tous les tickets pour appliquer le plafond de façon rétroactive.
+ */
+export async function definirPlafond(valeur: number | null): Promise<void> {
+  const query = valeur === null ? '' : `?valeur=${valeur}`
+  const reponse = await fetch(`${BASE}/ticket-fixed-costs/plafond${query}`, { method: 'PUT' })
+  if (!reponse.ok) throw new Error(`kanban-api ${reponse.status}`)
+}
+
 /** Retablit un mouvement annule. Le backend recalcule le ticket. */
 export async function restaurerEvent(eventId: number): Promise<void> {
   const reponse = await fetch(`${BASE}/ticket-fixed-costs/events/${eventId}/restore`, {

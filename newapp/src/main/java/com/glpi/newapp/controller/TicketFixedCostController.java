@@ -67,4 +67,23 @@ public class TicketFixedCostController {
                                         @RequestParam(defaultValue = "1") int modeCalcul) {
         return service.appliquerReouverture(ticketId, pourcentage, modeCalcul);
     }
+
+    /** Plafond de reouverture courant (% du supercost). null = aucun plafond. */
+    @GetMapping("/plafond")
+    public PlafondResponse getPlafond() {
+        return new PlafondResponse(service.getPlafondReouverture());
+    }
+
+    /**
+     * Definit le plafond de reouverture (% du supercost) puis recalcule tous
+     * les tickets. Sans parametre 'valeur' : supprime le plafond (aucun blocage).
+     */
+    @PutMapping("/plafond")
+    public PlafondResponse setPlafond(@RequestParam(required = false) Double valeur) {
+        service.definirPlafondReouverture(valeur);
+        return new PlafondResponse(service.getPlafondReouverture());
+    }
+
+    /** Reponse JSON du plafond ({ "plafond": 20 } ou { "plafond": null }). */
+    public record PlafondResponse(Double plafond) {}
 }

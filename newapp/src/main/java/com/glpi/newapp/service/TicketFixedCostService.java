@@ -1,5 +1,6 @@
 package com.glpi.newapp.service;
 
+import com.glpi.newapp.model.AppSetting;
 import com.glpi.newapp.model.TicketCostEvent;
 import com.glpi.newapp.model.TicketFixedCost;
 import com.glpi.newapp.repository.AppSettingRepository;
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -199,6 +202,52 @@ public class TicketFixedCostService {
         }
 
         return repository.saveAll(lignes);
+    }
+
+    // -- Plafond de reouverture (parametre global) ------------------------------
+
+    /** Cle du parametre global stockant le plafond de reouverture. */
+    private static final String CLE_PLAFOND = "plafond_reouverture";
+
+    /** Plafond courant en % (null = aucun plafond). */
+    public Double getPlafondReouverture() {
+        return lirePlafondReouverture();
+    }
+
+    /**
+     * Definit (ou supprime si null) le plafond de reouverture en %, puis
+     * recalcule TOUS les tickets pour appliquer le nouveau plafond de maniere
+     * retroactive (le plafond est applique au rejeu, cf. recalculerTicket).
+     */
+    @Transactional
+    public void definirPlafondReouverture(Double valeur) {
+        if (valeur == null) {
+            if (appSettingRepository.existsById(CLE_PLAFOND)) {
+                appSettingRepository.deleteById(CLE_PLAFOND);
+            }
+        } else {
+            AppSetting setting = appSettingRepository.findById(CLE_PLAFOND)
+                    .orElseGet(() -> {
+                        AppSetting neuf = new AppSetting();
+                        neuf.setCle(CLE_PLAFOND);
+                        return neuf;
+                    });
+            setting.setValeur(String.valueOf(valeur));
+            appSettingRepository.save(setting);
+        }
+        recalculerTous();
+    }
+
+    /** Recalcule le journal de tous les tickets ayant au moins un event. */
+    @Transactional
+    public void recalculerTous() {
+        Set<Long> ticketIds = new LinkedHashSet<>();
+        for (TicketCostEvent e : eventRepository.findAll()) {
+            ticketIds.add(e.getTicketId());
+        }
+        for (Long ticketId : ticketIds) {
+            recalculerTicket(ticketId);
+        }
     }
 
     /**
