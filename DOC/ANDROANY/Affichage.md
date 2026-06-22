@@ -227,9 +227,11 @@ AJOUTER **après la ligne 112** (la fermeture `</div>` du `table-scroll` du tabl
 principal, juste avant le bloc `{edition && (` ligne 114) :
 
 ```tsx
-      {etat === 'ready' && annules.length > 0 && (
-        <div className="table-scroll" style={{ marginTop: '1.5rem' }}>
-          <h3 className="modal-title"><i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Mouvements annulés</h3>
+      {etat === 'ready' && (
+        <div className="table-scroll" style={{ marginTop: '2rem' }}>
+          <div className="panel-head">
+            <h2><i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Mouvements annulés</h2>
+          </div>
           <table className="data-table">
             <thead>
               <tr>
@@ -258,11 +260,18 @@ principal, juste avant le bloc `{edition && (` ligne 114) :
                   </td>
                 </tr>
               ))}
+              {annules.length === 0 && (
+                <tr><td colSpan={7} className="muted">Aucun mouvement annulé.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
 ```
+
+> Le 2ᵉ tableau est **toujours rendu** (état `ready`), avec un état vide « Aucun
+> mouvement annulé. » — ainsi la page montre bien deux tableaux distincts même sans
+> annulation.
 
 ---
 

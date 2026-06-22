@@ -136,9 +136,11 @@ export function EditionCoutsPanel() {
         </div>
       )}
 
-      {etat === 'ready' && annules.length > 0 && (
-        <div className="table-scroll" style={{ marginTop: '1.5rem' }}>
-          <h3 className="modal-title"><i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Mouvements annulés</h3>
+      {etat === 'ready' && (
+        <div className="table-scroll" style={{ marginTop: '2rem' }}>
+          <div className="panel-head">
+            <h2><i className="bi bi-arrow-counterclockwise" aria-hidden="true" /> Mouvements annulés</h2>
+          </div>
           <table className="data-table">
             <thead>
               <tr>
@@ -167,6 +169,9 @@ export function EditionCoutsPanel() {
                   </td>
                 </tr>
               ))}
+              {annules.length === 0 && (
+                <tr><td colSpan={7} className="muted">Aucun mouvement annulé.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
