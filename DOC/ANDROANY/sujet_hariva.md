@@ -22,5 +22,6 @@ si c'est inférieur à 20% , ca passe
 
  calcul de réouverture normal et les modes changent pas  , mais si ca dépasse plafond ,on bloque 
 
+paramètre: plafond(general)
 
 
