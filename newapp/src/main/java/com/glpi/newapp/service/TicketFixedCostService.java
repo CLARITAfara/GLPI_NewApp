@@ -142,13 +142,6 @@ public class TicketFixedCostService {
 
         // Plafond eventuel : total des frais <= plafond% du cumul supercost FINAL.
         Double plafond = lirePlafondReouverture();
-        double cumulFinal = 0.0;
-        for (TicketCostEvent e : events) {
-            if (!Boolean.TRUE.equals(e.getAnnule()) && TicketCostEvent.TYPE_COST.equals(e.getType())) {
-                cumulFinal += e.getMontant();
-            }
-        }
-        double cap = plafond != null ? (plafond / 100.0) * cumulFinal : Double.MAX_VALUE;
 
         // Etat courant (en memoire) servant a calculer la base selon le mode.
         double cumul = 0.0;
@@ -183,10 +176,15 @@ public class TicketFixedCostService {
                 int mode = e.getModeCalcul();
                 double base = calculerBase(mode, dernier, premier, cumul, nombre);
                 double frais = base * (pct / 100.0);
-                // Plafond : on n'ajoute pas au-dela du cap restant.
-                double reste = Math.max(0.0, cap - fraisRunning);
-                if (frais > reste) {
-                    frais = reste;
+                // Plafond TOUJOURS verifie a chaque reouverture, par rapport au
+                // supercost CUMULE A CET INSTANT : le total des frais ne depasse
+                // jamais plafond% du supercost connu au moment de la reouverture.
+                if (plafond != null) {
+                    double cap = (plafond / 100.0) * cumul;
+                    double reste = Math.max(0.0, cap - fraisRunning);
+                    if (frais > reste) {
+                        frais = reste;
+                    }
                 }
                 fraisRunning += frais;
 
