@@ -13,7 +13,8 @@
 
 ## 1. `newapp/src/main/resources/schema.sql` — MODIFIER
 
-AJOUTER après la table `ticket_refs` :
+AJOUTER **après la ligne 87** (le `);` de fermeture de la table `ticket_refs`,
+dernière ligne du fichier d'origine) :
 
 ```sql
 -- ------------------------------------------------------------
@@ -118,20 +119,27 @@ public interface TicketCostEventRepository extends JpaRepository<TicketCostEvent
 
 ## 4. `newapp/.../service/TicketFixedCostService.java` — MODIFIER
 
-### 4.1 Imports — AJOUTER
+> Numéros de ligne donnés sur le fichier **d'origine** (avant nos modifs) :
+> `findAll` 17-19, `trouverOuCreer` 21-27, `ajouterCout` 29-41,
+> `annulerDernierCout` 43-59, `appliquerReouverture` 61-81, `calculerBase` 83-100.
+
+### 4.1 Imports — AJOUTER après la ligne 4 (`import ...TicketFixedCostRepository;`)
 
 ```java
 import com.glpi.newapp.model.TicketCostEvent;
 import com.glpi.newapp.repository.TicketCostEventRepository;
 ```
 
-### 4.2 Champ injecté — AJOUTER sous `repository`
+### 4.2 Champ injecté — AJOUTER après la ligne 15 (`private final TicketFixedCostRepository repository;`)
 
 ```java
     private final TicketCostEventRepository eventRepository;
 ```
 
-### 4.3 `supprimerTout()` — REMPLACER (vide aussi l'historique)
+### 4.3 `supprimerTout()` — AJOUTER après `findAll()` (après la ligne 19)
+
+> Vide aussi l'historique. (Si la méthode existe déjà — ajoutée lors du reset —
+> la REMPLACER par cette version.)
 
 ```java
     /** Vide entierement ticket_fixed_costs + l'historique (purge du reset Tickets). */
@@ -144,8 +152,10 @@ import com.glpi.newapp.repository.TicketCostEventRepository;
 
 ### 4.4 `ajouterCout` / `appliquerReouverture` / `annulerDernierCout` — REMPLACER
 
-Ces 3 méthodes journalisent désormais un event puis rejouent. La méthode privée
-`trouverOuCreer` n'est plus utilisée : la supprimer.
+Remplacer les corps existants : `ajouterCout` (lignes 29-41), `annulerDernierCout`
+(lignes 43-59), `appliquerReouverture` (lignes 61-81). Elles journalisent désormais
+un event puis rejouent. Supprimer aussi la méthode privée `trouverOuCreer`
+(lignes 21-27), devenue inutile.
 
 ```java
     @Transactional
@@ -187,7 +197,7 @@ Ces 3 méthodes journalisent désormais un event puis rejouent. La méthode priv
     }
 ```
 
-### 4.5 Méthodes nouvelles — AJOUTER
+### 4.5 Méthodes nouvelles — AJOUTER (avant `calculerBase`, qui était ligne 83)
 
 ```java
     /** Tout l'historique des events (pour la page d'edition). */
@@ -289,13 +299,17 @@ Ces 3 méthodes journalisent désormais un event puis rejouent. La méthode priv
 
 ## 5. `newapp/.../controller/TicketFixedCostController.java` — MODIFIER
 
-### 5.1 Import — AJOUTER
+> Sur le fichier d'origine : `getAll()` est aux lignes 17-20, le bloc
+> `@PostMapping(".../add")` commence ligne 22. (`deleteAll()` a été ajouté lors du
+> reset, juste après `getAll()`.)
+
+### 5.1 Import — AJOUTER après la ligne 3 (`import ...TicketFixedCost;`)
 
 ```java
 import com.glpi.newapp.model.TicketCostEvent;
 ```
 
-### 5.2 Endpoints — AJOUTER après `deleteAll()`
+### 5.2 Endpoints — AJOUTER après `getAll()` / `deleteAll()` (après la ligne 20, avant le `@PostMapping` ligne 22)
 
 ```java
     /** Historique complet des events (reouvertures + supercosts). */
@@ -584,13 +598,13 @@ function EditionDialog({
 
 ## 8. `src/App.tsx` — MODIFIER
 
-AJOUTER l'import (à côté de `CoutsPanel`) :
+AJOUTER l'import **après la ligne 10** (`import { CoutsPanel } from './components/front/CoutsPanel'`) :
 
 ```tsx
 import { EditionCoutsPanel } from './components/front/EditionCoutsPanel'
 ```
 
-AJOUTER la route après `<Route path="couts" element={<CoutsPanel />} />` :
+AJOUTER la route **après la ligne 59** (`<Route path="couts" element={<CoutsPanel />} />`) :
 
 ```tsx
           <Route path="couts/edition" element={<EditionCoutsPanel />} />
@@ -600,13 +614,13 @@ AJOUTER la route après `<Route path="couts" element={<CoutsPanel />} />` :
 
 ## 9. `src/components/front/FrontLayout.tsx` — MODIFIER
 
-AJOUTER dans `NAV`, après l'entrée `/couts` :
+AJOUTER dans `NAV`, **après la ligne 13** (l'entrée `{ id: '/couts', ... }`) :
 
 ```tsx
   { id: '/couts/edition', label: 'Édition des coûts', icon: 'bi bi-pencil-square', group: 'Tickets' },
 ```
 
-AJOUTER dans `PAGE_INTRO`, après l'entrée `'/couts'` :
+AJOUTER dans `PAGE_INTRO`, **après la ligne 22** (l'entrée `'/couts': { ... }`) :
 
 ```tsx
   '/couts/edition': { titre: 'Édition des coûts', sous: 'Modifiez une réouverture ou un supercost ; les totaux sont recalculés.' },
@@ -616,8 +630,17 @@ AJOUTER dans `PAGE_INTRO`, après l'entrée `'/couts'` :
 
 ## 10. `src/services/coutsApi.ts` — MODIFIER (anti-cache après recalcul)
 
-Sur les **deux** GET de `ticket-fixed-costs` (dans `chargerCoutsParMateriel` et
-`chargerDetailCoutMateriel`), ajouter `cache: 'no-store'` :
+Sur les **deux** GET de `ticket-fixed-costs`, ajouter `cache: 'no-store'` au `fetch` :
+- **ligne 94** dans `chargerCoutsParMateriel`,
+- **ligne 150** dans `chargerDetailCoutMateriel`.
+
+Avant :
+
+```ts
+  const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' } })
+```
+
+Après :
 
 ```ts
   const manuels = await fetch(`${BASE}/ticket-fixed-costs`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
