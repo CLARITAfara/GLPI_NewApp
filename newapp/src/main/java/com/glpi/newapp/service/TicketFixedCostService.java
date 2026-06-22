@@ -18,6 +18,12 @@ public class TicketFixedCostService {
         return repository.findAll();
     }
 
+    /** Vide entièrement la table ticket_fixed_costs (purge du reset Tickets). */
+    @Transactional
+    public void supprimerTout() {
+        repository.deleteAllInBatch();
+    }
+
     private TicketFixedCost trouverOuCreer(Long ticketId) {
         return repository.findByTicketId(ticketId).orElseGet(() -> {
             TicketFixedCost neuf = new TicketFixedCost();

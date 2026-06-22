@@ -19,6 +19,11 @@ public class TicketFixedCostController {
         return service.findAll();
     }
 
+    @DeleteMapping
+    public void deleteAll() {
+        service.supprimerTout();
+    }
+
     @PostMapping("/by-ticket/{ticketId}/add")
     public TicketFixedCost addCout(@PathVariable Long ticketId, @RequestParam double montant) {
         return service.ajouterCout(ticketId, montant);

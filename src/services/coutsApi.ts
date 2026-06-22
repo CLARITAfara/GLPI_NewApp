@@ -64,6 +64,11 @@ export async function annulerDernierCoutFixe(ticketId: number): Promise<void> {
   await postCout(`${BASE}/ticket-fixed-costs/by-ticket/${ticketId}/cancel-last`)
 }
 
+/** Vide la table ticket_fixed_costs (purge du reset Tickets). */
+export async function purgerCoutsFixes(): Promise<void> {
+  await fetch(`${BASE}/ticket-fixed-costs`, { method: 'DELETE' })
+}
+
 export async function appliquerReouverture(
   ticketId: number,
   pourcentage: number,

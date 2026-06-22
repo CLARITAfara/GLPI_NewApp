@@ -7,6 +7,7 @@ import {
 import { ITEM_TYPES, type ItemType } from './importSchemas'
 import { pool } from './concurrency'
 import { purgerRefs } from './ticketRefApi'
+import { purgerCoutsFixes } from './coutsApi'
 
 /** Nombre de suppressions menées en parallèle lors d'une réinitialisation. */
 const CONCURRENCE_SUPPRESSION = 8
@@ -376,6 +377,13 @@ export async function reinitialiserModule(
   if (module.id === 'tickets') {
     try {
       await purgerRefs()
+    } catch {
+      /* best-effort */
+    }
+    // Purge aussi les frais fixes/réouverture (ticket_fixed_costs) : sinon ils
+    // restent en base et se rattachent par ticket_id aux tickets réimportés.
+    try {
+      await purgerCoutsFixes()
     } catch {
       /* best-effort */
     }
